@@ -1,20 +1,8 @@
 "use client"
-
-import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, Bell, LogOut, Lock } from "lucide-react"
+import { Menu, X, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useMobile } from "@/hooks/use-mobile"
-import { useAuth } from "@/context/auth-context"
-import { useFirebase } from "@/components/firebase-provider"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import AdminLoginModal from "./admin-login-modal"
 
 interface HeaderProps {
   isLandingPage: boolean
@@ -24,9 +12,6 @@ interface HeaderProps {
 
 export default function Header({ isLandingPage, sidebarOpen, setSidebarOpen }: HeaderProps) {
   const isMobile = useMobile()
-  const { user, isAdmin, signOut } = useAuth()
-  const { initialized } = useFirebase()
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
 
   if (isLandingPage) {
     return (
@@ -60,49 +45,13 @@ export default function Header({ isLandingPage, sidebarOpen, setSidebarOpen }: H
               </nav>
 
               <div className="hidden md:flex items-center gap-4">
-                {isAdmin ? (
-                  <>
-                    <Button asChild variant="ghost">
-                      <Link href="/dashboard">Dashboard</Link>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full">
-                          <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold">
-                            {user?.email?.charAt(0).toUpperCase() || "A"}
-                          </div>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <span>Admin: {user?.email}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => signOut()}>
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>Log out</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsAdminModalOpen(true)}
-                    className="text-teal-600 hover:text-teal-800"
-                    disabled={!initialized}
-                  >
-                    <Lock className="h-5 w-5" />
-                  </Button>
-                )}
+                <Button asChild variant="ghost">
+                  <Link href="/dashboard">Dashboard</Link>
+                </Button>
               </div>
             </>
           )}
         </div>
-
-        {/* Admin Login Modal */}
-        <AdminLoginModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />
       </header>
     )
   }
@@ -121,28 +70,6 @@ export default function Header({ isLandingPage, sidebarOpen, setSidebarOpen }: H
             <Bell className="h-5 w-5" />
             <span className="sr-only">View notifications</span>
           </Button>
-
-          {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold">
-                    {user?.email?.charAt(0).toUpperCase() || "A"}
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <span>Admin: {user?.email}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
       </div>
     </header>

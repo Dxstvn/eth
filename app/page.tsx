@@ -5,30 +5,16 @@ import { useState, useEffect } from "react"
 import { ArrowRight, Mail, Shield, Clock, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import AdminLoginModal from "@/components/admin-login-modal"
-import { useAuth } from "@/context/auth-context"
-import { useFirebase } from "@/components/firebase-provider"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function ComingSoonPage() {
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
-  const { isAdmin } = useAuth()
-  const { initialized } = useFirebase()
-  const router = useRouter()
   const [statusMessage, setStatusMessage] = useState<{
     title: string
     message: string
     type: "success" | "error" | "info"
   } | null>(null)
-
-  // Redirect to dashboard if already authenticated as admin
-  useEffect(() => {
-    if (initialized && isAdmin) {
-      router.push("/dashboard")
-    }
-  }, [isAdmin, router, initialized])
 
   // Clear status message after 5 seconds
   useEffect(() => {
@@ -92,17 +78,18 @@ export default function ComingSoonPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 relative z-10">
         <div className="max-w-3xl w-full text-center">
-          {/* Lock icon at the top center - clickable for admin login */}
+          {/* Demo button replacing the lock icon */}
           <div className="flex justify-center mb-8">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsAdminModalOpen(true)}
+              asChild
               className="bg-teal-600 rounded-full p-4 shadow-lg hover:bg-teal-700"
-              disabled={!initialized}
             >
-              <Lock className="h-8 w-8 text-white" />
-              <span className="sr-only">Admin Login</span>
+              <Link href="/dashboard">
+                <Lock className="h-8 w-8 text-white" />
+                <span className="sr-only">View Dashboard</span>
+              </Link>
             </Button>
           </div>
 
@@ -170,9 +157,6 @@ export default function ComingSoonPage() {
       <footer className="py-6 text-center text-teal-200/70">
         <p>© {new Date().getFullYear()} CryptoEscrow. All rights reserved.</p>
       </footer>
-
-      {/* Admin Login Modal */}
-      <AdminLoginModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />
 
       {/* Add CSS for animations */}
       <style jsx global>{`

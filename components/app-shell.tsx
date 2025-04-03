@@ -1,22 +1,17 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import Sidebar from "@/components/sidebar"
 import Header from "@/components/header"
 import { useMobile } from "@/hooks/use-mobile"
-import { useAuth } from "@/context/auth-context"
-import { useFirebase } from "@/components/firebase-provider"
-import LoadingScreen from "@/components/loading-screen"
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, loading: authLoading, isAdmin } = useAuth()
-  const { initialized, initializing } = useFirebase()
-  const router = useRouter()
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
@@ -25,19 +20,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, isMobile])
 
+  // Determine if we're on the auth pages
+  const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password"
+
   // Determine if we're on the landing page
   const isLandingPage = pathname === "/"
 
-  // Redirect to home if not admin and trying to access dashboard
-  useEffect(() => {
-    if (initialized && !authLoading && !isAdmin && pathname.startsWith("/dashboard")) {
-      router.push("/")
-    }
-  }, [isAdmin, authLoading, pathname, router, initialized])
-
-  // Show loading screen while Firebase is initializing or auth state is loading
-  if (initializing || (!initialized && authLoading)) {
-    return <LoadingScreen />
+  if (isAuthPage) {
+    return <div className="min-h-screen bg-gray-50">{children}</div>
   }
 
   if (isLandingPage) {
