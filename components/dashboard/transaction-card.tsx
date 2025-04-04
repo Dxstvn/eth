@@ -74,7 +74,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   const statusInfo = getStatusInfo(transaction.status)
 
   return (
-    <div className="border border-gray-200 rounded-lg p-5">
+    <div className="border border-gray-200 rounded-lg p-5 bg-white">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">

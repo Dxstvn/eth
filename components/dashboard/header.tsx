@@ -1,6 +1,6 @@
 "use client"
 
-import { Menu, LogOut } from "lucide-react"
+import { Menu, LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 import {
@@ -11,40 +11,63 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useSidebar } from "@/context/sidebar-context"
 import { useMobile } from "@/hooks/use-mobile"
 
 interface HeaderProps {
-  sidebarOpen?: boolean
-  setSidebarOpen?: (open: boolean) => void
+  sidebarOpen: boolean
+  setSidebarOpen: (open: boolean) => void
 }
 
-export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
+export default function DashboardHeader({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const { user, signOut } = useAuth()
+  const { expanded, toggleSidebar } = useSidebar()
   const isMobile = useMobile()
 
-  return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b bg-white px-4 shadow-sm sm:px-6 lg:px-8">
-      <div className="flex items-center">
-        {isMobile && setSidebarOpen && (
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="mr-2">
-            <Menu className="h-5 w-5" />
-          </Button>
-        )}
-        <Link href="/dashboard" className="flex items-center md:hidden">
-          <div className="w-8 h-8 rounded-md bg-teal-600 flex items-center justify-center text-white font-bold mr-2">
-            CE
-          </div>
-          <span className="text-xl font-bold">CryptoEscrow</span>
-        </Link>
-      </div>
+  // Get user's initials for the avatar
+  const getUserInitials = () => {
+    if (!user || !user.email) return "U"
 
-      <div className="flex items-center gap-x-4">
+    // Try to extract initials from email (before the @ symbol)
+    const emailName = user.email.split("@")[0]
+    // Split by non-letter characters and take first letter of each part
+    const initials = emailName
+      .split(/[^a-zA-Z]/)
+      .filter((part) => part.length > 0)
+      .map((part) => part[0].toUpperCase())
+      .slice(0, 2)
+      .join("")
+
+    return initials || user.email[0].toUpperCase()
+  }
+
+  return (
+    <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 md:px-6">
+      {isMobile ? (
+        <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="mr-2">
+          <Menu className="h-5 w-5" />
+        </Button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="mr-2 hidden md:flex"
+          title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {expanded ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </Button>
+      )}
+
+      <div className="flex-1" />
+
+      <div className="flex items-center gap-2">
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold">
-                  {user?.email?.charAt(0).toUpperCase() || "A"}
+                  {getUserInitials()}
                 </div>
               </Button>
             </DropdownMenuTrigger>

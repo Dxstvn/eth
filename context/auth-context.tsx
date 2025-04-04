@@ -2,124 +2,117 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
-import {
-  type User,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-} from "firebase/auth"
-import { useFirebase } from "@/components/firebase-provider"
-
-// List of admin emails
-const ADMIN_EMAILS = ["jasmindustin@gmail.com", "dustin.jasmin@jaspire.co", "andyrowe00@gmail.com"]
+import { useRouter } from "next/navigation"
+import { useFirebaseAuth } from "@/lib/useFirebaseAuth"
+import type { User } from "firebase/auth"
 
 type AuthContextType = {
   user: User | null
   loading: boolean
   isAdmin: boolean
-  adminSignIn: (email: string, password: string) => Promise<boolean>
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
-  resetPassword: (email: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const ADMIN_EMAILS = ["jasmindustin@gmail.com", "dustin.jasmin@jaspire.co", "andyrowe00@gmail.com"]
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const { auth, initialized, initializing } = useFirebase()
+  const firebaseAuth = useFirebaseAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    // If Firebase is still initializing, keep loading true
-    if (initializing) {
+    if (!firebaseAuth) {
       return
     }
 
-    // If Firebase failed to initialize, stop loading
-    if (!initialized || !auth) {
-      console.log("Firebase not initialized, stopping auth loading")
+    const { auth } = firebaseAuth
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      console.log("Auth state changed")
+      if (user) {
+        const email = user.email || ""
+        const isAdminUser = ADMIN_EMAILS.includes(email)
+        console.log("User authentication processed")
+
+        setUser(user)
+        setIsAdmin(isAdminUser)
+
+        if (isAdminUser) {
+          // If user is admin and they're on the home page, redirect to dashboard
+          // This prevents redirecting when navigating between dashboard pages
+          if (window.location.pathname === "/") {
+            console.log("Admin user detected on home page, redirecting to dashboard")
+            // Use a small timeout to ensure state is updated before redirect
+            setTimeout(() => {
+              router.push("/dashboard")
+            }, 100)
+          }
+        } else {
+          // If not admin, sign out and stay on current page
+          console.log("Non-admin user detected, signing out")
+          auth.signOut()
+          setUser(null)
+          setIsAdmin(false)
+        }
+      } else {
+        setUser(null)
+        setIsAdmin(false)
+      }
       setLoading(false)
-      return
-    }
+    })
 
-    console.log("Setting up auth state listener")
+    return () => unsubscribe()
+  }, [firebaseAuth, router])
+
+  const signInWithGoogle = async () => {
+    if (!firebaseAuth) {
+      console.error("Sign-in attempted before Firebase initialized")
+      throw new Error("Firebase not initialized yet")
+    }
+    const { auth, googleProvider } = firebaseAuth
     try {
-      const unsubscribe = onAuthStateChanged(
-        auth,
-        (user) => {
-          console.log("Auth state changed:", user ? `User: ${user.email}` : "No user")
-          setUser(user)
-          setIsAdmin(user ? ADMIN_EMAILS.includes(user.email || "") : false)
-          setLoading(false)
-        },
-        (error) => {
-          console.error("Auth state change error:", error)
-          setLoading(false)
-        },
-      )
+      console.log("Attempting Google sign in...")
+      const result = await auth.signInWithPopup(googleProvider)
+      const email = result.user.email || ""
+      console.log("Sign-in successful")
 
-      return () => unsubscribe()
+      if (!ADMIN_EMAILS.includes(email)) {
+        console.log("Non-admin user detected, signing out")
+        await auth.signOut()
+        throw new Error("Unauthorized: Only admin emails are allowed")
+      }
+
+      // No need to redirect here, the onAuthStateChanged will handle it
     } catch (error) {
-      console.error("Error setting up auth state listener:", error)
-      setLoading(false)
-    }
-  }, [auth, initialized, initializing])
-
-  const adminSignIn = async (email: string, password: string) => {
-    if (!initialized || !auth) {
-      console.error("Firebase not initialized")
-      return false
-    }
-
-    if (!ADMIN_EMAILS.includes(email)) {
-      throw new Error("Unauthorized access attempt")
-    }
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password)
-      return true
-    } catch (error) {
-      console.error("Admin sign in error:", error)
-      return false
+      console.error("Google Sign-In error:", error)
+      throw error
     }
   }
 
-  const signIn = async (email: string, password: string) => {
-    if (!initialized || !auth) {
+  const signOutUser = async () => {
+    if (!firebaseAuth) {
+      console.error("Sign-out attempted before Firebase initialized")
       throw new Error("Firebase not initialized")
     }
-    await signInWithEmailAndPassword(auth, email, password)
+    const { auth } = firebaseAuth
+    await auth.signOut()
+    setUser(null)
+    setIsAdmin(false)
+    // Redirect to home page after sign out
+    router.push("/")
   }
 
-  const signUp = async (email: string, password: string) => {
-    if (!initialized || !auth) {
-      throw new Error("Firebase not initialized")
-    }
-    await createUserWithEmailAndPassword(auth, email, password)
-  }
-
-  const resetPassword = async (email: string) => {
-    if (!initialized || !auth) {
-      throw new Error("Firebase not initialized")
-    }
-    await sendPasswordResetEmail(auth, email)
-  }
-
-  const signOut = async () => {
-    if (!initialized || !auth) {
-      console.error("Firebase not initialized")
-      return
-    }
-    await firebaseSignOut(auth)
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading authentication...</div>
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, adminSignIn, signIn, signUp, resetPassword, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signInWithGoogle, signOut: signOutUser }}>
       {children}
     </AuthContext.Provider>
   )
@@ -127,9 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
+  if (context === undefined) throw new Error("useAuth must be used within an AuthProvider")
   return context
 }
 

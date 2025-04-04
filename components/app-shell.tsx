@@ -1,39 +1,43 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Sidebar from "@/components/sidebar"
-import Header from "@/components/header"
-import { useMobile } from "@/hooks/use-mobile"
+import { useAuth } from "@/context/auth-context"
+import LoadingScreen from "@/components/loading-screen"
+import { useEffect } from "react"
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isMobile = useMobile()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user, loading } = useAuth()
+  const router = useRouter()
 
-  // Close sidebar when route changes on mobile
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false)
+    // Only redirect if the user is not authenticated at all
+    if (
+      !loading &&
+      !user &&
+      (pathname.startsWith("/dashboard") ||
+        pathname.startsWith("/transactions") ||
+        pathname.startsWith("/documents") ||
+        pathname.startsWith("/wallet") ||
+        pathname.startsWith("/contacts") ||
+        pathname.startsWith("/settings") ||
+        pathname.startsWith("/support"))
+    ) {
+      router.push("/")
     }
-  }, [pathname, isMobile])
+  }, [user, loading, pathname, router])
 
-  // Determine if we're on the auth pages
-  const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password"
-
-  // Determine if we're on the landing page
-  const isLandingPage = pathname === "/"
-
-  if (isAuthPage) {
-    return <div className="min-h-screen bg-gray-50">{children}</div>
+  if (loading) {
+    return <LoadingScreen />
   }
+
+  const isLandingPage = pathname === "/"
 
   if (isLandingPage) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header isLandingPage={true} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="flex-1">{children}</main>
       </div>
     )
@@ -41,12 +45,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <Sidebar />
       <div className="flex flex-col flex-1 w-0 overflow-hidden">
-        <Header isLandingPage={false} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="relative flex-1 overflow-y-auto focus:outline-none">
-          <div className="py-6">{children}</div>
-        </main>
+        <main className="relative flex-1 overflow-y-auto focus:outline-none">{children}</main>
       </div>
     </div>
   )
