@@ -1,6 +1,6 @@
 import type React from "react"
 import "./globals.css"
-import { Inter } from "next/font/google"
+import { Inter } from 'next/font/google'
 import type { Metadata } from "next"
 import Script from "next/script"
 import { AuthProvider } from "@/context/auth-context"
@@ -22,7 +22,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
+      <body className={inter.className}>
+        {/* Firebase scripts moved to body */}
         <Script
           src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"
           strategy="afterInteractive"
@@ -32,14 +33,11 @@ export default function RootLayout({
           src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"
           strategy="afterInteractive"
           id="firebase-auth-script"
-          onReady={() => {
-            window.firebaseLoaded = true // Set a global flag
-          }}
         />
-      </head>
-      <body className={inter.className}>
+        
         <AuthProvider>{children}</AuthProvider>
         <DomainLogger />
+        
         <Script id="domain-logger" strategy="afterInteractive">
           {`
             console.log(
@@ -51,7 +49,8 @@ export default function RootLayout({
             console.log("Add this domain to Firebase authorized domains!");
           `}
         </Script>
-        <Script id="firebase-load-logger">
+        
+        <Script id="firebase-load-logger" strategy="afterInteractive">
           {`
             document.getElementById('firebase-app-script').addEventListener('load', function() {
               console.log("Firebase app script loaded");

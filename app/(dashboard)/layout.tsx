@@ -1,36 +1,33 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/auth-context"
-import LoadingScreen from "@/components/loading-screen"
-import Sidebar from "@/components/sidebar"
-import { useEffect } from "react"
+import type React from "react";
+import Script from "next/script";
+import { AuthProvider } from "@/context/auth-context";
+import AppShell from "@/components/app-shell";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    // Only redirect to home page if user is not authenticated at all
-    if (!loading && !user) {
-      router.push("/")
-    }
-  }, [user, loading, router])
-
-  if (loading) {
-    return <LoadingScreen />
-  }
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">{children}</main>
-    </div>
-  )
+    <html lang="en">
+      <head>
+        <Script
+          src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"
+          strategy="afterInteractive"
+        />
+        <Script
+          src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"
+          strategy="afterInteractive"
+          onLoad={() => {
+            console.log("Firebase auth script loaded");
+            window.firebaseLoaded = true; // Set a global flag
+          }}
+        />
+      </head>
+      <body>
+        <AuthProvider>
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
+      </body>
+    </html>
+  );
 }
 
