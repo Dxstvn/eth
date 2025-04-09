@@ -31,17 +31,31 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-500">Manage your real estate transactions securely with cryptocurrency</p>
+    <div className="pl-6 space-y-8">
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-gray-500">Manage your real estate transactions securely with cryptocurrency</p>
+          </div>
+          <Button asChild className="bg-black hover:bg-gray-800 text-white">
+            <Link href="/transactions/new" className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" /> New Transaction
+            </Link>
+          </Button>
         </div>
-        <Button asChild className="bg-black hover:bg-gray-800 text-white">
-          <Link href="/transactions/new" className="flex items-center">
-            <Plus className="mr-2 h-4 w-4" /> New Transaction
-          </Link>
-        </Button>
+
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8" aria-label="Dashboard tabs">
+            <button className="border-b-2 border-black py-4 px-1 text-sm font-medium text-gray-900">Overview</button>
+            <button className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+              Analytics
+            </button>
+            <button className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+              Reports
+            </button>
+          </nav>
+        </div>
       </div>
 
       <DashboardStats />

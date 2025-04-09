@@ -4,16 +4,30 @@ import { ArrowRight, Copy, ExternalLink, Plus, RefreshCw, ArrowUpRight, ArrowDow
 
 export default function WalletPage() {
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Wallet</h1>
-          <p className="text-gray-500">Manage your cryptocurrency wallet and transactions</p>
+    <div className="pl-6 space-y-8">
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Wallet</h1>
+            <p className="text-gray-500">Manage your cryptocurrency wallet and transactions</p>
+          </div>
+          <div>
+            <Button variant="outline" className="rounded-full px-6">
+              <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+            </Button>
+          </div>
         </div>
-        <div>
-          <Button variant="outline" className="rounded-full px-6">
-            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-          </Button>
+
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8" aria-label="Wallet tabs">
+            <button className="border-b-2 border-black py-4 px-1 text-sm font-medium text-gray-900">Assets</button>
+            <button className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+              Activity
+            </button>
+            <button className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+              Send/Receive
+            </button>
+          </nav>
         </div>
       </div>
 
