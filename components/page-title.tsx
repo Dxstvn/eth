@@ -17,4 +17,3 @@ export default function PageTitle({ title, description, actions }: PageTitleProp
     </div>
   )
 }
-

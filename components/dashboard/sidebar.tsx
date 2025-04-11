@@ -259,4 +259,3 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
     </div>
   )
 }
-

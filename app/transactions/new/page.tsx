@@ -26,7 +26,7 @@ export default function NewTransactionPage() {
   return (
     <div className="container px-4 md:px-6">
       <div className="mb-8">
-        <Link href="/transactions" className="flex items-center text-muted-foreground hover:text-foreground mb-4">
+        <Link href="/transactions" className="flex items-center text-teal-700 hover:text-teal-900 mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Transactions
         </Link>
         <PageTitle title="Create New Transaction" description="Set up a new escrow for your real estate transaction" />
@@ -72,7 +72,7 @@ export default function NewTransactionPage() {
         </div>
       </div>
 
-      <Card className="max-w-3xl mx-auto">
+      <Card className="max-w-3xl mx-auto shadow-md">
         {step === 1 && (
           <>
             <CardHeader>
@@ -126,7 +126,7 @@ export default function NewTransactionPage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} className="bg-teal-900 hover:bg-teal-800">
                 Next Step <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
@@ -194,10 +194,10 @@ export default function NewTransactionPage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>
+              <Button variant="outline" onClick={prevStep} className="border-teal-200 text-teal-700 hover:bg-teal-50">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} className="bg-teal-900 hover:bg-teal-800">
                 Next Step <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
@@ -259,10 +259,10 @@ export default function NewTransactionPage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>
+              <Button variant="outline" onClick={prevStep} className="border-teal-200 text-teal-700 hover:bg-teal-50">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} className="bg-teal-900 hover:bg-teal-800">
                 Next Step <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
@@ -311,14 +311,18 @@ export default function NewTransactionPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col sm:flex-row justify-between gap-4">
-              <Button variant="outline" onClick={prevStep} className="w-full sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                className="w-full sm:w-auto border-teal-200 text-teal-700 hover:bg-teal-50"
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                <Button variant="outline" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto border-teal-200 text-teal-700 hover:bg-teal-50">
                   Save as Draft
                 </Button>
-                <Button asChild className="w-full sm:w-auto">
+                <Button variant="primary" className="w-full sm:w-auto btn-primary" asChild>
                   <Link href="/transactions">Create Transaction</Link>
                 </Button>
               </div>
@@ -329,4 +333,3 @@ export default function NewTransactionPage() {
     </div>
   )
 }
-

@@ -126,7 +126,7 @@ export default function NewTransactionPage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} variant="primary">
                 Next Step <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
@@ -197,7 +197,7 @@ export default function NewTransactionPage() {
               <Button variant="outline" onClick={prevStep}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} variant="primary">
                 Next Step <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
@@ -262,7 +262,7 @@ export default function NewTransactionPage() {
               <Button variant="outline" onClick={prevStep}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} variant="primary">
                 Next Step <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
@@ -318,7 +318,7 @@ export default function NewTransactionPage() {
                 <Button variant="outline" className="w-full sm:w-auto">
                   Save as Draft
                 </Button>
-                <Button asChild className="w-full sm:w-auto">
+                <Button variant="primary" asChild className="w-full sm:w-auto">
                   <Link href="/dashboard">Create Transaction</Link>
                 </Button>
               </div>
@@ -329,4 +329,3 @@ export default function NewTransactionPage() {
     </div>
   )
 }
-

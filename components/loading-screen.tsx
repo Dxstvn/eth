@@ -12,7 +12,7 @@ export default function LoadingScreen() {
         className="flex flex-col items-center"
       >
         <div className="flex items-center mb-6">
-          <div className="w-12 h-12 rounded-md bg-teal-600 flex items-center justify-center text-white font-bold mr-3">
+          <div className="w-12 h-12 rounded-md bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold mr-3">
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.5 }}>
               CE
             </motion.span>
@@ -21,7 +21,7 @@ export default function LoadingScreen() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
-            className="text-2xl font-bold"
+            className="text-2xl font-display font-semibold bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-900"
           >
             CryptoEscrow
           </motion.span>
@@ -42,7 +42,7 @@ export default function LoadingScreen() {
               duration: 1.5,
               ease: "linear",
             }}
-            className="absolute inset-0 border-4 border-t-teal-600 border-r-transparent border-b-transparent border-l-transparent rounded-full"
+            className="absolute inset-0 border-4 border-t-brand-600 border-r-transparent border-b-transparent border-l-transparent rounded-full"
           />
         </motion.div>
 
@@ -50,7 +50,7 @@ export default function LoadingScreen() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className="text-gray-500 text-center"
+          className="text-neutral-500 text-center"
         >
           Authenticating your session...
         </motion.p>
@@ -58,4 +58,3 @@ export default function LoadingScreen() {
     </div>
   )
 }
-

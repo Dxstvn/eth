@@ -99,4 +99,3 @@ export default function DashboardHeader({ sidebarOpen, setSidebarOpen }: HeaderP
     </header>
   )
 }
-

@@ -6,4 +6,3 @@ export default function MarketingLayout({
 }) {
   return <div className="min-h-screen">{children}</div>
 }
-

@@ -11,18 +11,8 @@ export default function DomainLogger() {
     )
     console.log("Domain:", window.location.hostname)
     console.log("Full URL:", window.location.href)
-    console.log("Example v0 domain: lite.vusercontent.net")
-
-    // Check if it's a v0 preview domain
-    if (window.location.hostname.includes("lite.vusercontent.net")) {
-      console.log(
-        "%c V0 PREVIEW DOMAIN DETECTED ",
-        "background: #10b981; color: white; font-weight: bold; padding: 4px; border-radius: 4px;",
-      )
-      console.log("Add this domain to Firebase authorized domains!")
-    }
+    console.log("Mock backend enabled - no Firebase configuration needed")
   }, [])
 
   return null
 }
-

@@ -70,4 +70,3 @@ export const toast = (props: ToastProps) => {
     console.warn("Toast handler not set. Make sure ToastProvider is mounted.")
   }
 }
-

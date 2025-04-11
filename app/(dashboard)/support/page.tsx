@@ -39,35 +39,39 @@ export default function SupportPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center">
+          <CardContent className="p-6 flex flex-col items-center text-center h-full">
             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-4">
               <MessageSquare className="h-6 w-6 text-blue-700" />
             </div>
             <h3 className="text-lg font-medium mb-2">Chat Support</h3>
-            <p className="text-gray-500 mb-4">Chat with our support team for immediate assistance</p>
-            <Button className="w-full bg-black hover:bg-gray-800 text-white">Start Chat</Button>
+            <p className="text-gray-500 mb-4 flex-grow">Chat with our support team for immediate assistance</p>
+            <Button className="w-full bg-teal-900 hover:bg-teal-800 text-white hover:text-gold-300">Start Chat</Button>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center">
+          <CardContent className="p-6 flex flex-col items-center text-center h-full">
             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
               <Phone className="h-6 w-6 text-green-700" />
             </div>
             <h3 className="text-lg font-medium mb-2">Phone Support</h3>
-            <p className="text-gray-500 mb-4">Call our dedicated support line for complex issues</p>
-            <Button className="w-full bg-black hover:bg-gray-800 text-white">+1 (800) 123-4567</Button>
+            <p className="text-gray-500 mb-4 flex-grow">Call our dedicated support line for complex issues</p>
+            <Button className="w-full bg-teal-900 hover:bg-teal-800 text-white hover:text-gold-300">
+              +1 (800) 123-4567
+            </Button>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center">
+          <CardContent className="p-6 flex flex-col items-center text-center h-full">
             <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
               <FileText className="h-6 w-6 text-purple-700" />
             </div>
             <h3 className="text-lg font-medium mb-2">Knowledge Base</h3>
-            <p className="text-gray-500 mb-4">Browse our comprehensive guides and tutorials</p>
-            <Button className="w-full bg-black hover:bg-gray-800 text-white">View Articles</Button>
+            <p className="text-gray-500 mb-4 flex-grow">Browse our comprehensive guides and tutorials</p>
+            <Button className="w-full bg-teal-900 hover:bg-teal-800 text-white hover:text-gold-300">
+              View Articles
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -134,4 +138,3 @@ export default function SupportPage() {
     </div>
   )
 }
-

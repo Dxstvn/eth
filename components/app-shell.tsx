@@ -17,13 +17,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (
       !loading &&
       !user &&
-      (pathname.startsWith("/dashboard") ||
-        pathname.startsWith("/transactions") ||
-        pathname.startsWith("/documents") ||
-        pathname.startsWith("/wallet") ||
-        pathname.startsWith("/contacts") ||
-        pathname.startsWith("/settings") ||
-        pathname.startsWith("/support"))
+      (pathname?.startsWith("/dashboard") ||
+        pathname?.startsWith("/transactions") ||
+        pathname?.startsWith("/documents") ||
+        pathname?.startsWith("/wallet") ||
+        pathname?.startsWith("/contacts") ||
+        pathname?.startsWith("/settings") ||
+        pathname?.startsWith("/support"))
     ) {
       router.push("/")
     }
@@ -52,4 +52,3 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
-
