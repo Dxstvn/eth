@@ -104,7 +104,7 @@ body {
 }
 
 /* Add these styles at the end of the file to ensure they have high specificity
- and are loaded in both preview and production modes */
+and are loaded in both preview and production modes */
 
 /* Button style overrides with high specificity for consistent rendering */
 .btn-primary,
@@ -163,4 +163,37 @@ a:has(> [href="/dashboard"]):hover {
 .connect-wallet-btn:hover {
   color: #d4af37 !important;
   transform: translateY(-1px) !important;
+}
+
+/* Additional styles for the redesigned homepage */
+.glass-card {
+  @apply bg-white/90 backdrop-blur-sm border border-neutral-100 shadow-md transition-all duration-300;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #1a3c34 0%, #2d7463 100%);
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-teal-700 to-teal-900;
+}
+
+.text-gradient-gold {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-gold-400 to-gold-600;
 }

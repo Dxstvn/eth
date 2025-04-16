@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, FileText, Search, SlidersHorizontal, Upload, AlertCircle } from "lucide-react"
+import { Download, FileText, Search, SlidersHorizontal, Upload, AlertCircle, Database } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -20,15 +20,16 @@ import {
 import { Label } from "@/components/ui/label"
 import { useDatabaseStore } from "@/lib/mock-database"
 import { useAuth } from "@/context/auth-context"
-import { uploadToIPFS, downloadFromIPFS, encryptFile, decryptFile } from "@/lib/mock-ipfs"
+import { downloadFromIPFS, isIPFSNodeAvailable } from "@/lib/ipfs-client"
+import { decryptFile } from "@/lib/crypto-utils"
+import FileUpload from "@/components/file-upload"
+import IPFSStatus from "@/components/ipfs-status"
 
 export default function DocumentsPage() {
   const { user } = useAuth()
   const { getDocuments, getTransactions, addDocument } = useDatabaseStore()
 
-  const [file, setFile] = useState<File | null>(null)
   const [dealId, setDealId] = useState("")
-  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [documents, setDocuments] = useState(getDocuments())
@@ -38,6 +39,26 @@ export default function DocumentsPage() {
   const [sortOrder, setSortOrder] = useState("newest")
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [ipfsAvailable, setIpfsAvailable] = useState<boolean | null>(null)
+  const [checkingIpfs, setCheckingIpfs] = useState(false)
+
+  // Check IPFS availability on mount
+  useEffect(() => {
+    const checkIpfs = async () => {
+      setCheckingIpfs(true)
+      try {
+        const available = await isIPFSNodeAvailable()
+        setIpfsAvailable(available)
+      } catch (err) {
+        console.error("Error checking IPFS:", err)
+        setIpfsAvailable(false)
+      } finally {
+        setCheckingIpfs(false)
+      }
+    }
+
+    checkIpfs()
+  }, [])
 
   // Simulate loading
   useEffect(() => {
@@ -54,31 +75,30 @@ export default function DocumentsPage() {
     setTransactions(getTransactions())
   }, [getDocuments, getTransactions])
 
-  const handleUpload = async () => {
-    if (!file || !dealId || !user) {
-      setError("Please select a file and a deal")
+  const handleUploadComplete = (
+    cid: string,
+    fileKey: string,
+    encryptionKey: string,
+    fileName: string,
+    fileSize: string,
+    fileType: string,
+  ) => {
+    if (!user) {
+      setError("User not authenticated")
       return
     }
 
-    setUploading(true)
-    setError(null)
-
     try {
-      // Encrypt the file (mock)
-      const { encryptedBlob, encryptionKey } = await encryptFile(file)
-
-      // Upload encrypted file to IPFS (mock)
-      const { path: cid } = await uploadToIPFS(new File([encryptedBlob], file.name))
-
       // Prepare document metadata
       const newDocument = {
-        name: file.name,
+        name: fileName,
         cid: cid,
+        fileKey: fileKey, // Store the fileKey for Filebase
         encryptionKey: encryptionKey,
         uploadedBy: user.uid,
         uploadedAt: new Date().toISOString(),
-        size: formatFileSize(file.size),
-        type: file.type.split("/").pop()?.toUpperCase() || "UNKNOWN",
+        size: fileSize,
+        type: fileType,
         status: "pending" as const,
         dealId: dealId,
       }
@@ -89,29 +109,36 @@ export default function DocumentsPage() {
       // Update local state
       setDocuments(getDocuments())
 
-      // Reset form
-      setFile(null)
-      setShowUploadDialog(false)
-
-      // Success message
-      alert("Document uploaded successfully")
+      // Close dialog after a short delay
+      setTimeout(() => {
+        setShowUploadDialog(false)
+      }, 2000)
     } catch (err) {
-      console.error("Upload error:", err)
-      setError(`Upload failed: ${err instanceof Error ? err.message : String(err)}`)
-    } finally {
-      setUploading(false)
+      console.error("Error saving document metadata:", err)
+      setError(`Failed to save document metadata: ${err instanceof Error ? err.message : String(err)}`)
     }
   }
 
   const handleDownload = async (document: any) => {
     if (downloadingId) return // Prevent multiple downloads
 
+    // Check IPFS availability before attempting download
+    setCheckingIpfs(true)
+    const available = await isIPFSNodeAvailable()
+    setIpfsAvailable(available)
+    setCheckingIpfs(false)
+
+    if (!available) {
+      setError("IPFS service is not available. Cannot download document.")
+      return
+    }
+
     setDownloadingId(document.cid)
     try {
-      // Download encrypted file from IPFS (mock)
-      const encryptedBlob = await downloadFromIPFS(document.cid)
+      // Download encrypted file from IPFS using fileKey
+      const encryptedBlob = await downloadFromIPFS(document.fileKey || document.cid) // Support both new and old documents
 
-      // Decrypt the file (mock)
+      // Decrypt the file
       const decryptedBlob = await decryptFile(encryptedBlob, document.encryptionKey)
 
       // Create download link
@@ -135,10 +162,22 @@ export default function DocumentsPage() {
     }
   }
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + " B"
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+  const checkIpfsConnection = async () => {
+    setCheckingIpfs(true)
+    setError(null)
+    try {
+      const available = await isIPFSNodeAvailable()
+      setIpfsAvailable(available)
+      if (!available) {
+        setError("IPFS service is still not available. Document uploads and downloads will not work.")
+      }
+    } catch (err) {
+      console.error("Error checking IPFS:", err)
+      setIpfsAvailable(false)
+      setError(`Failed to check IPFS connection: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setCheckingIpfs(false)
+    }
   }
 
   // Filter and sort documents
@@ -172,81 +211,85 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold text-brand-900">Documents</h1>
           <p className="text-neutral-600">Manage and access all your transaction documents</p>
         </div>
-        <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-          <DialogTrigger asChild>
-            <Button className="bg-brand-600 hover:bg-brand-700">
-              <Upload className="mr-2 h-4 w-4" /> Upload Document
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload Document</DialogTitle>
-              <DialogDescription>
-                Upload a document to IPFS. The file will be encrypted before uploading.
-              </DialogDescription>
-            </DialogHeader>
+        <div className="flex items-center gap-2">
+          <IPFSStatus />
+          <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-brand-600 hover:bg-brand-700">
+                <Upload className="mr-2 h-4 w-4" /> Upload Document
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upload Document</DialogTitle>
+                <DialogDescription>
+                  Upload a document to IPFS. The file will be encrypted before uploading.
+                </DialogDescription>
+              </DialogHeader>
 
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="file">Select File</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  disabled={uploading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="deal">Select Deal</Label>
-                <Select value={dealId} onValueChange={setDealId} disabled={uploading}>
-                  <SelectTrigger id="deal">
-                    <SelectValue placeholder="Select a deal" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {transactions.map((deal) => (
-                      <SelectItem key={deal.id} value={deal.id}>
-                        {deal.propertyAddress} ({deal.id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {file && (
-                <div className="pt-2">
-                  <p className="text-sm font-medium">Selected file:</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <FileText className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{file.name}</span>
-                    <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
-                  </div>
-                </div>
-              )}
-
-              {error && (
-                <Alert variant="destructive">
+              {ipfsAvailable === false && (
+                <Alert className="bg-amber-50 text-amber-700 border-amber-200">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertTitle>IPFS Not Available</AlertTitle>
+                  <AlertDescription>
+                    <p>Cannot connect to IPFS service. File uploads will not work until connection is restored.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={checkIpfsConnection}
+                      disabled={checkingIpfs}
+                      className="mt-2"
+                    >
+                      {checkingIpfs ? (
+                        <>
+                          <Database className="mr-2 h-4 w-4 animate-spin" /> Checking...
+                        </>
+                      ) : (
+                        <>
+                          <Database className="mr-2 h-4 w-4" /> Check Connection
+                        </>
+                      )}
+                    </Button>
+                  </AlertDescription>
                 </Alert>
               )}
-            </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowUploadDialog(false)} disabled={uploading}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUpload}
-                disabled={uploading || !file || !dealId}
-                className="bg-brand-600 hover:bg-brand-700"
-              >
-                {uploading ? "Uploading..." : "Upload"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="deal">Select Deal</Label>
+                  <Select value={dealId} onValueChange={setDealId}>
+                    <SelectTrigger id="deal">
+                      <SelectValue placeholder="Select a deal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {transactions.map((deal) => (
+                        <SelectItem key={deal.id} value={deal.id}>
+                          {deal.propertyAddress} ({deal.id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {dealId && <FileUpload onUploadComplete={handleUploadComplete} dealId={dealId} />}
+
+                {error && !dealId && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>Please select a deal first</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {error && !showUploadDialog && (
@@ -254,6 +297,29 @@ export default function DocumentsPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {ipfsAvailable === false && !error && (
+        <Alert className="bg-amber-50 text-amber-700 border-amber-200 mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>IPFS Not Available</AlertTitle>
+          <AlertDescription>
+            <p>
+              Cannot connect to IPFS service. Document uploads and downloads will not work until connection is restored.
+            </p>
+            <Button variant="outline" size="sm" onClick={checkIpfsConnection} disabled={checkingIpfs} className="mt-2">
+              {checkingIpfs ? (
+                <>
+                  <Database className="mr-2 h-4 w-4 animate-spin" /> Checking...
+                </>
+              ) : (
+                <>
+                  <Database className="mr-2 h-4 w-4" /> Check Connection
+                </>
+              )}
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
@@ -362,7 +428,7 @@ export default function DocumentsPage() {
                     size="sm"
                     className="whitespace-nowrap text-brand-700 hover:bg-brand-50 hover:text-brand-800 border-brand-200"
                     onClick={() => handleDownload(document)}
-                    disabled={downloadingId === document.cid}
+                    disabled={downloadingId === document.cid || ipfsAvailable === false}
                   >
                     <Download className="mr-2 h-4 w-4" />
                     {downloadingId === document.cid ? "Downloading..." : "Download"}

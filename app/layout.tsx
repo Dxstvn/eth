@@ -3,6 +3,7 @@ import "./globals.css"
 import { Montserrat, Open_Sans } from "next/font/google"
 import type { Metadata } from "next"
 import { AuthProvider } from "@/context/auth-context"
+import FirebaseInitCheck from "@/components/firebase-init-check"
 
 // Load Montserrat font
 const montserrat = Montserrat({
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} ${openSans.variable}`}>
       <body className={openSans.className}>
+        <FirebaseInitCheck />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

@@ -5,7 +5,8 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { User } from "firebase/auth"
 import LoadingScreen from "@/components/loading-screen"
-import { useAuthStore } from "@/lib/mock-firebase-auth"
+import { signInWithPopup, signOut as firebaseSignOut } from "firebase/auth"
+import { auth, googleProvider } from "@/lib/firebase-client"
 
 type AuthContextType = {
   user: User | null
@@ -26,32 +27,42 @@ const ADMIN_EMAILS = [
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, loading, signInWithGoogle: mockSignInWithGoogle, signOut: mockSignOut } = useAuthStore()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      const email = user.email || ""
-      const isAdminUser = ADMIN_EMAILS.includes(email)
-      setIsAdmin(isAdminUser)
+    // Set up auth state listener
+    const unsubscribe = auth.onAuthStateChanged((authUser) => {
+      setUser(authUser)
+      setLoading(false)
 
-      if (isAdminUser) {
-        // If user is admin and they're on the home page, redirect to dashboard
-        if (window.location.pathname === "/") {
-          // Use a small timeout to ensure state is updated before redirect
-          setTimeout(() => {
-            router.push("/dashboard")
-          }, 100)
+      if (authUser) {
+        const email = authUser.email || ""
+        const isAdminUser = ADMIN_EMAILS.includes(email)
+        setIsAdmin(isAdminUser)
+
+        if (isAdminUser) {
+          // If user is admin and they're on the home page, redirect to dashboard
+          if (window.location.pathname === "/") {
+            // Use a small timeout to ensure state is updated before redirect
+            setTimeout(() => {
+              router.push("/dashboard")
+            }, 100)
+          }
         }
+      } else {
+        setIsAdmin(false)
       }
-    } else {
-      setIsAdmin(false)
-    }
-  }, [user, router])
+    })
+
+    // Clean up subscription
+    return () => unsubscribe()
+  }, [router])
 
   const signInWithGoogle = async () => {
     try {
-      await mockSignInWithGoogle()
+      await signInWithPopup(auth, googleProvider)
       // No need to redirect here, the useEffect will handle it
     } catch (error) {
       console.error("Google Sign-In error:", error)
@@ -60,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    await mockSignOut()
+    await firebaseSignOut(auth)
     // Redirect to home page after sign out
     router.push("/")
   }

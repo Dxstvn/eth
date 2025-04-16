@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
+import Link from "next/link"
 
 export default function SettingsPage() {
   return (
@@ -19,6 +20,7 @@ export default function SettingsPage() {
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="wallet">Wallet</TabsTrigger>
+          <TabsTrigger value="ipfs">IPFS</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -298,6 +300,26 @@ export default function SettingsPage() {
 
               <div className="flex justify-end">
                 <Button className="bg-black hover:bg-gray-800 text-white">Save Settings</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ipfs">
+          <Card>
+            <CardHeader>
+              <CardTitle>IPFS Settings</CardTitle>
+              <CardDescription>Manage your InterPlanetary File System connection</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">IPFS Configuration</h3>
+                <p className="text-sm text-gray-500">
+                  Configure your connection to a local IPFS node for secure, decentralized file storage.
+                </p>
+                <Button asChild className="bg-teal-900 hover:bg-teal-800 text-white">
+                  <Link href="/settings/ipfs">Manage IPFS Settings</Link>
+                </Button>
               </div>
             </CardContent>
           </Card>

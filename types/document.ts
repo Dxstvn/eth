@@ -4,6 +4,7 @@ export interface Document {
   id?: string
   name: string
   cid: string
+  fileKey: string // Added fileKey for Filebase
   encryptionKey: string
   uploadedBy: string
   uploadedAt: Timestamp

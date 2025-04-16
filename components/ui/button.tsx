@@ -13,7 +13,8 @@ const buttonVariants = cva(
         primary: "!bg-teal-900 !text-white hover:!text-gold-300 shadow-md transition-all duration-200",
         destructive: "bg-gradient-to-r from-red-600 to-red-700 text-white hover:shadow-md",
         outline: "border-2 border-teal-200 bg-transparent text-teal-700 hover:bg-teal-50 hover:text-teal-800",
-        secondary: "bg-gradient-to-r from-gold-400 to-gold-500 text-teal-900 hover:shadow-md",
+        secondary:
+          "bg-gradient-to-r from-gold-400 to-gold-500 text-teal-900 hover:shadow-md hover:from-gold-500 hover:to-gold-600",
         ghost: "bg-transparent text-teal-700 hover:bg-teal-50 hover:text-teal-900",
         link: "text-teal-900 underline-offset-4 hover:underline",
       },
