@@ -5,7 +5,7 @@ import type { Metadata } from "next"
 import { AuthProvider } from "@/context/auth-context"
 import { WalletProvider } from "@/context/wallet-context"
 import FirebaseInitCheck from "@/components/firebase-init-check"
-import { ToastProvider } from "@/components/ui/use-toast"
+import { ToastProvider } from "@/components/ui/toast-provider"
 import { Toaster } from "@/components/ui/toaster"
 
 // Load Montserrat font
