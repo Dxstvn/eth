@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useMobile } from "@/hooks/use-mobile"
+import ConnectWalletButton from "@/components/connect-wallet-button"
 
 interface HeaderProps {
   sidebarOpen?: boolean
@@ -53,6 +54,8 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-x-4">
+        <ConnectWalletButton variant="outline" size="default" />
+
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

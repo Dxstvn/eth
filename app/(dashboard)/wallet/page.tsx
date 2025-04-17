@@ -1,13 +1,28 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Copy, ExternalLink, RefreshCw, ArrowUpRight, ArrowDownRight, WalletIcon } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  ArrowRight,
+  Copy,
+  ExternalLink,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight,
+  WalletIcon,
+  AlertCircle,
+} from "lucide-react"
 import { useState, useEffect } from "react"
 import { useDatabaseStore } from "@/lib/mock-database"
+import { useWallet } from "@/context/wallet-context"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/use-toast"
+import Image from "next/image"
 
 export default function WalletPage() {
   const { getAssets, getActivities } = useDatabaseStore()
+  const { address, isConnected, balance, connectWallet, isConnecting, error } = useWallet()
+  const { addToast } = useToast()
   const [assets, setAssets] = useState(getAssets())
   const [activities, setActivities] = useState(
     getActivities().filter((a) => a.type === "payment_sent" || a.type === "payment_received"),
@@ -16,9 +31,6 @@ export default function WalletPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [copiedAddress, setCopiedAddress] = useState(false)
   const [activeTab, setActiveTab] = useState("assets")
-
-  // Mock wallet address
-  const walletAddress = "0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t"
 
   // Simulate loading
   useEffect(() => {
@@ -58,13 +70,100 @@ export default function WalletPage() {
 
   // Handle copy address
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(walletAddress)
-    setCopiedAddress(true)
-    setTimeout(() => setCopiedAddress(false), 2000)
+    if (address) {
+      navigator.clipboard.writeText(address)
+      setCopiedAddress(true)
+      addToast({
+        title: "Address Copied",
+        description: "Wallet address copied to clipboard",
+      })
+      setTimeout(() => setCopiedAddress(false), 2000)
+    }
+  }
+
+  // Handle connect wallet
+  const handleConnectWallet = async () => {
+    try {
+      await connectWallet()
+      addToast({
+        title: "Wallet Connected",
+        description: "Your MetaMask wallet has been connected successfully.",
+      })
+    } catch (err) {
+      addToast({
+        title: "Connection Failed",
+        description: error || "Failed to connect wallet. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   // Calculate total balance
   const totalBalance = assets.reduce((sum, asset) => sum + asset.value, 0)
+
+  // If not connected, show MetaMask connection UI
+  if (!isConnected) {
+    return (
+      <div className="p-6 space-y-8">
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-teal-900 font-display">Connect Your Wallet</h1>
+              <p className="text-neutral-600">Connect your MetaMask wallet to manage your cryptocurrency</p>
+            </div>
+          </div>
+        </div>
+
+        <Card className="shadow-md border-0 max-w-2xl mx-auto">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-2xl">Connect to MetaMask</CardTitle>
+            <CardDescription>Connect your MetaMask wallet to view your balance and transaction history</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 flex flex-col items-center">
+            <div className="mb-8 w-24 h-24 relative">
+              <Image src="/stylized-fox-profile.png" alt="MetaMask Logo" width={96} height={96} />
+            </div>
+
+            {error && (
+              <Alert variant="destructive" className="mb-6 max-w-md">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Connection Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4 w-full max-w-md">
+              <p className="text-center text-neutral-600">
+                MetaMask is a browser extension that allows you to securely manage your Ethereum and other
+                cryptocurrency accounts.
+              </p>
+
+              <Button
+                onClick={handleConnectWallet}
+                disabled={isConnecting}
+                className="w-full bg-teal-900 hover:bg-teal-800 text-white"
+                size="lg"
+              >
+                {isConnecting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Connecting...
+                  </>
+                ) : (
+                  <>
+                    <WalletIcon className="mr-2 h-5 w-5" /> Connect to MetaMask
+                  </>
+                )}
+              </Button>
+
+              <p className="text-xs text-center text-neutral-500">
+                By connecting your wallet, you agree to our Terms of Service and Privacy Policy.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-8">
@@ -265,11 +364,11 @@ export default function WalletPage() {
             <Card className="shadow-md border-0">
               <div className="p-6 border-b">
                 <h2 className="text-xl font-semibold text-teal-900 font-display">Wallet Address</h2>
-                <p className="text-sm text-neutral-500">Your public wallet address</p>
+                <p className="text-sm text-neutral-500">Your MetaMask wallet address</p>
               </div>
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center bg-neutral-50 p-3 rounded-lg">
-                  <code className="text-sm flex-1 overflow-x-auto font-mono text-teal-900">{walletAddress}</code>
+                  <code className="text-sm flex-1 overflow-x-auto font-mono text-teal-900">{address}</code>
                   <Button
                     variant="ghost"
                     size="icon"

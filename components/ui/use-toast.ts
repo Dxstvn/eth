@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { createContext, useContext, useState } from "react"
+import * as React from "react"
 
 type ToastProps = {
   title?: string
@@ -21,12 +19,12 @@ type ToastContextType = {
   dismissToast: (id: string) => void
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined)
+const ToastContext = React.createContext<ToastContextType | undefined>(undefined)
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([])
+  const [toasts, setToasts] = React.useState<Toast[]>([])
 
-  const addToast = (props: ToastProps) => {
+  const addToast = React.useCallback((props: ToastProps) => {
     const id = Math.random().toString(36).substring(2, 9)
     const newToast = { id, ...props }
 
@@ -37,17 +35,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         dismissToast(id)
       }, props.duration || 5000)
     }
-  }
+  }, [])
 
-  const dismissToast = (id: string) => {
+  const dismissToast = React.useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id))
-  }
+  }, [])
+
+  // Initialize the global toast handler
+  React.useEffect(() => {
+    window.toast = addToast
+    return () => {
+      window.toast = undefined
+    }
+  }, [addToast])
 
   return <ToastContext.Provider value={{ toasts, addToast, dismissToast }}>{children}</ToastContext.Provider>
 }
 
 export function useToast() {
-  const context = useContext(ToastContext)
+  const context = React.useContext(ToastContext)
 
   if (!context) {
     throw new Error("useToast must be used within a ToastProvider")
@@ -57,16 +63,17 @@ export function useToast() {
 }
 
 // Create a simpler API that doesn't require the hook
-let toastHandler: ((props: ToastProps) => void) | undefined
-
-export function setToastHandler(handler: (props: ToastProps) => void) {
-  toastHandler = handler
-}
-
 export const toast = (props: ToastProps) => {
-  if (toastHandler) {
-    toastHandler(props)
+  if (typeof window !== "undefined" && window.toast) {
+    window.toast(props)
   } else {
     console.warn("Toast handler not set. Make sure ToastProvider is mounted.")
+  }
+}
+
+// Add the toast function to the window object
+declare global {
+  interface Window {
+    toast?: (props: ToastProps) => void
   }
 }
