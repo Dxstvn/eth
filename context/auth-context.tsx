@@ -18,11 +18,12 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const ADMIN_EMAILS = [
-  "jasmindustin@gmail.com",
+// List of allowed email addresses
+const ALLOWED_EMAILS = [
   "dustin.jasmin@jaspire.co",
+  "jasmindustin@gmail.com",
   "andyrowe00@gmail.com",
-  "demo@cryptoescrow.com",
+  "demo@cryptoescrow.com", // Keep the demo account for testing
 ]
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -39,17 +40,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (authUser) {
         const email = authUser.email || ""
-        const isAdminUser = ADMIN_EMAILS.includes(email)
-        setIsAdmin(isAdminUser)
+        const isAllowed = ALLOWED_EMAILS.includes(email)
+        setIsAdmin(isAllowed)
 
-        if (isAdminUser) {
-          // If user is admin and they're on the home page, redirect to dashboard
+        if (isAllowed) {
+          // If user is allowed and they're on the home page, redirect to dashboard
           if (window.location.pathname === "/") {
             // Use a small timeout to ensure state is updated before redirect
             setTimeout(() => {
               router.push("/dashboard")
             }, 100)
           }
+        } else {
+          // If user is not allowed, sign them out
+          firebaseSignOut(auth).then(() => {
+            // Redirect to home page with error message
+            router.push("/?error=unauthorized")
+          })
         }
       } else {
         setIsAdmin(false)
@@ -62,7 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider)
+      const result = await signInWithPopup(auth, googleProvider)
+      const email = result.user.email || ""
+
+      // Check if the email is allowed
+      if (!ALLOWED_EMAILS.includes(email)) {
+        await firebaseSignOut(auth)
+        throw new Error("Unauthorized email address. Access denied.")
+      }
+
       // No need to redirect here, the useEffect will handle it
     } catch (error) {
       console.error("Google Sign-In error:", error)

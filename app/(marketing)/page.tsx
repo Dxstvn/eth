@@ -1,18 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/auth-context"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 export default function Home() {
   const [email, setEmail] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [showUnauthorizedError, setShowUnauthorizedError] = useState(false)
+  const searchParams = useSearchParams()
 
   // Get auth context
   const { signInWithGoogle } = useAuth()
+
+  // Check for error parameter in URL
+  useEffect(() => {
+    const errorParam = searchParams.get("error")
+    if (errorParam === "unauthorized") {
+      setShowUnauthorizedError(true)
+      setTimeout(() => setShowUnauthorizedError(false), 5000)
+    }
+  }, [searchParams])
 
   const handleGoogleSignIn = async () => {
     try {
@@ -20,8 +33,8 @@ export default function Home() {
       // No need to set error to null or handle redirection here
       // The auth context will handle redirection if the user is an admin
     } catch (err) {
-      setError("Failed to sign in. Only admin emails are allowed.")
-      setTimeout(() => setError(null), 3000)
+      setError("Failed to sign in. Only authorized emails are allowed.")
+      setTimeout(() => setError(null), 5000)
     }
   }
 
@@ -46,7 +59,7 @@ export default function Home() {
         <Link
           href="/login"
           className="mb-12 bg-white p-4 rounded-full hover:bg-neutral-50 transition-colors shadow-md flex items-center justify-center"
-          aria-label="Sign In"
+          aria-label="Login"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -64,6 +77,15 @@ export default function Home() {
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
         </Link>
+
+        {showUnauthorizedError && (
+          <Alert variant="destructive" className="mb-6 max-w-md">
+            <AlertTitle>Access Denied</AlertTitle>
+            <AlertDescription>
+              You are not authorized to access the dashboard. Please contact the administrator for access.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Logo */}
         <div className="mb-8">

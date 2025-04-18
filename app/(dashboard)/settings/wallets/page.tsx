@@ -25,7 +25,7 @@ interface ConnectedWallet {
 }
 
 export default function WalletsSettingsPage() {
-  const { isConnected, address, walletProvider, connectWallet, disconnectWallet } = useWallet()
+  const { isConnected, address, walletProvider, connectWallet, disconnectWallet, setPrimaryWallet } = useWallet()
   const { addToast } = useToast()
   const [connectedWallets, setConnectedWallets] = useState<ConnectedWallet[]>([])
   const [showAddWalletDialog, setShowAddWalletDialog] = useState(false)
@@ -37,11 +37,15 @@ export default function WalletsSettingsPage() {
     if (isConnected && address && walletProvider) {
       // Check if this wallet is already in our list
       if (!connectedWallets.some((wallet) => wallet.address === address)) {
-        setConnectedWallets([
+        // Only set as primary if there are no other wallets
+        const isPrimary = connectedWallets.length === 0
+
+        setConnectedWallets((prev) => [
+          ...prev,
           {
             provider: walletProvider,
             address,
-            isPrimary: true,
+            isPrimary,
           },
         ])
       }
@@ -89,6 +93,8 @@ export default function WalletsSettingsPage() {
   }
 
   const handleSetPrimary = (address: string) => {
+    setPrimaryWallet(address)
+
     setConnectedWallets((prev) =>
       prev.map((wallet) => ({
         ...wallet,
@@ -173,7 +179,9 @@ export default function WalletsSettingsPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 relative flex items-center justify-center">
                           {wallet.provider === "metamask" ? (
-                            <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                            <div className="relative w-10 h-10">
+                              <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                            </div>
                           ) : (
                             <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
                               <svg
@@ -288,21 +296,23 @@ export default function WalletsSettingsPage() {
             <Button
               onClick={() => handleAddWallet("metamask")}
               disabled={isConnecting}
-              className="flex items-center justify-center gap-3 h-16 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+              className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
             >
-              <div className="h-8 w-8 relative">
-                <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
+              <div className="h-8 w-8 relative flex items-center justify-center">
+                <div className="relative w-8 h-8">
+                  <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
+                </div>
               </div>
               <div className="flex flex-col items-start">
-                <span className="font-semibold">MetaMask</span>
-                <span className="text-xs text-neutral-500">Connect to your MetaMask wallet</span>
+                <span className="font-semibold text-white">MetaMask</span>
+                <span className="text-xs text-white opacity-80">Connect to your MetaMask wallet</span>
               </div>
             </Button>
 
             <Button
               onClick={() => handleAddWallet("coinbase")}
               disabled={isConnecting}
-              className="flex items-center justify-center gap-3 h-16 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+              className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
             >
               <div className="h-8 w-8 relative flex items-center justify-center bg-blue-600 rounded-full">
                 <svg width="20" height="20" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -315,8 +325,8 @@ export default function WalletsSettingsPage() {
                 </svg>
               </div>
               <div className="flex flex-col items-start">
-                <span className="font-semibold">Coinbase Wallet</span>
-                <span className="text-xs text-neutral-500">Connect to your Coinbase wallet</span>
+                <span className="font-semibold text-white">Coinbase Wallet</span>
+                <span className="text-xs text-white opacity-80">Connect to your Coinbase wallet</span>
               </div>
             </Button>
           </div>

@@ -14,6 +14,11 @@ type WalletContextType = {
   isConnecting: boolean
   error: string | null
   setPrimaryWallet: (address: string) => void
+  connectedWallets: Array<{
+    address: string
+    provider: "metamask" | "coinbase"
+    isPrimary: boolean
+  }>
 }
 
 // Create the context with default values
@@ -28,6 +33,7 @@ const WalletContext = createContext<WalletContextType>({
   isConnecting: false,
   error: null,
   setPrimaryWallet: () => {},
+  connectedWallets: [],
 })
 
 // Mock wallet data for development
@@ -55,8 +61,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Check if wallet was previously connected
   useEffect(() => {
-    const savedAddress = localStorage.getItem("walletAddress")
-    const savedProvider = localStorage.getItem("walletProvider") as "metamask" | "coinbase" | null
     const savedWallets = localStorage.getItem("connectedWallets")
 
     if (savedWallets) {
@@ -78,25 +82,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("Error parsing saved wallets:", err)
       }
-    } else if (savedAddress && savedProvider) {
-      setAddress(savedAddress)
-      setIsConnected(true)
-      setWalletProvider(savedProvider)
-
-      // Set a mock balance
-      const mockEthBalance = (Math.random() * 10).toFixed(4)
-      setBalance(mockEthBalance)
-
-      // Initialize connected wallets with this wallet
-      setConnectedWallets([
-        {
-          address: savedAddress,
-          provider: savedProvider,
-          isPrimary: true,
-        },
-      ])
     }
   }, [])
+
+  // Save wallets to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem("connectedWallets", JSON.stringify(connectedWallets))
+  }, [connectedWallets])
 
   // Connect wallet function
   const connectWallet = async (provider: "metamask" | "coinbase") => {
@@ -116,44 +108,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Check if this wallet is already connected
       const existingWallet = connectedWallets.find((w) => w.address === randomAddress)
 
-      if (existingWallet) {
-        // If it's already connected, just set it as primary
-        const updatedWallets = connectedWallets.map((w) => ({
-          ...w,
-          isPrimary: w.address === randomAddress,
-        }))
+      if (!existingWallet) {
+        // Add the new wallet without changing primary status of existing wallets
+        const updatedWallets = [...connectedWallets]
 
-        setConnectedWallets(updatedWallets)
-        localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
-      } else {
-        // Add the new wallet
-        const updatedWallets = connectedWallets.map((w) => ({
-          ...w,
-          isPrimary: false,
-        }))
+        // Only set as primary if there are no other wallets
+        const isPrimary = updatedWallets.length === 0
 
         updatedWallets.push({
           address: randomAddress,
           provider,
-          isPrimary: true,
+          isPrimary,
         })
 
         setConnectedWallets(updatedWallets)
-        localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
       }
 
-      // Update state
+      // Update state with the newly connected wallet
       setAddress(randomAddress)
       setBalance(mockEthBalance)
       setIsConnected(true)
       setChainId(1) // Ethereum Mainnet
       setWalletProvider(provider)
-
-      // Save to localStorage
-      localStorage.setItem("walletAddress", randomAddress)
-      localStorage.setItem("walletProvider", provider)
-
-      console.log(`${provider} wallet connected:`, randomAddress)
     } catch (err) {
       console.error(`Error connecting ${provider} wallet:`, err)
       setError(`Failed to connect ${provider} wallet. Please try again.`)
@@ -185,46 +161,30 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Set a mock balance
       const mockEthBalance = (Math.random() * 10).toFixed(4)
       setBalance(mockEthBalance)
-
-      // Update localStorage
-      localStorage.setItem("walletAddress", updatedWallets[0].address)
-      localStorage.setItem("walletProvider", updatedWallets[0].provider)
     } else {
       setConnectedWallets([])
-      localStorage.removeItem("walletAddress")
-      localStorage.removeItem("walletProvider")
     }
-
-    localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
-    console.log("Wallet disconnected")
   }
 
   // Set primary wallet
   const setPrimaryWallet = (walletAddress: string) => {
-    const wallet = connectedWallets.find((w) => w.address === walletAddress)
+    const updatedWallets = connectedWallets.map((w) => ({
+      ...w,
+      isPrimary: w.address === walletAddress,
+    }))
 
-    if (wallet) {
-      // Update connected wallets
-      const updatedWallets = connectedWallets.map((w) => ({
-        ...w,
-        isPrimary: w.address === walletAddress,
-      }))
+    setConnectedWallets(updatedWallets)
 
-      setConnectedWallets(updatedWallets)
-
-      // Connect to the new primary wallet
-      setAddress(wallet.address)
-      setWalletProvider(wallet.provider)
+    // Connect to the new primary wallet
+    const newPrimaryWallet = updatedWallets.find((w) => w.isPrimary)
+    if (newPrimaryWallet) {
+      setAddress(newPrimaryWallet.address)
+      setWalletProvider(newPrimaryWallet.provider)
       setIsConnected(true)
 
       // Set a mock balance
       const mockEthBalance = (Math.random() * 10).toFixed(4)
       setBalance(mockEthBalance)
-
-      // Update localStorage
-      localStorage.setItem("walletAddress", wallet.address)
-      localStorage.setItem("walletProvider", wallet.provider)
-      localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
     }
   }
 
@@ -241,6 +201,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isConnecting,
         error,
         setPrimaryWallet,
+        connectedWallets,
       }}
     >
       {children}

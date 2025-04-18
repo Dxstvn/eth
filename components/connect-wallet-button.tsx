@@ -13,8 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
-import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import Image from "next/image"
 
 interface ConnectWalletButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "primary"
@@ -135,21 +135,23 @@ export default function ConnectWalletButton({
               <Button
                 onClick={() => handleConnect("metamask")}
                 disabled={isConnecting}
-                className="flex items-center justify-center gap-3 h-16 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+                className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
               >
-                <div className="h-8 w-8 relative">
-                  <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
+                <div className="h-8 w-8 relative flex items-center justify-center">
+                  <div className="relative w-8 h-8">
+                    <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
+                  </div>
                 </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-semibold">MetaMask</span>
-                  <span className="text-xs text-neutral-500">Connect to your MetaMask wallet</span>
+                <div className="flex flex-col items-center">
+                  <span className="font-semibold text-white">MetaMask</span>
+                  <span className="text-xs text-white opacity-80">Popular Ethereum Wallet</span>
                 </div>
               </Button>
 
               <Button
                 onClick={() => handleConnect("coinbase")}
                 disabled={isConnecting}
-                className="flex items-center justify-center gap-3 h-16 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+                className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
               >
                 <div className="h-8 w-8 relative flex items-center justify-center bg-blue-600 rounded-full">
                   <svg width="20" height="20" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -161,9 +163,9 @@ export default function ConnectWalletButton({
                     />
                   </svg>
                 </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-semibold">Coinbase Wallet</span>
-                  <span className="text-xs text-neutral-500">Connect to your Coinbase wallet</span>
+                <div className="flex flex-col items-center">
+                  <span className="font-semibold text-white">Coinbase Wallet</span>
+                  <span className="text-xs text-white opacity-80">Coinbase's Crypto Wallet</span>
                 </div>
               </Button>
             </div>
@@ -179,7 +181,9 @@ export default function ConnectWalletButton({
         <Button variant={variant} size={size} className={`connect-wallet-btn ${className}`}>
           <div className="mr-2 h-5 w-5 relative">
             {walletProvider === "metamask" ? (
-              <Image src="/stylized-fox-profile.png" alt="MetaMask" width={20} height={20} />
+              <div className="relative w-5 h-5">
+                <Image src="/stylized-fox-profile.png" alt="MetaMask" width={20} height={20} />
+              </div>
             ) : (
               <div className="h-5 w-5 bg-blue-600 rounded-full flex items-center justify-center">
                 <svg width="12" height="12" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">

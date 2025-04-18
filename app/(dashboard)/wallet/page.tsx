@@ -2,27 +2,16 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import {
-  ArrowRight,
-  Copy,
-  ExternalLink,
-  RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
-  WalletIcon,
-  AlertCircle,
-} from "lucide-react"
 import { useState, useEffect } from "react"
 import { useDatabaseStore } from "@/lib/mock-database"
 import { useWallet } from "@/context/wallet-context"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function WalletPage() {
   const { getAssets, getActivities } = useDatabaseStore()
-  const { address, isConnected, balance, connectWallet, isConnecting, error, walletProvider } = useWallet()
+  const { address, isConnected, balance, connectWallet, isConnecting, error, walletProvider, connectedWallets } =
+    useWallet()
   const { addToast } = useToast()
   const [assets, setAssets] = useState(getAssets())
   const [activities, setActivities] = useState(
@@ -133,272 +122,23 @@ export default function WalletPage() {
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Button
-                onClick={() => handleConnectWallet("metamask")}
-                disabled={isConnecting}
-                className="flex flex-col items-center justify-center gap-3 h-32 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
-              >
-                <div className="h-12 w-12 relative">
-                  <Image src="/stylized-fox-profile.png" alt="MetaMask" width={48} height={48} />
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="font-semibold">MetaMask</span>
-                  <span className="text-xs text-neutral-500">Popular Ethereum Wallet</span>
-                </div>
-              </Button>
-
-              <Button
-                onClick={() => handleConnectWallet("coinbase")}
-                disabled={isConnecting}
-                className="flex flex-col items-center justify-center gap-3 h-32 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
-              >
-                <div className="h-12 w-12 relative flex items-center justify-center bg-blue-600 rounded-full">
-                  <svg width="28" height="28" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
-                      fill="white"
-                    />
-                  </svg>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="font-semibold">Coinbase Wallet</span>
-                  <span className="text-xs text-neutral-500">Coinbase's Crypto Wallet</span>
-                </div>
-              </Button>
-            </div>
-
-            {error && (
-              <Alert variant="destructive" className="mt-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Connection Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="text-center text-sm text-neutral-500 mt-4">
-              <p>By connecting your wallet, you agree to our Terms of Service and Privacy Policy.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  return (
-    <div className="p-6 space-y-8">
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-teal-900 font-display">Wallet</h1>
-            <p className="text-neutral-600">Manage your cryptocurrency wallet and transactions</p>
-          </div>
-          <div>
-            <Button
-              variant="outline"
-              className="rounded-md px-6 border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              {refreshing ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8" aria-label="Wallet tabs">
-            <button
-              className={`border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
-                activeTab === "assets"
-                  ? "border-teal-900 text-teal-900"
-                  : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
-              }`}
-              onClick={() => setActiveTab("assets")}
-            >
-              Assets
-            </button>
-            <button
-              className={`border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
-                activeTab === "activity"
-                  ? "border-teal-900 text-teal-900"
-                  : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
-              }`}
-              onClick={() => setActiveTab("activity")}
-            >
-              Activity
-            </button>
-          </nav>
-        </div>
-      </div>
-
-      {activeTab === "assets" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Total Balance Card with Gradient */}
-              <Card className="overflow-hidden shadow-md border-0 h-full">
-                <div className="bg-gradient-to-br from-teal-700 to-teal-900 p-6 text-white h-full flex flex-col">
-                  <div>
-                    <p className="text-sm text-teal-100 font-medium">Total Balance</p>
-                    <p className="text-4xl font-bold mt-1 font-display">
-                      ${loading ? "..." : totalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  <div className="mt-auto pt-6 flex justify-between items-center">
-                    <p className="text-sm text-teal-100">+12.5% this month</p>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Bitcoin Card */}
-              <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 border-0 h-full">
-                <CardContent className="p-6 h-full flex flex-col">
-                  <div className="flex items-center mb-3">
-                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-800 font-semibold mr-2">
-                      B
-                    </div>
-                    <p className="text-lg font-medium text-teal-900">Bitcoin</p>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-3xl font-bold text-teal-900 font-display">
-                      {loading ? "..." : assets[0]?.amount.toFixed(2)} BTC
-                    </p>
-                    <p className="text-neutral-500">{loading ? "..." : assets[0]?.price}</p>
-                  </div>
-                  <p className="text-sm text-green-600 mt-auto pt-4 font-medium">
-                    {loading ? "..." : assets[0]?.change} today
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Ethereum Card */}
-              <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 border-0 h-full">
-                <CardContent className="p-6 h-full flex flex-col">
-                  <div className="flex items-center mb-3">
-                    <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold mr-2">
-                      E
-                    </div>
-                    <p className="text-lg font-medium text-teal-900">Ethereum</p>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-3xl font-bold text-teal-900 font-display">
-                      {loading ? "..." : assets[1]?.amount.toFixed(1)} ETH
-                    </p>
-                    <p className="text-neutral-500">{loading ? "..." : assets[1]?.price}</p>
-                  </div>
-                  <p className="text-sm text-green-600 mt-auto pt-4 font-medium">
-                    {loading ? "..." : assets[1]?.change} today
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Transaction History */}
-            <Card className="shadow-md border-0">
-              <div className="p-6 border-b">
-                <h2 className="text-xl font-semibold text-teal-900 font-display">Transaction History</h2>
-                <p className="text-sm text-neutral-500">Recent wallet transactions</p>
-              </div>
-              <CardContent className="p-0">
-                <div className="divide-y divide-gray-100">
-                  {loading
-                    ? // Loading skeleton
-                      Array(4)
-                        .fill(0)
-                        .map((_, i) => (
-                          <div key={i} className="flex items-center justify-between p-4 animate-pulse">
-                            <div className="flex items-center">
-                              <div className="w-10 h-10 rounded-full bg-gray-200 mr-4"></div>
-                              <div>
-                                <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
-                                <div className="h-3 w-32 bg-gray-200 rounded"></div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="h-4 w-16 bg-gray-200 rounded mb-2"></div>
-                              <div className="h-3 w-20 bg-gray-200 rounded"></div>
-                            </div>
-                          </div>
-                        ))
-                    : // Actual transactions
-                      activities
-                        .slice(0, 4)
-                        .map((activity, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors"
-                          >
-                            <div className="flex items-center">
-                              <div
-                                className={`w-10 h-10 rounded-full ${
-                                  activity.type === "payment_sent"
-                                    ? "bg-green-50 text-green-600"
-                                    : "bg-teal-50 text-teal-600"
-                                } flex items-center justify-center mr-4`}
-                              >
-                                {activity.type === "payment_sent" ? (
-                                  <ArrowUpRight className="h-5 w-5" />
-                                ) : (
-                                  <ArrowDownRight className="h-5 w-5" />
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium text-teal-900">{activity.title}</p>
-                                <p className="text-xs text-neutral-500">
-                                  {activity.description.split(" to ")[1] || activity.description.split(" from ")[1]}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium text-teal-900">
-                                {activity.type === "payment_sent" ? "-" : "+"}
-                                {activity.description.split(" ")[2]} {activity.description.split(" ")[3]}
-                              </p>
-                              <p className="text-xs text-neutral-500">{activity.date}</p>
-                            </div>
-                          </div>
-                        ))}
-                </div>
-                <div className="p-4 border-t">
-                  <Button
-                    variant="outline"
-                    className="w-full text-teal-700 hover:bg-teal-50 hover:text-teal-800 border-teal-200"
-                  >
-                    View All Transactions <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            {/* Wallet Address Card */}
-            <Card className="shadow-md border-0">
-              <div className="p-6 border-b">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-teal-900 font-display">Wallet Address</h2>
-                    <p className="text-sm text-neutral-500">
-                      Your {walletProvider === "metamask" ? "MetaMask" : "Coinbase"} wallet address
-                    </p>
-                  </div>
-                  <div className="h-8 w-8 relative">
-                    {walletProvider === "metamask" ? (
-                      <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
+              {["metamask", "coinbase"].map((provider) => (
+                <Button
+                  key={provider}
+                  onClick={() => handleConnectWallet(provider as "metamask" | "coinbase")}
+                  disabled={isConnecting}
+                  className="flex items-center justify-center gap-3 h-32 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
+                >
+                  <div className="h-12 w-12 relative flex items-center justify-center">
+                    {provider === "metamask" ? (
+                      <div className="relative w-10 h-10">
+                        <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                      </div>
                     ) : (
-                      <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                      <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
                         <svg
-                          width="16"
-                          height="16"
+                          width="20"
+                          height="20"
                           viewBox="0 0 1024 1024"
                           fill="none"
                           xmlns="http://www.w3.org/2000/svg"
@@ -413,147 +153,254 @@ export default function WalletPage() {
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center bg-neutral-50 p-3 rounded-lg">
-                  <code className="text-sm flex-1 overflow-x-auto font-mono text-teal-900">{address}</code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-2 text-neutral-500 hover:text-teal-700"
-                    onClick={handleCopyAddress}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                {copiedAddress && <p className="text-sm text-green-600 text-center">Address copied to clipboard!</p>}
-                <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="flex-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 border-teal-200"
-                          onClick={handleViewOnExplorer}
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" /> View on Explorer
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="space-y-2 p-2 max-w-xs">
-                          <p className="font-medium">View on Blockchain Explorer</p>
-                          <p className="text-xs text-neutral-500">
-                            This button opens Etherscan, a blockchain explorer that allows you to view your wallet's
-                            transaction history, balance, and other details on the Ethereum blockchain.
-                          </p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <Button
-                    variant="primary"
-                    className="flex-1 btn-primary"
-                    onClick={handleRefresh}
-                    disabled={refreshing}
-                  >
-                    {refreshing ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Refreshing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Refresh Balances
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex flex-col items-start">
+                    <span className="font-semibold text-white">
+                      {provider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
+                    </span>
+                    <span className="text-xs text-white opacity-80">
+                      {provider === "metamask" ? "Popular Ethereum Wallet" : "Coinbase's Crypto Wallet"}
+                    </span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 space-y-8">
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-teal-900 font-display">Wallet</h1>
+            <p className="text-neutral-600">Manage your cryptocurrency assets and transactions</p>
           </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-teal-700 border-teal-200 hover:bg-teal-50"
+            >
+              {refreshing ? (
+                <>
+                  <span className="animate-spin mr-2">⟳</span> Refreshing...
+                </>
+              ) : (
+                <>⟳ Refresh</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyAddress}
+              className="text-teal-700 border-teal-200 hover:bg-teal-50"
+            >
+              {copiedAddress ? "✓ Copied" : "Copy Address"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewOnExplorer}
+              className="text-teal-700 border-teal-200 hover:bg-teal-50"
+            >
+              View on Explorer
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Card className="shadow-md border-0">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center text-teal-800">
+                {walletProvider === "metamask" ? (
+                  <div className="relative w-12 h-12">
+                    <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                  </div>
+                ) : (
+                  <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
+                        fill="white"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-teal-900 font-display">
+                  {walletProvider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
+                </h2>
+                <p className="text-sm text-neutral-500 font-mono">
+                  {address ? `${address.slice(0, 8)}...${address.slice(-6)}` : ""}
+                </p>
+              </div>
+            </div>
+            <div className="text-center md:text-right">
+              <p className="text-sm text-neutral-500">Total Balance</p>
+              <p className="text-3xl font-bold text-teal-900 font-display">
+                ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="border-b border-neutral-200">
+        <nav className="flex space-x-8" aria-label="Wallet tabs">
+          <button
+            className={`border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
+              activeTab === "assets"
+                ? "border-teal-900 text-teal-900"
+                : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
+            }`}
+            onClick={() => setActiveTab("assets")}
+          >
+            Assets
+          </button>
+          <button
+            className={`border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
+              activeTab === "activity"
+                ? "border-teal-900 text-teal-900"
+                : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
+            }`}
+            onClick={() => setActiveTab("activity")}
+          >
+            Activity
+          </button>
+        </nav>
+      </div>
+
+      {activeTab === "assets" && (
+        <div className="space-y-4">
+          {loading
+            ? // Loading skeleton for assets
+              Array(4)
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i} className="bg-white border border-neutral-100 rounded-lg p-5 animate-pulse">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-neutral-200 rounded-full"></div>
+                        <div>
+                          <div className="h-5 bg-neutral-200 rounded w-24 mb-1"></div>
+                          <div className="h-4 bg-neutral-200 rounded w-16"></div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="h-5 bg-neutral-200 rounded w-20 mb-1"></div>
+                        <div className="h-4 bg-neutral-200 rounded w-16"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+            : assets.map((asset) => (
+                <div
+                  key={asset.id}
+                  className="bg-white border border-neutral-100 rounded-lg p-5 hover:shadow-md transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          asset.symbol === "BTC"
+                            ? "bg-amber-100 text-amber-700"
+                            : asset.symbol === "ETH"
+                              ? "bg-blue-100 text-blue-700"
+                              : asset.symbol === "USDC"
+                                ? "bg-teal-100 text-teal-700"
+                                : "bg-purple-100 text-purple-700"
+                        }`}
+                      >
+                        {asset.symbol.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-teal-900">{asset.name}</p>
+                        <p className="text-sm text-neutral-500">
+                          {asset.amount} {asset.symbol}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-teal-900">
+                        ${asset.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p
+                        className={`text-sm ${
+                          asset.trend === "up"
+                            ? "text-green-600"
+                            : asset.trend === "down"
+                              ? "text-red-600"
+                              : "text-neutral-500"
+                        }`}
+                      >
+                        {asset.change}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
         </div>
       )}
 
       {activeTab === "activity" && (
-        <div className="space-y-6">
-          <Card className="shadow-md border-0">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold text-teal-900 font-display">Transaction Activity</h2>
-              <p className="text-sm text-neutral-500">All your wallet transactions</p>
-            </div>
-            <CardContent className="p-6">
-              {loading ? (
-                <div className="space-y-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between p-4 animate-pulse border-b border-gray-100 last:border-0"
-                      >
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-gray-200 mr-4"></div>
-                          <div>
-                            <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
-                            <div className="h-3 w-32 bg-gray-200 rounded"></div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="h-4 w-16 bg-gray-200 rounded mb-2"></div>
-                          <div className="h-3 w-20 bg-gray-200 rounded"></div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : activities.length > 0 ? (
-                <div className="space-y-4">
-                  {activities.map((activity, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors border-b border-gray-100 last:border-0"
-                    >
-                      <div className="flex items-center">
-                        <div
-                          className={`w-10 h-10 rounded-full ${
-                            activity.type === "payment_sent" ? "bg-green-50 text-green-600" : "bg-teal-50 text-teal-600"
-                          } flex items-center justify-center mr-4`}
-                        >
-                          {activity.type === "payment_sent" ? (
-                            <ArrowUpRight className="h-5 w-5" />
-                          ) : (
-                            <ArrowDownRight className="h-5 w-5" />
-                          )}
-                        </div>
+        <div className="space-y-4">
+          {loading
+            ? // Loading skeleton for activity
+              Array(4)
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i} className="bg-white border border-neutral-100 rounded-lg p-5 animate-pulse">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-neutral-200 rounded-full"></div>
                         <div>
-                          <p className="font-medium text-teal-900">{activity.title}</p>
-                          <p className="text-xs text-neutral-500">
-                            {activity.description.split(" to ")[1] || activity.description.split(" from ")[1]}
-                          </p>
+                          <div className="h-5 bg-neutral-200 rounded w-32 mb-1"></div>
+                          <div className="h-4 bg-neutral-200 rounded w-48"></div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-teal-900">
-                          {activity.type === "payment_sent" ? "-" : "+"}
-                          {activity.description.split(" ")[2]} {activity.description.split(" ")[3]}
-                        </p>
-                        <p className="text-xs text-neutral-500">{activity.date}</p>
+                        <div className="h-5 bg-neutral-200 rounded w-20 mb-1"></div>
+                        <div className="h-4 bg-neutral-200 rounded w-16"></div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="rounded-full bg-teal-100 p-3 mb-4">
-                    <WalletIcon className="h-6 w-6 text-teal-900" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2 text-teal-900 font-display">No transactions yet</h3>
-                  <p className="text-neutral-500 max-w-md mb-6">
-                    Your transaction history will appear here once you start using your wallet.
-                  </p>
+                ))
+            : activities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="bg-white border border-neutral-100 rounded-lg p-5 hover:shadow-md transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          activity.type === "payment_sent" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                        }`}
+                      >
+                        {activity.type === "payment_sent" ? "↑" : "↓"}
+                      </div>
+                      <div>
+                        <p className="font-medium text-teal-900">{activity.title}</p>
+                        <p className="text-sm text-neutral-500">{activity.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-teal-900">{new Date(activity.date).toLocaleDateString()}</p>
+                      <p className="text-sm text-neutral-500">{activity.time}</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              ))}
         </div>
       )}
     </div>
