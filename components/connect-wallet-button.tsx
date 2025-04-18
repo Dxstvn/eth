@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import Image from "next/image"
+import { MetamaskFox } from "@/components/icons/metamask-fox"
+import { CoinbaseLogo } from "@/components/icons/coinbase-logo"
 
 interface ConnectWalletButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "primary"
@@ -138,11 +139,9 @@ export default function ConnectWalletButton({
                 className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
               >
                 <div className="h-8 w-8 relative flex items-center justify-center">
-                  <div className="relative w-8 h-8">
-                    <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
-                  </div>
+                  <MetamaskFox />
                 </div>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-start">
                   <span className="font-semibold text-white">MetaMask</span>
                   <span className="text-xs text-white opacity-80">Popular Ethereum Wallet</span>
                 </div>
@@ -153,17 +152,10 @@ export default function ConnectWalletButton({
                 disabled={isConnecting}
                 className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
               >
-                <div className="h-8 w-8 relative flex items-center justify-center bg-blue-600 rounded-full">
-                  <svg width="20" height="20" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
-                      fill="white"
-                    />
-                  </svg>
+                <div className="h-8 w-8 relative flex items-center justify-center">
+                  <CoinbaseLogo />
                 </div>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-start">
                   <span className="font-semibold text-white">Coinbase Wallet</span>
                   <span className="text-xs text-white opacity-80">Coinbase's Crypto Wallet</span>
                 </div>
@@ -182,18 +174,11 @@ export default function ConnectWalletButton({
           <div className="mr-2 h-5 w-5 relative">
             {walletProvider === "metamask" ? (
               <div className="relative w-5 h-5">
-                <Image src="/stylized-fox-profile.png" alt="MetaMask" width={20} height={20} />
+                <MetamaskFox />
               </div>
             ) : (
-              <div className="h-5 w-5 bg-blue-600 rounded-full flex items-center justify-center">
-                <svg width="12" height="12" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
-                    fill="white"
-                  />
-                </svg>
+              <div className="h-5 w-5 flex items-center justify-center">
+                <CoinbaseLogo />
               </div>
             )}
           </div>

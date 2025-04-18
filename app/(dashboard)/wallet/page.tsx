@@ -6,7 +6,8 @@ import { useState, useEffect } from "react"
 import { useDatabaseStore } from "@/lib/mock-database"
 import { useWallet } from "@/context/wallet-context"
 import { useToast } from "@/components/ui/use-toast"
-import Image from "next/image"
+import { MetamaskFox } from "@/components/icons/metamask-fox"
+import { CoinbaseLogo } from "@/components/icons/coinbase-logo"
 
 export default function WalletPage() {
   const { getAssets, getActivities } = useDatabaseStore()
@@ -132,24 +133,11 @@ export default function WalletPage() {
                   <div className="h-12 w-12 relative flex items-center justify-center">
                     {provider === "metamask" ? (
                       <div className="relative w-10 h-10">
-                        <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                        <MetamaskFox />
                       </div>
                     ) : (
-                      <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 1024 1024"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
-                            fill="white"
-                          />
-                        </svg>
+                      <div className="h-10 w-10 flex items-center justify-center">
+                        <CoinbaseLogo />
                       </div>
                     )}
                   </div>
@@ -221,18 +209,11 @@ export default function WalletPage() {
               <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center text-teal-800">
                 {walletProvider === "metamask" ? (
                   <div className="relative w-12 h-12">
-                    <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                    <MetamaskFox />
                   </div>
                 ) : (
-                  <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
-                        fill="white"
-                      />
-                    </svg>
+                  <div className="h-10 w-10 flex items-center justify-center">
+                    <CoinbaseLogo />
                   </div>
                 )}
               </div>

@@ -1,5 +1,7 @@
 "use client"
 
+import { DialogFooter } from "@/components/ui/dialog"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,15 +10,10 @@ import Link from "next/link"
 import { useWallet } from "@/context/wallet-context"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
-import Image from "next/image"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+// Add imports at the top of the file
+import { MetamaskFox } from "@/components/icons/metamask-fox"
+import { CoinbaseLogo } from "@/components/icons/coinbase-logo"
 
 interface ConnectedWallet {
   provider: "metamask" | "coinbase"
@@ -180,24 +177,11 @@ export default function WalletsSettingsPage() {
                         <div className="h-10 w-10 relative flex items-center justify-center">
                           {wallet.provider === "metamask" ? (
                             <div className="relative w-10 h-10">
-                              <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                              <MetamaskFox />
                             </div>
                           ) : (
-                            <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
-                              <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 1024 1024"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
-                                  fill="white"
-                                />
-                              </svg>
+                            <div className="h-10 w-10 flex items-center justify-center">
+                              <CoinbaseLogo />
                             </div>
                           )}
                         </div>
@@ -299,9 +283,7 @@ export default function WalletsSettingsPage() {
               className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
             >
               <div className="h-8 w-8 relative flex items-center justify-center">
-                <div className="relative w-8 h-8">
-                  <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
-                </div>
+                <MetamaskFox />
               </div>
               <div className="flex flex-col items-start">
                 <span className="font-semibold text-white">MetaMask</span>
@@ -314,15 +296,8 @@ export default function WalletsSettingsPage() {
               disabled={isConnecting}
               className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
             >
-              <div className="h-8 w-8 relative flex items-center justify-center bg-blue-600 rounded-full">
-                <svg width="20" height="20" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
-                    fill="white"
-                  />
-                </svg>
+              <div className="h-8 w-8 relative flex items-center justify-center">
+                <CoinbaseLogo />
               </div>
               <div className="flex flex-col items-start">
                 <span className="font-semibold text-white">Coinbase Wallet</span>

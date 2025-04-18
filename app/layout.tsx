@@ -7,6 +7,8 @@ import { WalletProvider } from "@/context/wallet-context"
 import FirebaseInitCheck from "@/components/firebase-init-check"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { OnboardingProvider } from "@/context/onboarding-context"
+import OnboardingFlow from "@/components/onboarding/onboarding-flow"
 
 // Load Montserrat font
 const montserrat = Montserrat({
@@ -41,8 +43,11 @@ export default function RootLayout({
         <AuthProvider>
           <WalletProvider>
             <ToastProvider>
-              {children}
-              <Toaster />
+              <OnboardingProvider>
+                {children}
+                <Toaster />
+                <OnboardingFlow />
+              </OnboardingProvider>
             </ToastProvider>
           </WalletProvider>
         </AuthProvider>
