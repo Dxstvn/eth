@@ -50,11 +50,11 @@ export default function TransactionSuccess({
             <LockKeyhole className="h-8 w-8 text-teal-700" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-teal-900">
-            {isBuyer ? "Escrow Contract Created" : "Escrow Contract Created"}
+            {isBuyer ? "Funds Securely Held in Escrow" : "Escrow Contract Created"}
           </h1>
           <p className="text-neutral-600 mt-2">
             {isBuyer
-              ? "Your transaction has been initiated and funds are now held securely in escrow."
+              ? "Your funds are now locked in a smart contract and will only be released when all required conditions are met."
               : "Your escrow contract has been created successfully and is ready for the buyer to deposit funds."}
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function TransactionSuccess({
                 <div className="flex items-center">
                   <div className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
-                    {isBuyer ? "Awaiting Document Verification" : "Awaiting Buyer Funding"}
+                    {isBuyer ? "Awaiting Seller Documents" : "Awaiting Buyer Funding"}
                   </div>
                 </div>
               </div>
@@ -152,7 +152,7 @@ export default function TransactionSuccess({
                       <h3 className="font-medium text-teal-900">Seller Document Submission</h3>
                       <p className="text-sm text-neutral-600 mt-1">
                         The seller must upload required documents:
-                        {contractRequirements.titleVerification && " Title verification,"}
+                        {contractRequirements.titleVerification && " Title deeds submission,"}
                         {contractRequirements.inspectionReport && " Inspection report,"}
                         {contractRequirements.appraisalService && " Property appraisal"}
                       </p>
@@ -251,10 +251,12 @@ export default function TransactionSuccess({
                       <h3 className="font-medium text-teal-900">Your Document Submission</h3>
                       <p className="text-sm text-neutral-600 mt-1">
                         You need to upload the following required documents:
-                        {contractRequirements.titleVerification && " Title verification,"}
-                        {contractRequirements.inspectionReport && " Inspection report,"}
-                        {contractRequirements.appraisalService && " Property appraisal"}
                       </p>
+                      <ul className="ml-6 list-circle">
+                        {contractRequirements.titleVerification && <li>Title deeds submission</li>}
+                        {contractRequirements.inspectionReport && <li>Inspection report</li>}
+                        {contractRequirements.appraisalService && <li>Property appraisal</li>}
+                      </ul>
                       <div className="mt-2 flex items-center text-xs text-amber-800">
                         <Clock className="h-3 w-3 mr-1" /> Action required
                         <span className="ml-auto text-neutral-500">Estimated: 1-3 days</span>

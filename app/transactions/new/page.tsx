@@ -7,16 +7,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, ArrowRight, Building2, Coins, FileText, Info, AlertCircle, Shield, LockKeyhole } from "lucide-react"
+import { ArrowLeft, ArrowRight, Building2, Coins, FileText, AlertCircle, Shield, LockKeyhole } from "lucide-react"
 import Link from "next/link"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useWalletStore } from "@/lib/mock-wallet"
+import { useWallet } from "@/context/wallet-context"
 import { useToast } from "@/components/ui/use-toast"
 import ConnectWalletButton from "@/components/connect-wallet-button"
 import TransactionConfirmationModal from "@/components/transaction-confirmation-modal"
 import TransactionSuccess from "@/components/transaction-success"
 import RoleBasedRequirements, { type ContractRequirements } from "@/components/role-based-requirements"
+import { CompactInfo } from "@/components/compact-info"
 
 // Mock contacts data
 const mockContacts = [
@@ -41,7 +41,7 @@ const mockContacts = [
 ]
 
 export default function NewTransactionPage() {
-  const { isConnected } = useWalletStore()
+  const { isConnected, connectWallet, isConnecting, error } = useWallet()
   const { addToast } = useToast()
   const [step, setStep] = useState(1)
   const [confirmationOpen, setConfirmationOpen] = useState(false)
@@ -314,16 +314,32 @@ export default function NewTransactionPage() {
 
                       <div className="space-y-2">
                         <Label>Transaction Type</Label>
-                        <RadioGroup value={transactionType} onValueChange={setTransactionType}>
+                        <div className="space-y-2 mt-1">
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="purchase" id="purchase" />
-                            <Label htmlFor="purchase">Purchase</Label>
+                            <div
+                              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-gray-700 cursor-pointer"
+                              onClick={() => setTransactionType("purchase")}
+                            >
+                              {transactionType === "purchase" && (
+                                <div className="h-3 w-3 rounded-full bg-gray-700"></div>
+                              )}
+                            </div>
+                            <Label className="cursor-pointer" onClick={() => setTransactionType("purchase")}>
+                              Purchase
+                            </Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="sale" id="sale" />
-                            <Label htmlFor="sale">Sale</Label>
+                            <div
+                              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-gray-700 cursor-pointer"
+                              onClick={() => setTransactionType("sale")}
+                            >
+                              {transactionType === "sale" && <div className="h-3 w-3 rounded-full bg-gray-700"></div>}
+                            </div>
+                            <Label className="cursor-pointer" onClick={() => setTransactionType("sale")}>
+                              Sale
+                            </Label>
                           </div>
-                        </RadioGroup>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -398,15 +414,11 @@ export default function NewTransactionPage() {
                   <CardDescription>Configure the amount to be held in escrow until conditions are met.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <Alert className="bg-amber-50 border-amber-200 text-amber-800">
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>How Escrow Works</AlertTitle>
-                    <AlertDescription>
-                      The funds you specify will be locked in a smart contract and held in escrow. They will only be
-                      released to the {transactionType === "purchase" ? "seller" : "buyer"} when all contract conditions
-                      are met and verified.
-                    </AlertDescription>
-                  </Alert>
+                  <CompactInfo title="How Escrow Works" variant="warning" defaultOpen={true}>
+                    The funds you specify will be locked in a smart contract and held in escrow. They will only be
+                    released to the {transactionType === "purchase" ? "seller" : "buyer"} when all contract conditions
+                    are met and verified.
+                  </CompactInfo>
 
                   <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200 mb-4">
                     <h4 className="font-medium mb-2">Transaction With</h4>
@@ -517,29 +529,21 @@ export default function NewTransactionPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <Alert className="bg-teal-50 border-teal-200 text-teal-800">
-                    <LockKeyhole className="h-4 w-4" />
-                    <AlertTitle>Smart Contract Conditions</AlertTitle>
-                    <AlertDescription>
-                      These conditions will be encoded in the smart contract. Funds will only be released from escrow
-                      when all selected conditions are verified as complete.
-                    </AlertDescription>
-                  </Alert>
+                  <CompactInfo
+                    title="Smart Contract Conditions"
+                    variant="info"
+                    icon={<LockKeyhole className="h-4 w-4" />}
+                    defaultOpen={true}
+                  >
+                    These conditions will be encoded in the smart contract. Funds will only be released from escrow when
+                    all selected conditions are verified as complete.
+                  </CompactInfo>
 
                   <RoleBasedRequirements
                     transactionType={transactionType}
                     onChange={setContractRequirements}
                     initialOptions={contractRequirements}
                   />
-
-                  <Alert className="bg-amber-50 border-amber-200 text-amber-800">
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Document Verification Required</AlertTitle>
-                    <AlertDescription>
-                      After creating this escrow, both parties will need to upload required documents for verification.
-                      These documents will be reviewed before funds can be released.
-                    </AlertDescription>
-                  </Alert>
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Button
@@ -603,19 +607,22 @@ export default function NewTransactionPage() {
                         {transactionType === "purchase" ? (
                           // Buyer's view - seller requirements
                           <>
-                            {contractRequirements.titleVerification && <li>Seller must provide title verification</li>}
-                            {contractRequirements.inspectionReport && <li>Seller must provide inspection report</li>}
-                            {contractRequirements.appraisalService && <li>Seller must provide property appraisal</li>}
+                            <li>You have deposited funds into escrow</li>
+                            <li>Seller must provide required documentation:</li>
+                            <ul className="ml-6 list-circle">
+                              {contractRequirements.titleVerification && <li>Title deeds submission</li>}
+                              {contractRequirements.inspectionReport && <li>Inspection report</li>}
+                              {contractRequirements.appraisalService && <li>Property appraisal</li>}
+                            </ul>
                           </>
                         ) : (
-                          // Seller's view - buyer requirements
+                          // Seller's view - buyer requirements and seller responsibilities
                           <>
                             <li>Buyer must deposit funds into escrow</li>
                             <li>You must provide required documentation:</li>
                             <ul className="ml-6 list-circle">
-                              {contractRequirements.titleVerification && <li>Title verification</li>}
-                              {contractRequirements.inspectionReport && <li>Inspection report</li>}
-                              {contractRequirements.appraisalService && <li>Property appraisal</li>}
+                              {contractRequirements.titleVerification && <li>Title deeds submission</li>}
+                              {contractRequirements.inspectionReport && <li>Property appraisal</li>}
                             </ul>
                           </>
                         )}
@@ -639,16 +646,6 @@ export default function NewTransactionPage() {
                       </p>
                     </div>
                   </div>
-
-                  <Alert className="bg-amber-50 border-amber-200 text-amber-800">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Important Notice</AlertTitle>
-                    <AlertDescription>
-                      By creating this escrow, you agree to lock your funds until all contract conditions are met. After
-                      creation, both parties will need to upload required documents for verification before funds can be
-                      released.
-                    </AlertDescription>
-                  </Alert>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row sm:justify-between gap-4">
                   <Button

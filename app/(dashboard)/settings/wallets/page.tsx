@@ -1,0 +1,338 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, Check, Trash2, Plus, ExternalLink } from "lucide-react"
+import Link from "next/link"
+import { useWallet } from "@/context/wallet-context"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/use-toast"
+import Image from "next/image"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+interface ConnectedWallet {
+  provider: "metamask" | "coinbase"
+  address: string
+  isPrimary: boolean
+}
+
+export default function WalletsSettingsPage() {
+  const { isConnected, address, walletProvider, connectWallet, disconnectWallet } = useWallet()
+  const { addToast } = useToast()
+  const [connectedWallets, setConnectedWallets] = useState<ConnectedWallet[]>([])
+  const [showAddWalletDialog, setShowAddWalletDialog] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Initialize connected wallets
+  useEffect(() => {
+    if (isConnected && address && walletProvider) {
+      // Check if this wallet is already in our list
+      if (!connectedWallets.some((wallet) => wallet.address === address)) {
+        setConnectedWallets([
+          {
+            provider: walletProvider,
+            address,
+            isPrimary: true,
+          },
+        ])
+      }
+    } else {
+      // Load from localStorage if available
+      const savedWallets = localStorage.getItem("connectedWallets")
+      if (savedWallets) {
+        try {
+          setConnectedWallets(JSON.parse(savedWallets))
+        } catch (err) {
+          console.error("Error parsing saved wallets:", err)
+        }
+      }
+    }
+  }, [isConnected, address, walletProvider, connectedWallets])
+
+  // Save wallets to localStorage when they change
+  useEffect(() => {
+    if (connectedWallets.length > 0) {
+      localStorage.setItem("connectedWallets", JSON.stringify(connectedWallets))
+    }
+  }, [connectedWallets])
+
+  const handleAddWallet = async (provider: "metamask" | "coinbase") => {
+    try {
+      setIsConnecting(true)
+      setError(null)
+
+      // Connect the wallet
+      await connectWallet(provider)
+
+      // Close the dialog
+      setShowAddWalletDialog(false)
+
+      addToast({
+        title: "Wallet Connected",
+        description: `Your ${provider === "metamask" ? "MetaMask" : "Coinbase"} wallet has been connected successfully.`,
+      })
+    } catch (err) {
+      console.error("Error connecting wallet:", err)
+      setError(`Failed to connect ${provider} wallet. Please try again.`)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  const handleSetPrimary = (address: string) => {
+    setConnectedWallets((prev) =>
+      prev.map((wallet) => ({
+        ...wallet,
+        isPrimary: wallet.address === address,
+      })),
+    )
+
+    addToast({
+      title: "Primary Wallet Updated",
+      description: "Your primary wallet has been updated successfully.",
+    })
+  }
+
+  const handleRemoveWallet = (address: string) => {
+    // Check if this is the primary wallet
+    const isRemovingPrimary = connectedWallets.find((w) => w.address === address)?.isPrimary
+
+    // Remove the wallet
+    setConnectedWallets((prev) => {
+      const filtered = prev.filter((wallet) => wallet.address !== address)
+
+      // If we removed the primary wallet and there are other wallets, set the first one as primary
+      if (isRemovingPrimary && filtered.length > 0) {
+        filtered[0].isPrimary = true
+      }
+
+      return filtered
+    })
+
+    // If this is the currently connected wallet, disconnect it
+    if (address === address) {
+      disconnectWallet()
+    }
+
+    addToast({
+      title: "Wallet Removed",
+      description: "The wallet has been removed successfully.",
+    })
+  }
+
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-8">
+        <Link href="/settings" className="flex items-center text-muted-foreground hover:text-foreground mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Settings
+        </Link>
+        <h1 className="text-2xl font-bold">Wallet Management</h1>
+        <p className="text-gray-500">Connect and manage your cryptocurrency wallets</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Connected Wallets</CardTitle>
+            <CardDescription>
+              Manage your connected wallets. The primary wallet will be used for transactions by default.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {connectedWallets.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">You don't have any wallets connected yet.</p>
+                <Button
+                  onClick={() => setShowAddWalletDialog(true)}
+                  className="bg-teal-900 hover:bg-teal-800 text-white"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Connect a Wallet
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {connectedWallets.map((wallet) => (
+                  <div
+                    key={wallet.address}
+                    className={`p-4 rounded-lg border ${wallet.isPrimary ? "border-teal-200 bg-teal-50" : "border-gray-200"}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 relative flex items-center justify-center">
+                          {wallet.provider === "metamask" ? (
+                            <Image src="/stylized-fox-profile.png" alt="MetaMask" width={40} height={40} />
+                          ) : (
+                            <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 1024 1024"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  clipRule="evenodd"
+                                  d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
+                                  fill="white"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">
+                              {wallet.provider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
+                            </p>
+                            {wallet.isPrimary && (
+                              <span className="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">Primary</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500 font-mono">{formatAddress(wallet.address)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-gray-600"
+                          onClick={() => window.open(`https://etherscan.io/address/${wallet.address}`, "_blank")}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" /> View
+                        </Button>
+                        {!wallet.isPrimary && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-teal-700 border-teal-200 hover:bg-teal-50"
+                            onClick={() => handleSetPrimary(wallet.address)}
+                          >
+                            <Check className="h-4 w-4 mr-1" /> Set Primary
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => handleRemoveWallet(wallet.address)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => setShowAddWalletDialog(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
+              <Plus className="mr-2 h-4 w-4" /> Connect Another Wallet
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>About Wallet Management</CardTitle>
+            <CardDescription>Understanding how wallets work with CryptoEscrow</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h3 className="font-medium mb-2">Primary Wallet</h3>
+              <p className="text-sm text-gray-600">
+                Your primary wallet is used by default for all transactions. You can change your primary wallet at any
+                time.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Multiple Wallets</h3>
+              <p className="text-sm text-gray-600">
+                You can connect multiple wallets from different providers. This allows you to use different wallets for
+                different transactions.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Wallet Security</h3>
+              <p className="text-sm text-gray-600">
+                CryptoEscrow never stores your private keys. All transactions are signed directly through your wallet
+                provider.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Add Wallet Dialog */}
+      <Dialog open={showAddWalletDialog} onOpenChange={setShowAddWalletDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connect a Wallet</DialogTitle>
+            <DialogDescription>Choose a wallet provider to connect to your account.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-4 py-4">
+            <Button
+              onClick={() => handleAddWallet("metamask")}
+              disabled={isConnecting}
+              className="flex items-center justify-center gap-3 h-16 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+            >
+              <div className="h-8 w-8 relative">
+                <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="font-semibold">MetaMask</span>
+                <span className="text-xs text-neutral-500">Connect to your MetaMask wallet</span>
+              </div>
+            </Button>
+
+            <Button
+              onClick={() => handleAddWallet("coinbase")}
+              disabled={isConnecting}
+              className="flex items-center justify-center gap-3 h-16 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+            >
+              <div className="h-8 w-8 relative flex items-center justify-center bg-blue-600 rounded-full">
+                <svg width="20" height="20" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
+                    fill="white"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="font-semibold">Coinbase Wallet</span>
+                <span className="text-xs text-neutral-500">Connect to your Coinbase wallet</span>
+              </div>
+            </Button>
+          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddWalletDialog(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

@@ -18,10 +18,11 @@ import { useWallet } from "@/context/wallet-context"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function WalletPage() {
   const { getAssets, getActivities } = useDatabaseStore()
-  const { address, isConnected, balance, connectWallet, isConnecting, error } = useWallet()
+  const { address, isConnected, balance, connectWallet, isConnecting, error, walletProvider } = useWallet()
   const { addToast } = useToast()
   const [assets, setAssets] = useState(getAssets())
   const [activities, setActivities] = useState(
@@ -31,6 +32,7 @@ export default function WalletPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [copiedAddress, setCopiedAddress] = useState(false)
   const [activeTab, setActiveTab] = useState("assets")
+  const [checkingIpfs, setCheckingIpfs] = useState(false)
 
   // Simulate loading
   useEffect(() => {
@@ -81,13 +83,21 @@ export default function WalletPage() {
     }
   }
 
-  // Handle connect wallet
-  const handleConnectWallet = async () => {
+  // Handle view on explorer
+  const handleViewOnExplorer = () => {
+    if (address) {
+      window.open(`https://etherscan.io/address/${address}`, "_blank")
+    }
+  }
+
+  // Add this function to handle wallet connection with provider parameter
+  const handleConnectWallet = async (provider: "metamask" | "coinbase") => {
     try {
-      await connectWallet()
+      setCheckingIpfs(true) // Reuse the existing loading state
+      await connectWallet(provider)
       addToast({
-        title: "Wallet Connected",
-        description: "Your MetaMask wallet has been connected successfully.",
+        title: `${provider === "metamask" ? "MetaMask" : "Coinbase Wallet"} Connected`,
+        description: "Your wallet has been connected successfully.",
       })
     } catch (err) {
       addToast({
@@ -95,13 +105,15 @@ export default function WalletPage() {
         description: error || "Failed to connect wallet. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setCheckingIpfs(false)
     }
   }
 
   // Calculate total balance
   const totalBalance = assets.reduce((sum, asset) => sum + asset.value, 0)
 
-  // If not connected, show MetaMask connection UI
+  // If not connected, show wallet connection UI
   if (!isConnected) {
     return (
       <div className="p-6 space-y-8">
@@ -109,55 +121,64 @@ export default function WalletPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-teal-900 font-display">Connect Your Wallet</h1>
-              <p className="text-neutral-600">Connect your MetaMask wallet to manage your cryptocurrency</p>
+              <p className="text-neutral-600">Connect your wallet to manage your cryptocurrency</p>
             </div>
           </div>
         </div>
 
         <Card className="shadow-md border-0 max-w-2xl mx-auto">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">Connect to MetaMask</CardTitle>
-            <CardDescription>Connect your MetaMask wallet to view your balance and transaction history</CardDescription>
+            <CardTitle className="text-2xl">Choose a Wallet Provider</CardTitle>
+            <CardDescription>Connect your wallet to view your balance and transaction history</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6 flex flex-col items-center">
-            <div className="mb-8 w-24 h-24 relative">
-              <Image src="/stylized-fox-profile.png" alt="MetaMask Logo" width={96} height={96} />
+          <CardContent className="pt-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Button
+                onClick={() => handleConnectWallet("metamask")}
+                disabled={isConnecting}
+                className="flex flex-col items-center justify-center gap-3 h-32 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+              >
+                <div className="h-12 w-12 relative">
+                  <Image src="/stylized-fox-profile.png" alt="MetaMask" width={48} height={48} />
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="font-semibold">MetaMask</span>
+                  <span className="text-xs text-neutral-500">Popular Ethereum Wallet</span>
+                </div>
+              </Button>
+
+              <Button
+                onClick={() => handleConnectWallet("coinbase")}
+                disabled={isConnecting}
+                className="flex flex-col items-center justify-center gap-3 h-32 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200"
+              >
+                <div className="h-12 w-12 relative flex items-center justify-center bg-blue-600 rounded-full">
+                  <svg width="28" height="28" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
+                      fill="white"
+                    />
+                  </svg>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="font-semibold">Coinbase Wallet</span>
+                  <span className="text-xs text-neutral-500">Coinbase's Crypto Wallet</span>
+                </div>
+              </Button>
             </div>
 
             {error && (
-              <Alert variant="destructive" className="mb-6 max-w-md">
+              <Alert variant="destructive" className="mt-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Connection Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
-            <div className="space-y-4 w-full max-w-md">
-              <p className="text-center text-neutral-600">
-                MetaMask is a browser extension that allows you to securely manage your Ethereum and other
-                cryptocurrency accounts.
-              </p>
-
-              <Button
-                onClick={handleConnectWallet}
-                disabled={isConnecting}
-                className="w-full bg-teal-900 hover:bg-teal-800 text-white"
-                size="lg"
-              >
-                {isConnecting ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Connecting...
-                  </>
-                ) : (
-                  <>
-                    <WalletIcon className="mr-2 h-5 w-5" /> Connect to MetaMask
-                  </>
-                )}
-              </Button>
-
-              <p className="text-xs text-center text-neutral-500">
-                By connecting your wallet, you agree to our Terms of Service and Privacy Policy.
-              </p>
+            <div className="text-center text-sm text-neutral-500 mt-4">
+              <p>By connecting your wallet, you agree to our Terms of Service and Privacy Policy.</p>
             </div>
           </CardContent>
         </Card>
@@ -363,8 +384,36 @@ export default function WalletPage() {
             {/* Wallet Address Card */}
             <Card className="shadow-md border-0">
               <div className="p-6 border-b">
-                <h2 className="text-xl font-semibold text-teal-900 font-display">Wallet Address</h2>
-                <p className="text-sm text-neutral-500">Your MetaMask wallet address</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-teal-900 font-display">Wallet Address</h2>
+                    <p className="text-sm text-neutral-500">
+                      Your {walletProvider === "metamask" ? "MetaMask" : "Coinbase"} wallet address
+                    </p>
+                  </div>
+                  <div className="h-8 w-8 relative">
+                    {walletProvider === "metamask" ? (
+                      <Image src="/stylized-fox-profile.png" alt="MetaMask" width={32} height={32} />
+                    ) : (
+                      <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 1024 1024"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                            d="M512 1024C794.769 1024 1024 794.769 1024 512C1024 229.23 794.769 0 512 0C229.23 0 0 229.23 0 512C0 794.769 229.23 1024 512 1024ZM518.04 295.13C398.943 295.13 302.042 391.965 302.042 511.995C302.042 632.025 398.943 728.86 518.04 728.86C637.138 728.86 734.039 632.025 734.039 511.995C734.039 391.965 637.138 295.13 518.04 295.13Z"
+                            fill="white"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center bg-neutral-50 p-3 rounded-lg">
@@ -380,12 +429,28 @@ export default function WalletPage() {
                 </div>
                 {copiedAddress && <p className="text-sm text-green-600 text-center">Address copied to clipboard!</p>}
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 border-teal-200"
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" /> View on Explorer
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="flex-1 text-teal-700 hover:bg-teal-50 hover:text-teal-800 border-teal-200"
+                          onClick={handleViewOnExplorer}
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" /> View on Explorer
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="space-y-2 p-2 max-w-xs">
+                          <p className="font-medium">View on Blockchain Explorer</p>
+                          <p className="text-xs text-neutral-500">
+                            This button opens Etherscan, a blockchain explorer that allows you to view your wallet's
+                            transaction history, balance, and other details on the Ethereum blockchain.
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button
                     variant="primary"
                     className="flex-1 btn-primary"

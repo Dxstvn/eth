@@ -9,10 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, ArrowRight, Building2, CheckCircle, Coins, FileText, Info } from "lucide-react"
 import Link from "next/link"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 export default function NewTransactionPage() {
   const [step, setStep] = useState(1)
+  const [transactionType, setTransactionType] = useState("purchase")
 
   const nextStep = () => {
     setStep(step + 1)
@@ -113,16 +113,30 @@ export default function NewTransactionPage() {
 
               <div className="space-y-2">
                 <Label>Transaction Type</Label>
-                <RadioGroup defaultValue="purchase">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="purchase" id="purchase" />
-                    <Label htmlFor="purchase">Purchase</Label>
+                <div className="space-y-2 mt-1">
+                  <div
+                    className={`flex items-center space-x-2 p-2 rounded-md border cursor-pointer ${
+                      transactionType === "purchase" ? "bg-teal-50 border-teal-600" : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => setTransactionType("purchase")}
+                  >
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full border border-primary">
+                      {transactionType === "purchase" && <div className="h-2 w-2 rounded-full bg-primary"></div>}
+                    </div>
+                    <Label className="cursor-pointer">Purchase</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="sale" id="sale" />
-                    <Label htmlFor="sale">Sale</Label>
+                  <div
+                    className={`flex items-center space-x-2 p-2 rounded-md border cursor-pointer ${
+                      transactionType === "sale" ? "bg-teal-50 border-teal-600" : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => setTransactionType("sale")}
+                  >
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full border border-primary">
+                      {transactionType === "sale" && <div className="h-2 w-2 rounded-full bg-primary"></div>}
+                    </div>
+                    <Label className="cursor-pointer">Sale</Label>
                   </div>
-                </RadioGroup>
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">

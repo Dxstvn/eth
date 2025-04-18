@@ -54,7 +54,7 @@ export default function SmartContractOptions({ onChange, initialOptions }: Smart
             <div className="flex items-center gap-2">
               <CheckSquare className="h-5 w-5 text-teal-600" />
               <Label htmlFor="title-verification" className="font-medium text-teal-900">
-                Title Verification Required
+                Title Deeds Submission Required
               </Label>
               <TooltipProvider>
                 <Tooltip>
@@ -62,7 +62,7 @@ export default function SmartContractOptions({ onChange, initialOptions }: Smart
                     <Info className="h-4 w-4 text-teal-600" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    Requires verification that the property title is clear and there are no liens or encumbrances before
+                    Requires submission of property title deeds to verify there are no liens or encumbrances before
                     funds can be released from escrow
                   </TooltipContent>
                 </Tooltip>

@@ -27,9 +27,10 @@ interface WalletState {
   chainId: number | null
   balance: string | null
   error: string | null
+  walletProvider: "metamask" | "coinbase" | null
 
   // Methods
-  connect: () => Promise<void>
+  connect: (provider: "metamask" | "coinbase") => Promise<void>
   disconnect: () => void
   switchChain: (chainId: number) => Promise<void>
   addToken: (address: string, symbol: string, decimals: number, image?: string) => Promise<void>
@@ -43,8 +44,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   chainId: null,
   balance: null,
   error: null,
+  walletProvider: null,
 
-  connect: async () => {
+  connect: async (provider: "metamask" | "coinbase") => {
     try {
       set({ isConnecting: true, error: null })
 
@@ -62,6 +64,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         address,
         chainId: 1, // Ethereum Mainnet
         balance,
+        walletProvider: provider,
       })
 
       // Store in localStorage to persist across refreshes
@@ -69,10 +72,11 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       localStorage.setItem("walletAddress", address)
       localStorage.setItem("walletChainId", "1")
       localStorage.setItem("walletBalance", balance)
+      localStorage.setItem("walletProvider", provider)
     } catch (error) {
       set({
         isConnecting: false,
-        error: (error as Error).message || "Failed to connect wallet",
+        error: (error as Error).message || `Failed to connect ${provider} wallet`,
       })
     }
   },
@@ -83,6 +87,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       address: null,
       chainId: null,
       balance: null,
+      walletProvider: null,
     })
 
     // Clear localStorage
@@ -90,6 +95,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     localStorage.removeItem("walletAddress")
     localStorage.removeItem("walletChainId")
     localStorage.removeItem("walletBalance")
+    localStorage.removeItem("walletProvider")
   },
 
   switchChain: async (chainId: number) => {
@@ -152,6 +158,7 @@ if (typeof window !== "undefined") {
   const address = localStorage.getItem("walletAddress")
   const chainId = localStorage.getItem("walletChainId")
   const balance = localStorage.getItem("walletBalance")
+  const walletProvider = localStorage.getItem("walletProvider") as "metamask" | "coinbase" | null
 
   if (isConnected && address) {
     useWalletStore.setState({
@@ -159,6 +166,7 @@ if (typeof window !== "undefined") {
       address,
       chainId: chainId ? Number.parseInt(chainId) : 1,
       balance,
+      walletProvider,
     })
   }
 }

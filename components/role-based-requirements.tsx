@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Info, FileText, CheckSquare, Scale, Clock, Zap, DollarSign, AlertCircle } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Info, FileText, CheckSquare, Scale, Clock, Zap, DollarSign, Shield } from "lucide-react"
 import { useState, useEffect } from "react"
+// Import the CompactInfo component
+import { CompactInfo } from "@/components/compact-info"
 
 export interface ContractRequirements {
   // Seller requirements
@@ -16,7 +17,7 @@ export interface ContractRequirements {
   appraisalService: boolean
 
   // Buyer requirements
-  fundingRequired: boolean
+  fundingRequired: boolean // This is always true, but we keep it for data structure consistency
 
   // Common requirements
   escrowPeriod: number
@@ -45,7 +46,7 @@ export default function RoleBasedRequirements({
       inspectionReport: true,
       appraisalService: false,
 
-      // Buyer requirements
+      // Buyer requirements - always true
       fundingRequired: true,
 
       // Common requirements
@@ -57,40 +58,70 @@ export default function RoleBasedRequirements({
 
   useEffect(() => {
     if (initialOptions) {
-      setOptions(initialOptions)
+      // Ensure fundingRequired is always true regardless of what's passed in
+      setOptions({
+        ...initialOptions,
+        fundingRequired: true,
+      })
     }
   }, [initialOptions])
 
   const handleChange = (key: keyof ContractRequirements, value: boolean | number) => {
+    // Don't allow changing fundingRequired - it's always true
+    if (key === "fundingRequired") return
+
     const newOptions = { ...options, [key]: value }
     setOptions(newOptions)
     onChange(newOptions)
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Role-specific explanation */}
-      <Alert className="bg-teal-50 border-teal-200 text-teal-800">
-        <Info className="h-4 w-4" />
-        <AlertTitle>{isBuyer ? "Requirements for the Seller" : "Requirements for the Buyer"}</AlertTitle>
-        <AlertDescription>
-          {isBuyer
-            ? "These are the requirements the seller must fulfill before funds will be released from escrow."
-            : "The buyer must fulfill these requirements before the transaction can proceed."}
-        </AlertDescription>
-      </Alert>
+  // For sellers, just show that the buyer must provide funds
+  if (isSeller) {
+    return (
+      <div className="space-y-6">
+        <CompactInfo title="Buyer's Responsibility" variant="info" defaultOpen={true}>
+          The buyer will be required to deposit funds into the escrow contract. These funds will be held securely until
+          all conditions are met.
+        </CompactInfo>
 
-      <Card className="border-teal-100">
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            {/* Buyer's view - Requirements for the seller */}
-            {isBuyer && (
-              <>
+        <Card className="border-teal-100">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-teal-600" />
+                  <Label className="font-medium text-teal-900">Buyer Must Provide Funds</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-teal-600" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        The buyer will be required to deposit the agreed amount into the escrow contract
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Switch checked={true} disabled className="data-[state=checked]:bg-teal-600" />
+              </div>
+
+              <CompactInfo title="Your Requirements as Seller" variant="warning" icon={<Shield className="h-4 w-4" />}>
+                As the seller, you'll need to provide the following documentation to fulfill the escrow requirements:
+                <ul className="list-disc list-inside mt-2">
+                  {options.titleVerification && <li>Title Deeds Submission</li>}
+                  {options.inspectionReport && <li>Inspection Report</li>}
+                  {options.appraisalService && <li>Property Appraisal</li>}
+                </ul>
+              </CompactInfo>
+
+              <div className="pt-4 border-t border-neutral-200">
+                <h3 className="font-medium text-teal-900 mb-4">Common Requirements</h3>
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckSquare className="h-5 w-5 text-teal-600" />
-                    <Label htmlFor="title-verification" className="font-medium text-teal-900">
-                      Title Verification Required
+                    <Zap className="h-5 w-5 text-teal-600" />
+                    <Label htmlFor="automatic-release" className="font-medium text-teal-900">
+                      Automatic Release When Verified
                     </Label>
                     <TooltipProvider>
                       <Tooltip>
@@ -98,108 +129,24 @@ export default function RoleBasedRequirements({
                           <Info className="h-4 w-4 text-teal-600" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          Requires the seller to provide proof that the property title is clear and there are no liens
-                          or encumbrances
+                          Automatically releases funds from escrow when all required conditions are verified
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
                   <Switch
-                    id="title-verification"
-                    checked={options.titleVerification}
-                    onCheckedChange={(checked) => handleChange("titleVerification", checked)}
+                    id="automatic-release"
+                    checked={options.automaticRelease}
+                    onCheckedChange={(checked) => handleChange("automaticRelease", checked)}
                     className="data-[state=checked]:bg-teal-600"
                   />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-teal-600" />
-                    <Label htmlFor="inspection-report" className="font-medium text-teal-900">
-                      Inspection Report Required
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-teal-600" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          Requires the seller to provide a professional inspection report before funds can be released
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Switch
-                    id="inspection-report"
-                    checked={options.inspectionReport}
-                    onCheckedChange={(checked) => handleChange("inspectionReport", checked)}
-                    className="data-[state=checked]:bg-teal-600"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-teal-600" />
-                    <Label htmlFor="appraisal-service" className="font-medium text-teal-900">
-                      Appraisal Required
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-teal-600" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          Requires the seller to provide a professional property appraisal before funds can be released
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Switch
-                    id="appraisal-service"
-                    checked={options.appraisalService}
-                    onCheckedChange={(checked) => handleChange("appraisalService", checked)}
-                    className="data-[state=checked]:bg-teal-600"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Seller's view - Requirements for the buyer */}
-            {isSeller && (
-              <>
-                <Alert className="bg-amber-50 border-amber-200 text-amber-800">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Buyer Requirements</AlertTitle>
-                  <AlertDescription>
-                    The buyer will be required to deposit funds into the escrow contract. You will need to provide the
-                    following documentation:
-                  </AlertDescription>
-                </Alert>
-
-                <div className="pl-4 border-l-2 border-teal-200 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="h-5 w-5 text-teal-600" />
-                    <span className="text-teal-900">Title Verification Documents</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-teal-600" />
-                    <span className="text-teal-900">Property Inspection Report</span>
-                  </div>
-
-                  {options.appraisalService && (
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-teal-600" />
-                      <span className="text-teal-900">Property Appraisal</span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-teal-600" />
-                    <Label htmlFor="funding-required" className="font-medium text-teal-900">
-                      Buyer Funding Required
+                    <Scale className="h-5 w-5 text-teal-600" />
+                    <Label htmlFor="dispute-resolution" className="font-medium text-teal-900">
+                      Dispute Resolution Mechanism
                     </Label>
                     <TooltipProvider>
                       <Tooltip>
@@ -207,25 +154,24 @@ export default function RoleBasedRequirements({
                           <Info className="h-4 w-4 text-teal-600" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          The buyer must deposit the agreed amount into the escrow contract
+                          Includes a dispute resolution mechanism in the smart contract to handle disagreements
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
                   <Switch
-                    id="funding-required"
-                    checked={options.fundingRequired}
-                    onCheckedChange={(checked) => handleChange("fundingRequired", checked)}
+                    id="dispute-resolution"
+                    checked={options.disputeResolution}
+                    onCheckedChange={(checked) => handleChange("disputeResolution", checked)}
                     className="data-[state=checked]:bg-teal-600"
-                    disabled={true}
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-teal-600" />
-                    <Label htmlFor="appraisal-service" className="font-medium text-teal-900">
-                      Include Appraisal Requirement
+                    <Clock className="h-5 w-5 text-teal-600" />
+                    <Label htmlFor="escrow-period" className="font-medium text-teal-900">
+                      Maximum Escrow Period (days)
                     </Label>
                     <TooltipProvider>
                       <Tooltip>
@@ -233,20 +179,128 @@ export default function RoleBasedRequirements({
                           <Info className="h-4 w-4 text-teal-600" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          You will need to provide a professional property appraisal
+                          Maximum time period for the escrow before automatic refund if conditions are not met
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <Switch
-                    id="appraisal-service"
-                    checked={options.appraisalService}
-                    onCheckedChange={(checked) => handleChange("appraisalService", checked)}
-                    className="data-[state=checked]:bg-teal-600"
+                  <Input
+                    id="escrow-period"
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={options.escrowPeriod}
+                    onChange={(e) => handleChange("escrowPeriod", Number.parseInt(e.target.value) || 30)}
+                    className="w-20 text-right"
                   />
                 </div>
-              </>
-            )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // For buyers, show the full documentation requirements UI
+  return (
+    <div className="space-y-6">
+      <CompactInfo title="Requirements for the Seller (Set by You as Buyer)" variant="info">
+        As the buyer, you're setting these requirements that the seller must fulfill before funds will be released from
+        escrow.
+      </CompactInfo>
+
+      {/* Buyer's funding requirement notice */}
+      <CompactInfo title="Your Responsibility as Buyer" variant="warning" icon={<DollarSign className="h-4 w-4" />}>
+        As the buyer, you will be required to deposit funds into the escrow contract. These funds will be held securely
+        until all conditions are met.
+      </CompactInfo>
+
+      <Card className="border-teal-100">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {/* Seller's documentation requirements - configurable by buyer */}
+            <div className="mb-4">
+              <h3 className="font-medium text-teal-900 mb-2">Documentation Required from Seller</h3>
+              <p className="text-sm text-neutral-600 mb-4">
+                Select which documents the seller must provide before funds will be released from escrow.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="h-5 w-5 text-teal-600" />
+                <Label htmlFor="title-verification" className="font-medium text-teal-900">
+                  Title Deeds Submission
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-teal-600" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      Requires the seller to submit property title deeds to verify there are no liens or encumbrances
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Switch
+                id="title-verification"
+                checked={options.titleVerification}
+                onCheckedChange={(checked) => handleChange("titleVerification", checked)}
+                className="data-[state=checked]:bg-teal-600"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-teal-600" />
+                <Label htmlFor="inspection-report" className="font-medium text-teal-900">
+                  Inspection Report
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-teal-600" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      Requires the seller to provide a professional inspection report before funds can be released
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Switch
+                id="inspection-report"
+                checked={options.inspectionReport}
+                onCheckedChange={(checked) => handleChange("inspectionReport", checked)}
+                className="data-[state=checked]:bg-teal-600"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-teal-600" />
+                <Label htmlFor="appraisal-service" className="font-medium text-teal-900">
+                  Property Appraisal
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-teal-600" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      Requires the seller to provide a professional property appraisal before funds can be released
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Switch
+                id="appraisal-service"
+                checked={options.appraisalService}
+                onCheckedChange={(checked) => handleChange("appraisalService", checked)}
+                className="data-[state=checked]:bg-teal-600"
+              />
+            </div>
 
             {/* Common requirements for both roles */}
             <div className="pt-4 border-t border-neutral-200">

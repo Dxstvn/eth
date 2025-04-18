@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, FileText, Search, SlidersHorizontal, Upload, AlertCircle, Database } from "lucide-react"
+import { Download, FileText, Search, SlidersHorizontal, Upload, AlertCircle, Database, Building2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -41,6 +41,7 @@ export default function DocumentsPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [ipfsAvailable, setIpfsAvailable] = useState<boolean | null>(null)
   const [checkingIpfs, setCheckingIpfs] = useState(false)
+  const [expandedDeals, setExpandedDeals] = useState<Record<string, boolean>>({})
 
   // Check IPFS availability on mount
   useEffect(() => {
@@ -73,6 +74,14 @@ export default function DocumentsPage() {
   useEffect(() => {
     setDocuments(getDocuments())
     setTransactions(getTransactions())
+
+    // Initialize all deals as expanded
+    const deals = getTransactions()
+    const initialExpandedState: Record<string, boolean> = {}
+    deals.forEach((deal) => {
+      initialExpandedState[deal.id] = true
+    })
+    setExpandedDeals(initialExpandedState)
   }, [getDocuments, getTransactions])
 
   const handleUploadComplete = (
@@ -180,6 +189,14 @@ export default function DocumentsPage() {
     }
   }
 
+  // Toggle deal expansion
+  const toggleDealExpansion = (dealId: string) => {
+    setExpandedDeals((prev) => ({
+      ...prev,
+      [dealId]: !prev[dealId],
+    }))
+  }
+
   // Filter and sort documents
   const filteredDocuments = documents
     .filter((doc) => {
@@ -203,6 +220,25 @@ export default function DocumentsPage() {
           return 0
       }
     })
+
+  // Group documents by deal
+  const documentsByDeal: Record<string, any[]> = {}
+  filteredDocuments.forEach((doc) => {
+    if (!documentsByDeal[doc.dealId]) {
+      documentsByDeal[doc.dealId] = []
+    }
+    documentsByDeal[doc.dealId].push(doc)
+  })
+
+  // Get deal information
+  const getDealInfo = (dealId: string) => {
+    return (
+      transactions.find((t) => t.id === dealId) || {
+        propertyAddress: "Unknown Property",
+        status: "unknown",
+      }
+    )
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -390,53 +426,97 @@ export default function DocumentsPage() {
             </div>
           ))}
         </div>
-      ) : filteredDocuments.length > 0 ? (
-        <div className="space-y-4">
-          {filteredDocuments.map((document) => (
-            <div
-              key={document.id}
-              className="bg-white border border-gray-100 rounded-lg p-5 shadow-soft hover:shadow-md transition-all duration-300"
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="bg-gray-100 p-2 rounded-md">
-                    <FileText className="h-6 w-6 text-brand-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1 text-brand-900">{document.name}</h3>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
-                      <span>
-                        {document.type || "DOC"} • {document.size || "Unknown size"}
-                      </span>
-                      <span>Added on {new Date(document.uploadedAt).toLocaleDateString()}</span>
-                      <span>Transaction: {document.dealId}</span>
+      ) : Object.keys(documentsByDeal).length > 0 ? (
+        <div className="space-y-8">
+          {Object.entries(documentsByDeal).map(([dealId, docs]) => {
+            const deal = getDealInfo(dealId)
+            const isExpanded = expandedDeals[dealId] || false
+
+            return (
+              <Card key={dealId} className="border border-gray-100 shadow-sm overflow-hidden">
+                <CardHeader
+                  className="bg-gray-50 border-b border-gray-100 p-4 cursor-pointer"
+                  onClick={() => toggleDealExpansion(dealId)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="h-5 w-5 text-teal-700" />
+                      <div>
+                        <CardTitle className="text-lg">{deal.propertyAddress}</CardTitle>
+                        <p className="text-sm text-gray-500">Transaction ID: {dealId}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        className={
+                          deal.status === "completed"
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        }
+                      >
+                        {deal.status === "completed" ? "Completed" : "In Progress"}
+                      </Badge>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <span className={`transform transition-transform ${isExpanded ? "rotate-180" : ""}`}>▼</span>
+                      </Button>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge
-                    className={
-                      document.status === "signed"
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
-                    }
-                  >
-                    {document.status === "signed" ? "Signed" : "Pending"}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="whitespace-nowrap text-brand-700 hover:bg-brand-50 hover:text-brand-800 border-brand-200"
-                    onClick={() => handleDownload(document)}
-                    disabled={downloadingId === document.cid || ipfsAvailable === false}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {downloadingId === document.cid ? "Downloading..." : "Download"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
+                </CardHeader>
+
+                {isExpanded && (
+                  <CardContent className="p-0 divide-y divide-gray-100">
+                    {docs.length > 0 ? (
+                      docs.map((document) => (
+                        <div key={document.id} className="p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex items-start gap-4">
+                              <div className="bg-gray-100 p-2 rounded-md">
+                                <FileText className="h-6 w-6 text-brand-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-medium mb-1 text-brand-900">{document.name}</h3>
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
+                                  <span>
+                                    {document.type || "DOC"} • {document.size || "Unknown size"}
+                                  </span>
+                                  <span>Added on {new Date(document.uploadedAt).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Badge
+                                className={
+                                  document.status === "signed"
+                                    ? "bg-green-50 text-green-700 border-green-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }
+                              >
+                                {document.status === "signed" ? "Signed" : "Pending"}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="whitespace-nowrap text-brand-700 hover:bg-brand-50 hover:text-brand-800 border-brand-200"
+                                onClick={() => handleDownload(document)}
+                                disabled={downloadingId === document.cid || ipfsAvailable === false}
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                {downloadingId === document.cid ? "Downloading..." : "Download"}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center">
+                        <p className="text-gray-500">No documents found for this transaction.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                )}
+              </Card>
+            )
+          })}
         </div>
       ) : (
         <div className="text-center py-12 bg-neutral-50 rounded-lg">

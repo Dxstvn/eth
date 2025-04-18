@@ -9,6 +9,7 @@ import { useMobile } from "@/hooks/use-mobile"
 export default function Navbar() {
   const isMobile = useMobile()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isLogin, setIsLogin] = useState(true) // Added isLogin state
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -55,7 +56,13 @@ export default function Navbar() {
                     </Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/signup" onClick={toggleMenu}>
+                    <Link
+                      href="/login"
+                      onClick={() => {
+                        toggleMenu()
+                        setIsLogin(false)
+                      }}
+                    >
                       Sign Up
                     </Link>
                   </Button>

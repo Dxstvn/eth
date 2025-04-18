@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -5,8 +7,12 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
+import { Wallet } from "lucide-react"
+import { useWallet } from "@/context/wallet-context"
 
 export default function SettingsPage() {
+  const { isConnected, walletProvider } = useWallet()
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
@@ -228,41 +234,38 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Connected Wallets</h3>
                 <div className="space-y-2">
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-semibold">
-                          E
+                  {isConnected ? (
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold">
+                            {walletProvider === "metamask" ? "M" : "C"}
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {walletProvider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
+                            </p>
+                            <p className="text-xs text-gray-500">Connected • Primary</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">Ethereum Wallet</p>
-                          <p className="text-xs text-gray-500">0x1a2b...3c4d • Primary</p>
-                        </div>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/settings/wallets">Manage</Link>
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm">
-                        Manage
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 p-6 rounded-md text-center">
+                      <p className="text-gray-500 mb-4">No wallets connected yet</p>
+                      <Button asChild className="bg-teal-900 hover:bg-teal-800 text-white">
+                        <Link href="/settings/wallets">Connect Wallet</Link>
                       </Button>
                     </div>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-800 font-semibold">
-                          B
-                        </div>
-                        <div>
-                          <p className="font-medium">Bitcoin Wallet</p>
-                          <p className="text-xs text-gray-500">bc1q...xyz</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-                <Button variant="outline">
-                  <span className="mr-2">+</span> Connect New Wallet
+                <Button asChild variant="outline">
+                  <Link href="/settings/wallets" className="flex items-center">
+                    <Wallet className="mr-2 h-4 w-4" /> Manage Wallets
+                  </Link>
                 </Button>
               </div>
 

@@ -2,14 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useWalletStore, formatAddress } from "@/lib/mock-wallet"
 import { Loader2, AlertTriangle, LockKeyhole, Shield } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
@@ -173,10 +166,10 @@ export default function TransactionConfirmationModal({
           )}
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+        <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
           {status === "idle" && (
             <>
-              <Button variant="outline" onClick={handleClose} className="sm:mr-2">
+              <Button variant="outline" onClick={handleClose} className="mt-3 sm:mt-0">
                 Cancel
               </Button>
               <Button onClick={handleConfirm} className="bg-teal-900 hover:bg-teal-800 text-white">
@@ -196,7 +189,7 @@ export default function TransactionConfirmationModal({
               Close
             </Button>
           )}
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/auth-context"
+import Link from "next/link"
 
 export default function Home() {
   const [email, setEmail] = useState("")
@@ -42,10 +43,10 @@ export default function Home() {
 
       <div className="w-full max-w-6xl mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center relative z-10">
         {/* Admin lock button at top */}
-        <button
-          onClick={handleGoogleSignIn}
+        <Link
+          href="/login"
           className="mb-12 bg-white p-4 rounded-full hover:bg-neutral-50 transition-colors shadow-md flex items-center justify-center"
-          aria-label="Admin Sign In"
+          aria-label="Sign In"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -62,7 +63,7 @@ export default function Home() {
             <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-        </button>
+        </Link>
 
         {/* Logo */}
         <div className="mb-8">
