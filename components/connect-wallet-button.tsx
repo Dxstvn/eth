@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
+import { useAuth } from "@/context/auth-context"
 
 interface ConnectWalletButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "primary"
@@ -29,6 +30,7 @@ export default function ConnectWalletButton({
   className = "",
 }: ConnectWalletButtonProps) {
   const { isConnected, isConnecting, address, balance, walletProvider, connectWallet, disconnectWallet } = useWallet()
+  const { isDemoAccount } = useAuth()
   const { addToast } = useToast()
   const [copied, setCopied] = useState(false)
   const [showWalletOptions, setShowWalletOptions] = useState(false)

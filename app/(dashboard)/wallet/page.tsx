@@ -8,11 +8,13 @@ import { useWallet } from "@/context/wallet-context"
 import { useToast } from "@/components/ui/use-toast"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
+import { useAuth } from "@/context/auth-context"
 
 export default function WalletPage() {
   const { getAssets, getActivities } = useDatabaseStore()
   const { address, isConnected, balance, connectWallet, isConnecting, error, walletProvider, connectedWallets } =
     useWallet()
+  const { isDemoAccount } = useAuth()
   const { addToast } = useToast()
   const [assets, setAssets] = useState(getAssets())
   const [activities, setActivities] = useState(
@@ -49,7 +51,7 @@ export default function WalletPage() {
 
       return {
         ...asset,
-        price: `$${newPrice.toFixed(2)}`,
+        price: `${newPrice.toFixed(2)}`,
         value: newValue,
         change: newChange,
         trend: changePercent > 0 ? "up" : changePercent < 0 ? "down" : "neutral",

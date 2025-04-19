@@ -1,18 +1,53 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { useWallet } from "@/context/wallet-context"
 import { useOnboarding } from "@/context/onboarding-context"
+import { useAuth } from "@/context/auth-context"
 import Link from "next/link"
 
 export default function SettingsPage() {
   const { isConnected, walletProvider } = useWallet()
   const { setShowOnboarding } = useOnboarding()
+  const { user, isDemoAccount } = useAuth()
   const [activeTab, setActiveTab] = useState("profile")
+
+  // Extract user information from Google account
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [initials, setInitials] = useState("")
+
+  useEffect(() => {
+    if (user && !isDemoAccount) {
+      // Parse name from Google account
+      const displayName = user.displayName || ""
+      const nameParts = displayName.split(" ")
+
+      if (nameParts.length > 0) {
+        setFirstName(nameParts[0])
+        setInitials(nameParts[0].charAt(0))
+
+        if (nameParts.length > 1) {
+          setLastName(nameParts.slice(1).join(" "))
+          setInitials((prev) => prev + nameParts[nameParts.length - 1].charAt(0))
+        }
+      }
+
+      // Set email from Google account
+      setEmail(user.email || "")
+    } else if (isDemoAccount) {
+      // Demo account data
+      setFirstName("John")
+      setLastName("Doe")
+      setEmail("john.doe@example.com")
+      setInitials("JD")
+    }
+  }, [user, isDemoAccount])
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -27,7 +62,7 @@ export default function SettingsPage() {
 
                   <div className="flex items-center mb-6">
                     <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold text-xl mr-4">
-                      JD
+                      {initials}
                     </div>
                     <Button variant="outline" className="border-teal-200 text-teal-700 hover:bg-teal-50">
                       Change Avatar
@@ -39,13 +74,13 @@ export default function SettingsPage() {
                       <label htmlFor="first-name" className="block text-sm font-medium">
                         First Name
                       </label>
-                      <Input id="first-name" defaultValue="John" />
+                      <Input id="first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="last-name" className="block text-sm font-medium">
                         Last Name
                       </label>
-                      <Input id="last-name" defaultValue="Doe" />
+                      <Input id="last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                     </div>
                   </div>
 
@@ -54,13 +89,24 @@ export default function SettingsPage() {
                       <label htmlFor="email" className="block text-sm font-medium">
                         Email
                       </label>
-                      <Input id="email" type="email" defaultValue="john.doe@example.com" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        readOnly={!isDemoAccount} // Make email read-only for non-demo accounts
+                        className={!isDemoAccount ? "bg-gray-50" : ""}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="phone" className="block text-sm font-medium">
                         Phone Number
                       </label>
-                      <Input id="phone" type="tel" defaultValue="+1 (555) 123-4567" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder={isDemoAccount ? "+1 (555) 123-4567" : "Add your phone number"}
+                      />
                     </div>
                   </div>
 
@@ -68,7 +114,10 @@ export default function SettingsPage() {
                     <label htmlFor="company" className="block text-sm font-medium">
                       Company
                     </label>
-                    <Input id="company" defaultValue="Blockchain Properties LLC" />
+                    <Input
+                      id="company"
+                      placeholder={isDemoAccount ? "Blockchain Properties LLC" : "Add your company name"}
+                    />
                   </div>
 
                   <div className="flex justify-end">
@@ -247,20 +296,26 @@ export default function SettingsPage() {
                   <div className="space-y-6 mb-8">
                     <h3 className="text-lg font-medium">Connected Wallets</h3>
 
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-semibold mr-3">
-                          C
+                    {isDemoAccount ? (
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 flex items-center justify-center mr-3">
+                            <CoinbaseIcon className="h-10 w-10" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Coinbase Wallet</p>
+                            <p className="text-xs text-neutral-500">Connected • Primary</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">Coinbase Wallet</p>
-                          <p className="text-xs text-neutral-500">Connected • Primary</p>
-                        </div>
+                        <Button variant="outline" size="sm">
+                          Manage
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    </div>
+                    ) : (
+                      <div className="text-center py-6 border border-dashed rounded-lg">
+                        <p className="text-neutral-500 mb-4">You don't have any wallets connected yet.</p>
+                      </div>
+                    )}
 
                     <div>
                       <Button variant="outline" className="flex items-center" asChild>
@@ -485,3 +540,6 @@ export default function SettingsPage() {
     </div>
   )
 }
+
+// Import the CoinbaseIcon component
+import { CoinbaseIcon } from "@/components/icons/coinbase-icon"

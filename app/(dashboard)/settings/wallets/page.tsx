@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
+import { useAuth } from "@/context/auth-context"
 
 interface ConnectedWallet {
   provider: "metamask" | "coinbase"
@@ -22,6 +23,7 @@ interface ConnectedWallet {
 
 export default function WalletsSettingsPage() {
   const { isConnected, address, walletProvider, connectWallet, disconnectWallet, setPrimaryWallet } = useWallet()
+  const { isDemoAccount } = useAuth()
   const { addToast } = useToast()
   const [connectedWallets, setConnectedWallets] = useState<ConnectedWallet[]>([])
   const [showAddWalletDialog, setShowAddWalletDialog] = useState(false)
@@ -30,13 +32,38 @@ export default function WalletsSettingsPage() {
 
   // Initialize connected wallets
   useEffect(() => {
-    // Load from localStorage if available
+    // For demo account, show a demo wallet
+    if (isDemoAccount) {
+      setConnectedWallets([
+        {
+          provider: "coinbase",
+          address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+          isPrimary: true,
+        },
+      ])
+      return
+    }
+
+    // For non-demo accounts, load from localStorage if available
     const savedWallets = localStorage.getItem("connectedWallets")
     if (savedWallets) {
       try {
-        setConnectedWallets(JSON.parse(savedWallets))
+        // Get the wallets from localStorage
+        const allWallets = JSON.parse(savedWallets)
+
+        // Get the current user email to use as a key
+        const userEmail = localStorage.getItem("current-user-email")
+
+        // If we have wallets for this user, use them
+        if (userEmail && allWallets[userEmail]) {
+          setConnectedWallets(allWallets[userEmail])
+        } else {
+          // Otherwise start with an empty array
+          setConnectedWallets([])
+        }
       } catch (err) {
         console.error("Error parsing saved wallets:", err)
+        setConnectedWallets([])
       }
     }
 
@@ -61,14 +88,35 @@ export default function WalletsSettingsPage() {
         ]
       })
     }
-  }, [isConnected, address, walletProvider]) // Remove connectedWallets from dependencies
+  }, [isConnected, address, walletProvider, isDemoAccount]) // Remove connectedWallets from dependencies
 
   // Save wallets to localStorage when they change
   useEffect(() => {
-    if (connectedWallets.length > 0) {
-      localStorage.setItem("connectedWallets", JSON.stringify(connectedWallets))
+    if (!isDemoAccount && connectedWallets.length >= 0) {
+      try {
+        // Get the current user email to use as a key
+        const userEmail = localStorage.getItem("current-user-email")
+
+        if (userEmail) {
+          // Get all wallets from localStorage
+          const savedWallets = localStorage.getItem("connectedWallets")
+          let allWallets = {}
+
+          if (savedWallets) {
+            allWallets = JSON.parse(savedWallets)
+          }
+
+          // Update the wallets for this user
+          allWallets[userEmail] = connectedWallets
+
+          // Save back to localStorage
+          localStorage.setItem("connectedWallets", JSON.stringify(allWallets))
+        }
+      } catch (err) {
+        console.error("Error saving wallets:", err)
+      }
     }
-  }, [connectedWallets])
+  }, [connectedWallets, isDemoAccount])
 
   const handleAddWallet = async (provider: "metamask" | "coinbase") => {
     try {
