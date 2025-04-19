@@ -11,9 +11,8 @@ import { useWallet } from "@/context/wallet-context"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-// Add imports at the top of the file
 import { MetamaskFox } from "@/components/icons/metamask-fox"
-import { CoinbaseLogo } from "@/components/icons/coinbase-logo"
+import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 
 interface ConnectedWallet {
   provider: "metamask" | "coinbase"
@@ -31,33 +30,38 @@ export default function WalletsSettingsPage() {
 
   // Initialize connected wallets
   useEffect(() => {
-    if (isConnected && address && walletProvider) {
-      // Check if this wallet is already in our list
-      if (!connectedWallets.some((wallet) => wallet.address === address)) {
-        // Only set as primary if there are no other wallets
-        const isPrimary = connectedWallets.length === 0
+    // Load from localStorage if available
+    const savedWallets = localStorage.getItem("connectedWallets")
+    if (savedWallets) {
+      try {
+        setConnectedWallets(JSON.parse(savedWallets))
+      } catch (err) {
+        console.error("Error parsing saved wallets:", err)
+      }
+    }
 
-        setConnectedWallets((prev) => [
+    // Add current wallet if connected and not already in the list
+    if (isConnected && address && walletProvider) {
+      setConnectedWallets((prev) => {
+        // Check if this wallet is already in our list
+        if (prev.some((wallet) => wallet.address === address)) {
+          return prev // Return unchanged if already exists
+        }
+
+        // Only set as primary if there are no other wallets
+        const isPrimary = prev.length === 0
+
+        return [
           ...prev,
           {
             provider: walletProvider,
             address,
             isPrimary,
           },
-        ])
-      }
-    } else {
-      // Load from localStorage if available
-      const savedWallets = localStorage.getItem("connectedWallets")
-      if (savedWallets) {
-        try {
-          setConnectedWallets(JSON.parse(savedWallets))
-        } catch (err) {
-          console.error("Error parsing saved wallets:", err)
-        }
-      }
+        ]
+      })
     }
-  }, [isConnected, address, walletProvider, connectedWallets])
+  }, [isConnected, address, walletProvider]) // Remove connectedWallets from dependencies
 
   // Save wallets to localStorage when they change
   useEffect(() => {
@@ -181,7 +185,7 @@ export default function WalletsSettingsPage() {
                             </div>
                           ) : (
                             <div className="h-10 w-10 flex items-center justify-center">
-                              <CoinbaseLogo />
+                              <CoinbaseIcon className="h-10 w-10" />
                             </div>
                           )}
                         </div>
@@ -283,7 +287,9 @@ export default function WalletsSettingsPage() {
               className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
             >
               <div className="h-8 w-8 relative flex items-center justify-center">
-                <MetamaskFox />
+                <div className="relative w-8 h-8">
+                  <MetamaskFox />
+                </div>
               </div>
               <div className="flex flex-col items-start">
                 <span className="font-semibold text-white">MetaMask</span>
@@ -297,7 +303,7 @@ export default function WalletsSettingsPage() {
               className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
             >
               <div className="h-8 w-8 relative flex items-center justify-center">
-                <CoinbaseLogo />
+                <CoinbaseIcon className="h-8 w-8" />
               </div>
               <div className="flex flex-col items-start">
                 <span className="font-semibold text-white">Coinbase Wallet</span>

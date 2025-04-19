@@ -64,12 +64,15 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
 
   const statusInfo = getStatusInfo(transaction.status)
 
+  // Extract currency from amount (e.g., "2.5 ETH" -> "ETH")
+  const currency = transaction.amount.split(" ").length > 1 ? transaction.amount.split(" ")[1] : ""
+
   return (
     <div className="glass-card p-5 rounded-xl hover:shadow-md transition-all duration-300">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h3 className="font-medium text-brand-900">{transaction.propertyAddress}</h3>
+            <h3 className="font-medium text-brand-900 font-display">{transaction.propertyAddress}</h3>
             <Badge className={`${statusInfo.color} border`}>
               <div className="flex items-center">
                 {statusInfo.icon} {statusInfo.label}
@@ -87,7 +90,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              <span>{transaction.date}</span>
+              <span>{new Date(transaction.date).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -96,12 +99,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
             <p className="text-sm text-neutral-500">Amount</p>
             <p className="font-medium text-brand-900">{transaction.amount}</p>
           </div>
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="whitespace-nowrap hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200"
-          >
+          <Button asChild variant="secondary" size="sm" className="whitespace-nowrap">
             <Link href={`/transactions/${transaction.id}`} className="flex items-center">
               View Details <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

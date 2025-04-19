@@ -17,6 +17,7 @@ export interface Transaction {
   timeline?: TimelineEvent[]
 }
 
+// Update the Document interface to include reviewStatus
 export interface Document {
   id: string
   name: string
@@ -28,6 +29,10 @@ export interface Document {
   type: string
   status: "signed" | "pending"
   dealId: string
+  fileKey?: string
+  reviewStatus?: "pending" | "approved" | "declined"
+  reviewedBy?: string
+  reviewedAt?: string
 }
 
 export interface TimelineEvent {
@@ -351,8 +356,13 @@ interface DatabaseState {
   // Asset methods
   getAssets: () => CryptoAsset[]
   updateAsset: (id: string, updates: Partial<CryptoAsset>) => CryptoAsset | undefined
+
+  // Add methods for approving and declining documents
+  approveDocument: (id: string, reviewerId: string) => Document | undefined
+  declineDocument: (id: string, reviewerId: string) => Document | undefined
 }
 
+// Update the useDatabaseStore to handle different user types
 export const useDatabaseStore = create<DatabaseState>()(
   persist(
     (set, get) => ({
@@ -364,8 +374,26 @@ export const useDatabaseStore = create<DatabaseState>()(
       assets: initialAssets,
 
       // Transaction methods
-      getTransactions: () => get().transactions,
+      getTransactions: () => {
+        // This is a workaround since we can't directly use hooks in zustand
+        // We'll check if we're in a browser environment and try to get the current user
+        let isDemoAccount = false
+        try {
+          if (typeof window !== "undefined") {
+            // Try to get the current user email from localStorage
+            const userEmail = localStorage.getItem("current-user-email")
+            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+          }
+        } catch (e) {
+          console.error("Error checking user type:", e)
+        }
+
+        // Return demo data for demo account, empty array for others
+        return isDemoAccount ? get().transactions : []
+      },
+
       getTransactionById: (id) => get().transactions.find((t) => t.id === id),
+
       addTransaction: (transaction) => {
         const newTransaction = {
           ...transaction,
@@ -400,7 +428,21 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
       // Document methods
-      getDocuments: () => get().documents,
+      getDocuments: () => {
+        // Similar approach for documents
+        let isDemoAccount = false
+        try {
+          if (typeof window !== "undefined") {
+            const userEmail = localStorage.getItem("current-user-email")
+            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+          }
+        } catch (e) {
+          console.error("Error checking user type:", e)
+        }
+
+        return isDemoAccount ? get().documents : []
+      },
+
       getDocumentsByDealId: (dealId) => get().documents.filter((d) => d.dealId === dealId),
       addDocument: (document) => {
         const newDocument = {
@@ -436,7 +478,20 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
       // Contact methods
-      getContacts: () => get().contacts,
+      getContacts: () => {
+        // Similar approach for contacts
+        let isDemoAccount = false
+        try {
+          if (typeof window !== "undefined") {
+            const userEmail = localStorage.getItem("current-user-email")
+            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+          }
+        } catch (e) {
+          console.error("Error checking user type:", e)
+        }
+
+        return isDemoAccount ? get().contacts : []
+      },
       getContactById: (id) => get().contacts.find((c) => c.id === id),
       addContact: (contact) => {
         const newContact = {
@@ -472,7 +527,20 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
       // Activity methods
-      getActivities: () => get().activities,
+      getActivities: () => {
+        // Similar approach for activities
+        let isDemoAccount = false
+        try {
+          if (typeof window !== "undefined") {
+            const userEmail = localStorage.getItem("current-user-email")
+            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+          }
+        } catch (e) {
+          console.error("Error checking user type:", e)
+        }
+
+        return isDemoAccount ? get().activities : []
+      },
       addActivity: (activity) => {
         const newActivity = {
           ...activity,
@@ -483,7 +551,20 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
       // Deadline methods
-      getDeadlines: () => get().deadlines,
+      getDeadlines: () => {
+        // Similar approach for deadlines
+        let isDemoAccount = false
+        try {
+          if (typeof window !== "undefined") {
+            const userEmail = localStorage.getItem("current-user-email")
+            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+          }
+        } catch (e) {
+          console.error("Error checking user type:", e)
+        }
+
+        return isDemoAccount ? get().deadlines : []
+      },
       addDeadline: (deadline) => {
         const newDeadline = {
           ...deadline,
@@ -494,7 +575,20 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
       // Asset methods
-      getAssets: () => get().assets,
+      getAssets: () => {
+        // Similar approach for assets
+        let isDemoAccount = false
+        try {
+          if (typeof window !== "undefined") {
+            const userEmail = localStorage.getItem("current-user-email")
+            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+          }
+        } catch (e) {
+          console.error("Error checking user type:", e)
+        }
+
+        return isDemoAccount ? get().assets : []
+      },
       updateAsset: (id, updates) => {
         let updatedAsset: CryptoAsset | undefined
 
@@ -511,6 +605,54 @@ export const useDatabaseStore = create<DatabaseState>()(
         })
 
         return updatedAsset
+      },
+
+      // Add methods for approving and declining documents
+      approveDocument: (id: string, reviewerId: string) => {
+        let updatedDocument: Document | undefined
+
+        set((state) => {
+          const documents = state.documents.map((d) => {
+            if (d.id === id) {
+              updatedDocument = {
+                ...d,
+                status: "signed" as const,
+                reviewStatus: "approved" as const,
+                reviewedBy: reviewerId,
+                reviewedAt: new Date().toISOString(),
+              }
+              return updatedDocument
+            }
+            return d
+          })
+
+          return { documents }
+        })
+
+        return updatedDocument
+      },
+
+      declineDocument: (id: string, reviewerId: string) => {
+        let updatedDocument: Document | undefined
+
+        set((state) => {
+          const documents = state.documents.map((d) => {
+            if (d.id === id) {
+              updatedDocument = {
+                ...d,
+                reviewStatus: "declined" as const,
+                reviewedBy: reviewerId,
+                reviewedAt: new Date().toISOString(),
+              }
+              return updatedDocument
+            }
+            return d
+          })
+
+          return { documents }
+        })
+
+        return updatedDocument
       },
     }),
     {

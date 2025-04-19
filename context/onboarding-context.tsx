@@ -28,6 +28,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       // For jasmindustin@gmail.com, always show onboarding
       if (user.email === "jasmindustin@gmail.com") {
         setShowOnboarding(true)
+        setHasCompletedOnboarding(false) // Always set to false for demo account
         return
       }
 

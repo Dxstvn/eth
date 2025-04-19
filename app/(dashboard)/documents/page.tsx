@@ -5,7 +5,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, FileText, Search, SlidersHorizontal, Upload, AlertCircle, Database, Building2 } from "lucide-react"
+import {
+  Download,
+  FileText,
+  Search,
+  SlidersHorizontal,
+  Upload,
+  AlertCircle,
+  Database,
+  Building2,
+  Eye,
+  CheckCircle,
+  XCircle,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -24,6 +36,7 @@ import { downloadFromIPFS, isIPFSNodeAvailable } from "@/lib/ipfs-client"
 import { decryptFile } from "@/lib/crypto-utils"
 import FileUpload from "@/components/file-upload"
 import IPFSStatus from "@/components/ipfs-status"
+import DocumentPreviewModal from "@/components/document-preview-modal"
 
 export default function DocumentsPage() {
   const { user } = useAuth()
@@ -42,6 +55,8 @@ export default function DocumentsPage() {
   const [ipfsAvailable, setIpfsAvailable] = useState<boolean | null>(null)
   const [checkingIpfs, setCheckingIpfs] = useState(false)
   const [expandedDeals, setExpandedDeals] = useState<Record<string, boolean>>({})
+  const [selectedDocument, setSelectedDocument] = useState<any>(null)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
 
   // Check IPFS availability on mount
   useEffect(() => {
@@ -195,6 +210,45 @@ export default function DocumentsPage() {
       ...prev,
       [dealId]: !prev[dealId],
     }))
+  }
+
+  const handlePreviewDocument = (document: any) => {
+    setSelectedDocument(document)
+    setShowPreviewModal(true)
+  }
+
+  const handleApproveDocument = async (documentId: string) => {
+    if (!user) {
+      setError("User not authenticated")
+      return
+    }
+
+    try {
+      await useDatabaseStore.getState().approveDocument(documentId, user.uid)
+      setDocuments(getDocuments())
+      return Promise.resolve()
+    } catch (err) {
+      console.error("Error approving document:", err)
+      setError(`Failed to approve document: ${err instanceof Error ? err.message : String(err)}`)
+      return Promise.reject(err)
+    }
+  }
+
+  const handleDeclineDocument = async (documentId: string) => {
+    if (!user) {
+      setError("User not authenticated")
+      return
+    }
+
+    try {
+      await useDatabaseStore.getState().declineDocument(documentId, user.uid)
+      setDocuments(getDocuments())
+      return Promise.resolve()
+    } catch (err) {
+      console.error("Error declining document:", err)
+      setError(`Failed to decline document: ${err instanceof Error ? err.message : String(err)}`)
+      return Promise.reject(err)
+    }
   }
 
   // Filter and sort documents
@@ -480,6 +534,16 @@ export default function DocumentsPage() {
                                     {document.type || "DOC"} • {document.size || "Unknown size"}
                                   </span>
                                   <span>Added on {new Date(document.uploadedAt).toLocaleDateString()}</span>
+                                  {document.reviewStatus === "approved" && (
+                                    <span className="flex items-center text-green-600">
+                                      <CheckCircle className="h-3.5 w-3.5 mr-1" /> Approved
+                                    </span>
+                                  )}
+                                  {document.reviewStatus === "declined" && (
+                                    <span className="flex items-center text-red-600">
+                                      <XCircle className="h-3.5 w-3.5 mr-1" /> Declined
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -493,6 +557,15 @@ export default function DocumentsPage() {
                               >
                                 {document.status === "signed" ? "Signed" : "Pending"}
                               </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="whitespace-nowrap text-brand-700 hover:bg-brand-50 hover:text-brand-800 border-brand-200"
+                                onClick={() => handlePreviewDocument(document)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                Preview
+                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -528,6 +601,15 @@ export default function DocumentsPage() {
               : "Upload your first document to get started"}
           </p>
         </div>
+      )}
+      {selectedDocument && (
+        <DocumentPreviewModal
+          open={showPreviewModal}
+          onOpenChange={setShowPreviewModal}
+          document={selectedDocument}
+          onApprove={handleApproveDocument}
+          onDecline={handleDeclineDocument}
+        />
       )}
     </div>
   )

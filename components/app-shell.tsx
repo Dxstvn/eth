@@ -6,6 +6,7 @@ import Sidebar from "@/components/sidebar"
 import { useAuth } from "@/context/auth-context"
 import LoadingScreen from "@/components/loading-screen"
 import { useEffect } from "react"
+import UserEmailTracker from "@/components/user-email-tracker"
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -38,6 +39,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isLandingPage) {
     return (
       <div className="flex flex-col min-h-screen">
+        <UserEmailTracker />
         <main className="flex-1">{children}</main>
       </div>
     )
@@ -45,6 +47,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
+      <UserEmailTracker />
       <Sidebar />
       <div className="flex flex-col flex-1 w-0 overflow-hidden">
         <main className="relative flex-1 overflow-y-auto focus:outline-none">{children}</main>

@@ -19,14 +19,27 @@ export default function TransactionsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortOrder, setSortOrder] = useState("newest")
 
-  // Simulate loading
+  // Simulate loading and fetch transactions
   useEffect(() => {
     const timer = setTimeout(() => {
+      // Refresh transactions from the store to ensure we have the latest data
+      setTransactions(getTransactions())
       setLoading(false)
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [getTransactions])
+
+  // Refresh transactions when the component is focused
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refresh transactions from the store when the window regains focus
+      setTransactions(getTransactions())
+    }
+
+    window.addEventListener("focus", handleFocus)
+    return () => window.removeEventListener("focus", handleFocus)
+  }, [getTransactions])
 
   // Filter and sort transactions
   const filteredTransactions = transactions
@@ -47,9 +60,14 @@ export default function TransactionsPage() {
         case "oldest":
           return getTime(a.date) - getTime(b.date)
         case "amount_high":
-          return Number.parseFloat(b.amount) - Number.parseFloat(a.amount)
+          // Extract numeric value from amount string (e.g., "2.5 ETH" -> 2.5)
+          const aAmount = Number.parseFloat(a.amount.split(" ")[0]) || 0
+          const bAmount = Number.parseFloat(b.amount.split(" ")[0]) || 0
+          return bAmount - aAmount
         case "amount_low":
-          return Number.parseFloat(a.amount) - Number.parseFloat(b.amount)
+          const aAmt = Number.parseFloat(a.amount.split(" ")[0]) || 0
+          const bAmt = Number.parseFloat(b.amount.split(" ")[0]) || 0
+          return aAmt - bAmt
         default:
           return 0
       }

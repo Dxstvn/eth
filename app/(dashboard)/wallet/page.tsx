@@ -7,7 +7,7 @@ import { useDatabaseStore } from "@/lib/mock-database"
 import { useWallet } from "@/context/wallet-context"
 import { useToast } from "@/components/ui/use-toast"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
-import { CoinbaseLogo } from "@/components/icons/coinbase-logo"
+import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 
 export default function WalletPage() {
   const { getAssets, getActivities } = useDatabaseStore()
@@ -137,7 +137,7 @@ export default function WalletPage() {
                       </div>
                     ) : (
                       <div className="h-10 w-10 flex items-center justify-center">
-                        <CoinbaseLogo />
+                        <CoinbaseIcon className="h-10 w-10" />
                       </div>
                     )}
                   </div>
@@ -206,6 +206,7 @@ export default function WalletPage() {
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
+              {/* Update the connected wallet display */}
               <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center text-teal-800">
                 {walletProvider === "metamask" ? (
                   <div className="relative w-12 h-12">
@@ -213,7 +214,7 @@ export default function WalletPage() {
                   </div>
                 ) : (
                   <div className="h-10 w-10 flex items-center justify-center">
-                    <CoinbaseLogo />
+                    <CoinbaseIcon className="h-10 w-10" />
                   </div>
                 )}
               </div>

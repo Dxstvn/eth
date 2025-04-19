@@ -12,6 +12,7 @@ type AuthContextType = {
   user: User | null
   loading: boolean
   isAdmin: boolean
+  isDemoAccount: boolean // Add this new property
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isDemoAccount, setIsDemoAccount] = useState(false) // Add this new state
 
   useEffect(() => {
     // Set up auth state listener
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const email = authUser.email || ""
         const isAllowed = ALLOWED_EMAILS.includes(email)
         setIsAdmin(isAllowed)
+        setIsDemoAccount(email === "jasmindustin@gmail.com") // Set demo account flag
 
         if (isAllowed) {
           // If user is allowed and they're on the home page, redirect to dashboard
@@ -60,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setIsAdmin(false)
+        setIsDemoAccount(false) // Reset demo account flag
       }
     })
 
@@ -96,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, isDemoAccount, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )

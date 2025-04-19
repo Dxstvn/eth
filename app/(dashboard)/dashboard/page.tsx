@@ -12,6 +12,7 @@ import { useDatabaseStore } from "@/lib/mock-database"
 import { useState, useEffect } from "react"
 import { Building, BarChart, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuth } from "@/context/auth-context"
 
 export default function DashboardPage() {
   const { getTransactions } = useDatabaseStore()
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [transactionsTab, setTransactionsTab] = useState("active")
+  const { isDemoAccount } = useAuth() // Get the demo account status
 
   useEffect(() => {
     // Simulate loading
@@ -123,8 +125,9 @@ export default function DashboardPage() {
                                   No active transactions
                                 </h3>
                                 <p className="text-neutral-500 max-w-md mb-6">
-                                  You don't have any active real estate transactions. Start a new transaction to begin
-                                  the escrow process.
+                                  {isDemoAccount
+                                    ? "You don't have any active real estate transactions. Start a new transaction to begin the escrow process."
+                                    : "Welcome to CryptoEscrow! Start your first transaction to begin the escrow process."}
                                 </p>
                                 <Button asChild className="bg-teal-900 hover:text-gold-300 text-white">
                                   <Link href="/transactions/new" className="flex items-center">
@@ -153,7 +156,9 @@ export default function DashboardPage() {
                                   No completed transactions
                                 </h3>
                                 <p className="text-neutral-500 max-w-md mb-6">
-                                  You don't have any completed real estate transactions yet.
+                                  {isDemoAccount
+                                    ? "You don't have any completed real estate transactions yet."
+                                    : "Your completed transactions will appear here once you've finished your first escrow process."}
                                 </p>
                               </div>
                             )}
@@ -177,7 +182,9 @@ export default function DashboardPage() {
                                   No transactions found
                                 </h3>
                                 <p className="text-neutral-500 max-w-md mb-6">
-                                  Start your first transaction to begin the escrow process.
+                                  {isDemoAccount
+                                    ? "Start your first transaction to begin the escrow process."
+                                    : "Welcome to CryptoEscrow! Create your first transaction to get started."}
                                 </p>
                                 <Button asChild className="bg-teal-900 hover:text-gold-300 text-white">
                                   <Link href="/transactions/new" className="flex items-center">

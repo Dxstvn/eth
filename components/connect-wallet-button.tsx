@@ -15,7 +15,7 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
-import { CoinbaseLogo } from "@/components/icons/coinbase-logo"
+import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 
 interface ConnectWalletButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "primary"
@@ -139,11 +139,13 @@ export default function ConnectWalletButton({
                 className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
               >
                 <div className="h-8 w-8 relative flex items-center justify-center">
-                  <MetamaskFox />
+                  <div className="relative w-8 h-8">
+                    <MetamaskFox />
+                  </div>
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="font-semibold text-white">MetaMask</span>
-                  <span className="text-xs text-white opacity-80">Popular Ethereum Wallet</span>
+                  <span className="text-xs text-white opacity-80">Connect to your MetaMask wallet</span>
                 </div>
               </Button>
 
@@ -153,11 +155,11 @@ export default function ConnectWalletButton({
                 className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
               >
                 <div className="h-8 w-8 relative flex items-center justify-center">
-                  <CoinbaseLogo />
+                  <CoinbaseIcon className="h-8 w-8" />
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="font-semibold text-white">Coinbase Wallet</span>
-                  <span className="text-xs text-white opacity-80">Coinbase's Crypto Wallet</span>
+                  <span className="text-xs text-white opacity-80">Connect to your Coinbase wallet</span>
                 </div>
               </Button>
             </div>
@@ -178,7 +180,7 @@ export default function ConnectWalletButton({
               </div>
             ) : (
               <div className="h-5 w-5 flex items-center justify-center">
-                <CoinbaseLogo />
+                <CoinbaseIcon className="h-5 w-5" />
               </div>
             )}
           </div>

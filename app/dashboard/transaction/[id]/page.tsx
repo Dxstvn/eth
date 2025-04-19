@@ -14,6 +14,7 @@ import {
   MessageSquare,
   UserCheck,
   DollarSign,
+  XCircle,
 } from "lucide-react"
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
@@ -35,9 +36,9 @@ export default function TransactionDetailsPage({ params }: { params: { id: strin
     description: "3 bedroom, 2 bathroom single-family home with modern amenities and a spacious backyard.",
     escrowAddress: "0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t",
     documents: [
-      { name: "Purchase Agreement", date: "2023-04-15", status: "signed" },
-      { name: "Property Inspection Report", date: "2023-04-18", status: "pending" },
-      { name: "Title Transfer Documents", date: "2023-04-20", status: "pending" },
+      { name: "Purchase Agreement", date: "2023-04-15", status: "signed", reviewStatus: "approved" },
+      { name: "Property Inspection Report", date: "2023-04-18", status: "pending", reviewStatus: "pending" },
+      { name: "Title Transfer Documents", date: "2023-04-20", status: "pending", reviewStatus: "declined" },
     ],
     timeline: [
       { date: "2023-04-15", event: "Transaction created", status: "completed" },
@@ -182,13 +183,23 @@ export default function TransactionDetailsPage({ params }: { params: { id: strin
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {transaction.documents.map((doc, index) => (
+                    {transaction.documents?.map((doc, index) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-md">
                         <div className="flex items-center">
                           <FileText className="h-5 w-5 text-muted-foreground mr-3" />
                           <div>
                             <p className="font-medium">{doc.name}</p>
                             <p className="text-sm text-muted-foreground">{new Date(doc.date).toLocaleDateString()}</p>
+                            {doc.reviewStatus === "approved" && (
+                              <p className="text-xs text-green-600 flex items-center">
+                                <CheckCircle className="h-3 w-3 mr-1" /> Approved
+                              </p>
+                            )}
+                            {doc.reviewStatus === "declined" && (
+                              <p className="text-xs text-red-600 flex items-center">
+                                <XCircle className="h-3 w-3 mr-1" /> Declined
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center">

@@ -17,6 +17,9 @@ import TransactionConfirmationModal from "@/components/transaction-confirmation-
 import TransactionSuccess from "@/components/transaction-success"
 import RoleBasedRequirements, { type ContractRequirements } from "@/components/role-based-requirements"
 import { CompactInfo } from "@/components/compact-info"
+import { useDatabaseStore } from "@/lib/mock-database"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
 
 // Mock contacts data
 const mockContacts = [
@@ -41,12 +44,17 @@ const mockContacts = [
 ]
 
 export default function NewTransactionPage() {
-  const { isConnected, connectWallet, isConnecting, error } = useWallet()
+  const { isConnected, connectWallet, isConnecting, error: walletError } = useWallet()
+  const { user } = useAuth()
   const { addToast } = useToast()
+  const { addTransaction } = useDatabaseStore()
+  const router = useRouter()
+
   const [step, setStep] = useState(1)
   const [confirmationOpen, setConfirmationOpen] = useState(false)
   const [transactionCreated, setTransactionCreated] = useState(false)
   const [transactionId, setTransactionId] = useState("")
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
   // Form state
   const [propertyAddress, setPropertyAddress] = useState("")
@@ -100,34 +108,47 @@ export default function NewTransactionPage() {
     }
   }
 
-  const nextStep = () => {
-    // Validate current step
-    if (step === 1) {
-      if (!propertyAddress) {
-        addToast({
-          title: "Missing Information",
-          description: "Please enter the property address",
-        })
-        return
-      }
+  const validateStep = (stepNumber: number): boolean => {
+    const errors: Record<string, string> = {}
 
+    if (stepNumber === 1) {
+      if (!propertyAddress.trim()) {
+        errors.propertyAddress = "Property address is required"
+      }
+      if (!propertyType) {
+        errors.propertyType = "Property type is required"
+      }
+      if (!propertyId.trim()) {
+        errors.propertyId = "Property ID is required"
+      }
       if (!selectedContact) {
-        addToast({
-          title: "Missing Information",
-          description: "Please select a contact to transact with",
-        })
-        return
+        errors.selectedContact = "Please select a contact"
       }
     }
 
-    if (step === 2) {
-      if (!amount) {
-        addToast({
-          title: "Missing Information",
-          description: "Please enter the amount",
-        })
-        return
+    if (stepNumber === 2) {
+      if (!currency) {
+        errors.currency = "Currency is required"
       }
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        errors.amount = "Please enter a valid amount"
+      }
+    }
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const nextStep = () => {
+    // Validate current step
+    if (!validateStep(step)) {
+      // Show validation errors
+      addToast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      })
+      return
     }
 
     setStep(step + 1)
@@ -142,19 +163,38 @@ export default function NewTransactionPage() {
   }
 
   const handleTransactionSuccess = (txHash: string) => {
-    // Generate a transaction ID
-    const newTransactionId = `TX${Math.floor(Math.random() * 1000000)
-      .toString()
-      .padStart(6, "0")}`
-    setTransactionId(newTransactionId)
+    // Create a new transaction in the database
+    const newTransaction = {
+      propertyAddress,
+      amount: `${amount} ${currency.toUpperCase()}`,
+      status: transactionType === "purchase" ? "awaiting_funds" : ("verification" as any),
+      counterparty: counterpartyName,
+      date: new Date().toISOString().split("T")[0],
+      progress: 20,
+      description: propertyDescription,
+      participants: user ? [user.uid] : [],
+      escrowAddress: txHash,
+    }
 
+    // Add the transaction to the database
+    const transaction = addTransaction(newTransaction)
+
+    // Set the transaction ID
+    setTransactionId(transaction.id)
+
+    // Show success message
     addToast({
-      title: "Funds Placed in Escrow",
-      description: `Your funds are now securely held in escrow. Transaction ID: ${newTransactionId}`,
+      title: "Transaction Created",
+      description: `Your transaction has been created successfully. Transaction ID: ${transaction.id}`,
     })
 
     // Show success screen
     setTransactionCreated(true)
+
+    // After a delay, redirect to the transactions page
+    setTimeout(() => {
+      router.push("/transactions")
+    }, 5000)
   }
 
   // If transaction is created, show success screen
@@ -267,20 +307,31 @@ export default function NewTransactionPage() {
                     <h3 className="text-lg font-medium mb-4">Property Information</h3>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="property-address">Property Address</Label>
+                        <Label htmlFor="property-address" className="flex items-center">
+                          Property Address <span className="text-red-500 ml-1">*</span>
+                        </Label>
                         <Input
                           id="property-address"
                           placeholder="Enter the full property address"
                           value={propertyAddress}
                           onChange={(e) => setPropertyAddress(e.target.value)}
+                          className={validationErrors.propertyAddress ? "border-red-500" : ""}
                         />
+                        {validationErrors.propertyAddress && (
+                          <p className="text-red-500 text-sm">{validationErrors.propertyAddress}</p>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="property-type">Property Type</Label>
+                          <Label htmlFor="property-type" className="flex items-center">
+                            Property Type <span className="text-red-500 ml-1">*</span>
+                          </Label>
                           <Select value={propertyType} onValueChange={setPropertyType}>
-                            <SelectTrigger id="property-type">
+                            <SelectTrigger
+                              id="property-type"
+                              className={validationErrors.propertyType ? "border-red-500" : ""}
+                            >
                               <SelectValue placeholder="Select property type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -290,15 +341,24 @@ export default function NewTransactionPage() {
                               <SelectItem value="land">Land</SelectItem>
                             </SelectContent>
                           </Select>
+                          {validationErrors.propertyType && (
+                            <p className="text-red-500 text-sm">{validationErrors.propertyType}</p>
+                          )}
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="property-id">Property ID/Reference</Label>
+                          <Label htmlFor="property-id" className="flex items-center">
+                            Property ID/Reference <span className="text-red-500 ml-1">*</span>
+                          </Label>
                           <Input
                             id="property-id"
                             placeholder="Legal property identifier"
                             value={propertyId}
                             onChange={(e) => setPropertyId(e.target.value)}
+                            className={validationErrors.propertyId ? "border-red-500" : ""}
                           />
+                          {validationErrors.propertyId && (
+                            <p className="text-red-500 text-sm">{validationErrors.propertyId}</p>
+                          )}
                         </div>
                       </div>
 
@@ -353,7 +413,10 @@ export default function NewTransactionPage() {
                           Select Contact <span className="text-red-500 ml-1">*</span>
                         </Label>
                         <Select value={selectedContact} onValueChange={handleContactSelect} required>
-                          <SelectTrigger id="contact-select">
+                          <SelectTrigger
+                            id="contact-select"
+                            className={validationErrors.selectedContact ? "border-red-500" : ""}
+                          >
                             <SelectValue placeholder="Select a contact to transact with" />
                           </SelectTrigger>
                           <SelectContent>
@@ -364,6 +427,9 @@ export default function NewTransactionPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        {validationErrors.selectedContact && (
+                          <p className="text-red-500 text-sm">{validationErrors.selectedContact}</p>
+                        )}
                         <p className="text-sm text-muted-foreground mt-1">
                           Don't see your counterparty?{" "}
                           <Link href="/contacts" className="text-teal-600 hover:underline">
@@ -440,9 +506,11 @@ export default function NewTransactionPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="currency">Cryptocurrency</Label>
+                      <Label htmlFor="currency" className="flex items-center">
+                        Cryptocurrency <span className="text-red-500 ml-1">*</span>
+                      </Label>
                       <Select value={currency} onValueChange={setCurrency}>
-                        <SelectTrigger id="currency">
+                        <SelectTrigger id="currency" className={validationErrors.currency ? "border-red-500" : ""}>
                           <SelectValue placeholder="Select cryptocurrency" />
                         </SelectTrigger>
                         <SelectContent>
@@ -452,9 +520,12 @@ export default function NewTransactionPage() {
                           <SelectItem value="usdt">Tether (USDT)</SelectItem>
                         </SelectContent>
                       </Select>
+                      {validationErrors.currency && <p className="text-red-500 text-sm">{validationErrors.currency}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="amount">Amount to Place in Escrow</Label>
+                      <Label htmlFor="amount" className="flex items-center">
+                        Amount to Place in Escrow <span className="text-red-500 ml-1">*</span>
+                      </Label>
                       <Input
                         id="amount"
                         placeholder="Enter amount"
@@ -462,7 +533,9 @@ export default function NewTransactionPage() {
                         step="0.01"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
+                        className={validationErrors.amount ? "border-red-500" : ""}
                       />
+                      {validationErrors.amount && <p className="text-red-500 text-sm">{validationErrors.amount}</p>}
                     </div>
                   </div>
 

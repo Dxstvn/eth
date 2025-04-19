@@ -8,7 +8,7 @@ import WelcomeStep from "./steps/welcome-step"
 import WalletStep from "./steps/wallet-step"
 import TransactionsStep from "./steps/transactions-step"
 import DocumentsStep from "./steps/documents-step"
-import { X } from "lucide-react"
+import { X, ArrowRight, ArrowLeft } from "lucide-react"
 
 export default function OnboardingFlow() {
   const { showOnboarding, setShowOnboarding, setHasCompletedOnboarding, currentStep, setCurrentStep, totalSteps } =
@@ -63,19 +63,29 @@ export default function OnboardingFlow() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8"
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.3 }}
-          className="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl p-8 mx-4"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="relative w-full max-w-3xl bg-white rounded-xl shadow-2xl mx-4 max-h-[90vh] flex flex-col"
         >
+          {/* Decorative elements */}
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-500 via-teal-700 to-gold-500"></div>
+          <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-teal-100 opacity-50"></div>
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-gold-100 opacity-50"></div>
+
           {/* Close button */}
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 text-neutral-500 hover:text-neutral-700"
+            className="absolute top-4 right-4 text-neutral-500 hover:text-neutral-700 z-10"
             onClick={handleComplete}
           >
             <X className="h-5 w-5" />
@@ -83,24 +93,38 @@ export default function OnboardingFlow() {
           </Button>
 
           {/* Progress indicator */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center pt-8 pb-4 relative z-10">
             {Array.from({ length: totalSteps }).map((_, index) => (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full mx-1 ${index === currentStep ? "bg-teal-600" : "bg-neutral-200"}`}
-              />
+              <div key={index} className="relative mx-2">
+                <div
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentStep
+                      ? "bg-teal-600 scale-125"
+                      : index < currentStep
+                        ? "bg-teal-300"
+                        : "bg-neutral-200"
+                  }`}
+                />
+                {index < totalSteps - 1 && (
+                  <div
+                    className={`absolute top-1/2 left-full w-8 h-0.5 -translate-y-1/2 transition-all duration-300 ${
+                      index < currentStep ? "bg-teal-300" : "bg-neutral-200"
+                    }`}
+                  />
+                )}
+              </div>
             ))}
           </div>
 
           {/* Step content */}
-          <div className="mb-8">
+          <div className="px-8 overflow-y-auto flex-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
               >
                 {renderStep()}
               </motion.div>
@@ -108,25 +132,30 @@ export default function OnboardingFlow() {
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex justify-between">
+          <div className="flex justify-between p-6 relative z-10 border-t border-neutral-100 mt-4">
             <div>
               {currentStep > 0 && (
-                <Button variant="outline" onClick={handlePrevious}>
-                  Previous
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  className="border-teal-200 text-teal-700 hover:bg-teal-50"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
               )}
             </div>
             <div className="flex gap-4">
-              <Button variant="ghost" onClick={handleComplete}>
+              <Button variant="ghost" onClick={handleComplete} className="text-neutral-600 hover:text-neutral-800">
                 {currentStep === totalSteps - 1 ? "Skip" : "Skip Tour"}
               </Button>
               <Button className="bg-teal-900 hover:bg-teal-800 text-white" onClick={handleNext}>
                 {currentStep === totalSteps - 1 ? "Get Started" : "Next"}
+                {currentStep !== totalSteps - 1 && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     </AnimatePresence>
   )
 }
