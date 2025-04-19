@@ -9,6 +9,7 @@ import { ToastProvider } from "@/components/ui/toast-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { OnboardingProvider } from "@/context/onboarding-context"
 import OnboardingFlow from "@/components/onboarding/onboarding-flow"
+import { SidebarProvider } from "@/context/sidebar-context"
 
 // Load Montserrat font
 const montserrat = Montserrat({
@@ -43,11 +44,13 @@ export default function RootLayout({
         <AuthProvider>
           <WalletProvider>
             <ToastProvider>
-              <OnboardingProvider>
-                {children}
-                <Toaster />
-                <OnboardingFlow />
-              </OnboardingProvider>
+              <SidebarProvider>
+                <OnboardingProvider>
+                  {children}
+                  <Toaster />
+                  <OnboardingFlow />
+                </OnboardingProvider>
+              </SidebarProvider>
             </ToastProvider>
           </WalletProvider>
         </AuthProvider>
