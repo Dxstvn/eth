@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import {
   ArrowRight,
@@ -15,6 +14,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import type { Transaction } from "@/lib/mock-database"
+import TransactionStageIndicator from "@/components/transaction-stage-indicator"
 
 interface TransactionCardProps {
   transaction: Transaction
@@ -73,11 +73,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <h3 className="font-medium text-brand-900 font-display">{transaction.propertyAddress}</h3>
-            <Badge className={`${statusInfo.color} border`}>
-              <div className="flex items-center">
-                {statusInfo.icon} {statusInfo.label}
-              </div>
-            </Badge>
+            <TransactionStageIndicator stage={transaction.status} />
           </div>
           <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
             <div className="flex items-center gap-1">

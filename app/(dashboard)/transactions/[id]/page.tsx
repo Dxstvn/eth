@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, CheckCircle, Clock, FileText, LockKeyhole, UserCheck, DollarSign } from "lucide-react"
 import Link from "next/link"
@@ -12,6 +11,7 @@ import TransactionParties from "@/components/transaction-parties"
 import { useDatabaseStore } from "@/lib/mock-database"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import TransactionStageIndicator from "@/components/transaction-stage-indicator"
 
 export default function TransactionDetailsPage({ params }: { params: { id: string } }) {
   const { getTransactions } = useDatabaseStore()
@@ -192,12 +192,7 @@ export default function TransactionDetailsPage({ params }: { params: { id: strin
             <p className="text-neutral-600">View and manage transaction {transaction.id}</p>
           </div>
         </div>
-        <Badge className={`${statusInfo.color} text-sm py-1 px-3`}>
-          <div className="flex items-center">
-            {statusInfo.icon}
-            {statusInfo.label}
-          </div>
-        </Badge>
+        <TransactionStageIndicator stage={transaction.status} size="lg" className="self-start" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

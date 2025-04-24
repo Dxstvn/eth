@@ -8,7 +8,7 @@ import WelcomeStep from "./steps/welcome-step"
 import WalletStep from "./steps/wallet-step"
 import TransactionsStep from "./steps/transactions-step"
 import DocumentsStep from "./steps/documents-step"
-import { X, ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 
 export default function OnboardingFlow() {
   const { showOnboarding, setShowOnboarding, setHasCompletedOnboarding, currentStep, setCurrentStep, totalSteps } =
@@ -80,17 +80,6 @@ export default function OnboardingFlow() {
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-500 via-teal-700 to-gold-500"></div>
           <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-teal-100 opacity-50"></div>
           <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-gold-100 opacity-50"></div>
-
-          {/* Close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 text-neutral-500 hover:text-neutral-700 z-10"
-            onClick={handleComplete}
-          >
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close</span>
-          </Button>
 
           {/* Progress indicator */}
           <div className="flex justify-center pt-8 pb-4 relative z-10">
