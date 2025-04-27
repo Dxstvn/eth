@@ -10,6 +10,7 @@ import {
   signOut as firebaseSignOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  firebase
 } from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase-client"
 
