@@ -46,9 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // If user is authenticated, check if it's the demo account
         setIsDemoAccount(authUser.email === "jasmindustin@gmail.com")
 
-        // Check if user is admin (has the specific UID from backend)
-        setIsAdmin(authUser.uid === "qmKQsr8ZKJb6p7HKeLRGzcB1dsA2")
-
         // If user is on the home page, redirect to dashboard
         if (window.location.pathname === "/") {
           setTimeout(() => {
@@ -89,8 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || "Authentication failed")
+        throw new Error(data.error || "Authentication failed")
       }
+
+      // 4. Set admin status based on backend response
+      setIsAdmin(data.isAdmin || false)
 
       // No need to redirect here, the useEffect will handle it
       return data
@@ -118,15 +118,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Authentication failed")
+        throw new Error(data.error || "Authentication failed")
       }
 
       // 3. Sign in with Firebase client
       await signInWithEmailAndPassword(auth, email, password)
 
       // No need to redirect here, the useEffect will handle it
+      return data
     } catch (error: any) {
       console.error("Email Sign-In error:", error)
       throw error
@@ -149,15 +151,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Registration failed")
+        throw new Error(data.error || "Registration failed")
       }
 
       // 3. Sign in with Firebase client
       await createUserWithEmailAndPassword(auth, email, password)
 
       // No need to redirect here, the useEffect will handle it
+      return data
     } catch (error: any) {
       console.error("Email Sign-Up error:", error)
       throw error
