@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signInWithPopup(auth, googleProvider)
 
       // 2. Get the ID token using the specific method provided
-      const idToken = await firebase.auth.currentUser?.getIdToken(true)
+      const idToken = await firebase.auth.currentUser.getIdToken(true)
 
       if (!idToken) {
         throw new Error("Failed to get ID token")
