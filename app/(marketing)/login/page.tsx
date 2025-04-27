@@ -15,7 +15,7 @@ import { useAuth } from "@/context/auth-context"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { signInWithGoogle } = useAuth()
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -29,9 +29,9 @@ export default function LoginPage() {
       setLoading(true)
       setError(null)
       await signInWithGoogle()
-      router.push("/dashboard")
-    } catch (err) {
-      setError("Failed to sign in with Google. Please try again.")
+      // The router.push is handled in the auth context
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in with Google. Please try again.")
       console.error("Google sign-in error:", err)
     } finally {
       setLoading(false)
@@ -57,22 +57,15 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        // Mock login - in a real app, this would call an auth service
-        console.log("Logging in with:", email, password)
-        // Simulate successful login
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 1000)
+        // Sign in with email and password
+        await signInWithEmail(email, password)
       } else {
-        // Mock signup - in a real app, this would call an auth service
-        console.log("Signing up with:", email, password)
-        // Simulate successful signup
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 1000)
+        // Sign up with email and password
+        await signUpWithEmail(email, password)
       }
-    } catch (err) {
-      setError(`Failed to ${isLogin ? "sign in" : "sign up"}. Please try again.`)
+      // The router.push is handled in the auth context
+    } catch (err: any) {
+      setError(err.message || `Failed to ${isLogin ? "sign in" : "sign up"}. Please try again.`)
       console.error("Auth error:", err)
     } finally {
       setLoading(false)
