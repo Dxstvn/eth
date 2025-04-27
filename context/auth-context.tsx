@@ -36,6 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [isDemoAccount, setIsDemoAccount] = useState(false)
 
+  // Helper function for redirection after successful authentication
+  const redirectToDashboard = () => {
+    // Use setTimeout to ensure state updates have been processed
+    setTimeout(() => {
+      router.push("/dashboard")
+    }, 100)
+  }
+
   useEffect(() => {
     // Set up auth state listener
     const unsubscribe = auth.onAuthStateChanged((authUser) => {
@@ -46,11 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // If user is authenticated, check if it's the demo account
         setIsDemoAccount(authUser.email === "jasmindustin@gmail.com")
 
-        // If user is on the home page, redirect to dashboard
-        if (window.location.pathname === "/") {
-          setTimeout(() => {
-            router.push("/dashboard")
-          }, 100)
+        // If user is on the home page or login page, redirect to dashboard
+        if (window.location.pathname === "/" || window.location.pathname === "/login") {
+          redirectToDashboard()
         }
       } else {
         setIsAdmin(false)
@@ -88,6 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 // Set admin status based on backend response
                 setIsAdmin(data.isAdmin || false)
+
+                // Explicitly redirect to dashboard after successful authentication
+                redirectToDashboard()
+
                 resolve()
               })
               .catch((error) => {
@@ -134,7 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 3. Sign in with Firebase client
       await signInWithEmailAndPassword(auth, email, password)
 
-      // No need to redirect here, the useEffect will handle it
+      // 4. Explicitly redirect to dashboard after successful authentication
+      redirectToDashboard()
+
       return data
     } catch (error: any) {
       console.error("Email Sign-In error:", error)
@@ -167,7 +179,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 3. Sign in with Firebase client
       await createUserWithEmailAndPassword(auth, email, password)
 
-      // No need to redirect here, the useEffect will handle it
+      // 4. Explicitly redirect to dashboard after successful authentication
+      redirectToDashboard()
+
       return data
     } catch (error: any) {
       console.error("Email Sign-Up error:", error)
