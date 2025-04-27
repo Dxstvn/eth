@@ -2,6 +2,8 @@ import Link from "next/link"
 import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear()
+
   return (
     <footer className="bg-gradient-to-b from-white to-brand-50 border-t">
       <div className="container px-4 md:px-6 py-12">
@@ -133,7 +135,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm text-neutral-600">© {new Date().getFullYear()} CryptoEscrow. All rights reserved.</p>
+          <p className="text-sm text-neutral-600">© {currentYear} CryptoEscrow. All rights reserved.</p>
           <p className="text-sm text-neutral-600 mt-4 md:mt-0">
             Cryptocurrency transactions are subject to applicable laws and regulations.
           </p>
