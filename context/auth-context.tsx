@@ -10,7 +10,6 @@ import {
   signOut as firebaseSignOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  firebase
 } from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase-client"
 
@@ -68,36 +67,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 1. Sign in with Google to get credentials
       await signInWithPopup(auth, googleProvider)
 
-      // 2. Get the ID token using the specific method provided
-      const idToken = await firebase.auth.currentUser.getIdToken(true)
+      // 2. Use the exact pattern from Firebase docs to get and send the ID token
+      return new Promise<void>((resolve, reject) => {
+        auth.currentUser
+          .getIdToken(/* forceRefresh */ true)
+          .then((idToken) => {
+            // Send token to your backend via HTTPS
+            fetch(`${API_URL}/auth/signInGoogle`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ idToken }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (!data || data.error) {
+                  throw new Error(data?.error || "Authentication failed")
+                }
 
-      if (!idToken) {
-        throw new Error("Failed to get ID token")
-      }
-
-      // 3. Send the token to your backend
-      const response = await fetch(`${API_URL}/auth/signInGoogle`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken }),
+                // Set admin status based on backend response
+                setIsAdmin(data.isAdmin || false)
+                resolve()
+              })
+              .catch((error) => {
+                console.error("Backend authentication error:", error)
+                reject(error)
+              })
+          })
+          .catch((error) => {
+            // Handle error
+            console.error("Error getting ID token:", error)
+            reject(error)
+          })
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Authentication failed")
-      }
-
-      // 4. Set admin status based on backend response
-      setIsAdmin(data.isAdmin || false)
-
-      // No need to redirect here, the useEffect will handle it
-      return data
-    } catch (error: any) {
+    } catch (error) {
       console.error("Google Sign-In error:", error)
-      // Sign out if backend authentication fails
+      // Sign out if authentication fails
       await firebaseSignOut(auth)
       throw error
     }
