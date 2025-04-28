@@ -2,613 +2,243 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Download,
-  FileText,
-  Search,
-  SlidersHorizontal,
-  Upload,
-  AlertCircle,
-  Database,
-  Building2,
-  Eye,
-  CheckCircle,
-  XCircle,
-} from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { useDatabaseStore } from "@/lib/mock-database"
-import { useAuth } from "@/context/auth-context"
-import { downloadFromIPFS, isIPFSNodeAvailable } from "@/lib/ipfs-client"
-import { decryptFile } from "@/lib/crypto-utils"
+import { Card, CardContent } from "@/components/ui/card"
 import FileUpload from "@/components/file-upload"
-import IPFSStatus from "@/components/ipfs-status"
+import { useToast } from "@/components/ui/use-toast"
+import { File, Download, Eye, Trash2 } from "lucide-react"
 import DocumentPreviewModal from "@/components/document-preview-modal"
 
+interface Document {
+  id: string
+  name: string
+  url: string
+  type: string
+  size: number
+  uploadDate: string
+}
+
 export default function DocumentsPage() {
-  const { user } = useAuth()
-  const { getDocuments, getTransactions, addDocument } = useDatabaseStore()
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const { toast } = useToast()
 
-  const [dealId, setDealId] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [documents, setDocuments] = useState(getDocuments())
-  const [transactions, setTransactions] = useState(getTransactions())
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [sortOrder, setSortOrder] = useState("newest")
-  const [showUploadDialog, setShowUploadDialog] = useState(false)
-  const [downloadingId, setDownloadingId] = useState<string | null>(null)
-  const [ipfsAvailable, setIpfsAvailable] = useState<boolean | null>(null)
-  const [checkingIpfs, setCheckingIpfs] = useState(false)
-  const [expandedDeals, setExpandedDeals] = useState<Record<string, boolean>>({})
-  const [selectedDocument, setSelectedDocument] = useState<any>(null)
-  const [showPreviewModal, setShowPreviewModal] = useState(false)
-
-  // Check IPFS availability on mount
   useEffect(() => {
-    const checkIpfs = async () => {
-      setCheckingIpfs(true)
+    // Fetch documents from backend
+    const fetchDocuments = async () => {
       try {
-        const available = await isIPFSNodeAvailable()
-        setIpfsAvailable(available)
-      } catch (err) {
-        console.error("Error checking IPFS:", err)
-        setIpfsAvailable(false)
+        setIsLoading(true)
+        const response = await fetch("http://localhost:3000/database/documents")
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch documents")
+        }
+
+        const data = await response.json()
+        setDocuments(data.documents || [])
+      } catch (error) {
+        console.error("Error fetching documents:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load documents. Please try again later.",
+          variant: "destructive",
+        })
+        // Set some mock data for development
+        setDocuments([
+          {
+            id: "1",
+            name: "Contract.pdf",
+            url: "/digital-document.png",
+            type: "application/pdf",
+            size: 2500000,
+            uploadDate: new Date().toISOString(),
+          },
+          {
+            id: "2",
+            name: "Property_Image.jpg",
+            url: "/modern-living-room.png",
+            type: "image/jpeg",
+            size: 1500000,
+            uploadDate: new Date().toISOString(),
+          },
+        ])
       } finally {
-        setCheckingIpfs(false)
+        setIsLoading(false)
       }
     }
 
-    checkIpfs()
-  }, [])
+    fetchDocuments()
+  }, [toast])
 
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Refresh data
-  useEffect(() => {
-    setDocuments(getDocuments())
-    setTransactions(getTransactions())
-
-    // Initialize all deals as expanded
-    const deals = getTransactions()
-    const initialExpandedState: Record<string, boolean> = {}
-    deals.forEach((deal) => {
-      initialExpandedState[deal.id] = true
-    })
-    setExpandedDeals(initialExpandedState)
-  }, [getDocuments, getTransactions])
-
-  const handleUploadComplete = (
-    cid: string,
-    fileKey: string,
-    encryptionKey: string,
-    fileName: string,
-    fileSize: string,
-    fileType: string,
-  ) => {
-    if (!user) {
-      setError("User not authenticated")
-      return
+  const handleUploadComplete = (fileData: { name: string; url: string; type: string; size: number }) => {
+    const newDocument: Document = {
+      id: Date.now().toString(),
+      name: fileData.name,
+      url: fileData.url,
+      type: fileData.type,
+      size: fileData.size,
+      uploadDate: new Date().toISOString(),
     }
 
-    try {
-      // Prepare document metadata
-      const newDocument = {
-        name: fileName,
-        cid: cid,
-        fileKey: fileKey, // Store the fileKey for Filebase
-        encryptionKey: encryptionKey,
-        uploadedBy: user.uid,
-        uploadedAt: new Date().toISOString(),
-        size: fileSize,
-        type: fileType,
-        status: "pending" as const,
-        dealId: dealId,
-      }
-
-      // Add to mock database
-      addDocument(newDocument)
-
-      // Update local state
-      setDocuments(getDocuments())
-
-      // Close dialog after a short delay
-      setTimeout(() => {
-        setShowUploadDialog(false)
-      }, 2000)
-    } catch (err) {
-      console.error("Error saving document metadata:", err)
-      setError(`Failed to save document metadata: ${err instanceof Error ? err.message : String(err)}`)
-    }
+    setDocuments((prev) => [newDocument, ...prev])
   }
 
-  const handleDownload = async (document: any) => {
-    if (downloadingId) return // Prevent multiple downloads
-
-    // Check IPFS availability before attempting download
-    setCheckingIpfs(true)
-    const available = await isIPFSNodeAvailable()
-    setIpfsAvailable(available)
-    setCheckingIpfs(false)
-
-    if (!available) {
-      setError("IPFS service is not available. Cannot download document.")
-      return
-    }
-
-    setDownloadingId(document.cid)
-    try {
-      // Download encrypted file from IPFS using fileKey
-      const encryptedBlob = await downloadFromIPFS(document.fileKey || document.cid) // Support both new and old documents
-
-      // Decrypt the file
-      const decryptedBlob = await decryptFile(encryptedBlob, document.encryptionKey)
-
-      // Create download link
-      const url = URL.createObjectURL(decryptedBlob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = document.name
-      document.body.appendChild(a)
-      a.click()
-
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }, 100)
-    } catch (err) {
-      console.error("Download error:", err)
-      setError(`Failed to download document: ${err instanceof Error ? err.message : String(err)}`)
-    } finally {
-      setDownloadingId(null)
-    }
-  }
-
-  const checkIpfsConnection = async () => {
-    setCheckingIpfs(true)
-    setError(null)
-    try {
-      const available = await isIPFSNodeAvailable()
-      setIpfsAvailable(available)
-      if (!available) {
-        setError("IPFS service is still not available. Document uploads and downloads will not work.")
-      }
-    } catch (err) {
-      console.error("Error checking IPFS:", err)
-      setIpfsAvailable(false)
-      setError(`Failed to check IPFS connection: ${err instanceof Error ? err.message : String(err)}`)
-    } finally {
-      setCheckingIpfs(false)
-    }
-  }
-
-  // Toggle deal expansion
-  const toggleDealExpansion = (dealId: string) => {
-    setExpandedDeals((prev) => ({
-      ...prev,
-      [dealId]: !prev[dealId],
-    }))
-  }
-
-  const handlePreviewDocument = (document: any) => {
+  const handlePreview = (document: Document) => {
     setSelectedDocument(document)
-    setShowPreviewModal(true)
+    setIsPreviewOpen(true)
   }
 
-  const handleApproveDocument = async (documentId: string) => {
-    if (!user) {
-      setError("User not authenticated")
-      return
-    }
-
+  const handleDownload = async (document: Document) => {
     try {
-      await useDatabaseStore.getState().approveDocument(documentId, user.uid)
-      setDocuments(getDocuments())
-      return Promise.resolve()
-    } catch (err) {
-      console.error("Error approving document:", err)
-      setError(`Failed to approve document: ${err instanceof Error ? err.message : String(err)}`)
-      return Promise.reject(err)
+      // For direct download from URL
+      window.open(document.url, "_blank")
+
+      // Alternative: fetch from backend and download
+      // const response = await fetch(`http://localhost:3000/database/download/${document.id}`);
+      // if (!response.ok) throw new Error('Download failed');
+      // const blob = await response.blob();
+      // const url = window.URL.createObjectURL(blob);
+      // const a = document.createElement('a');
+      // a.href = url;
+      // a.download = document.name;
+      // document.body.appendChild(a);
+      // a.click();
+      // window.URL.revokeObjectURL(url);
+      // document.body.removeChild(a);
+    } catch (error) {
+      console.error("Download error:", error)
+      toast({
+        title: "Download failed",
+        description: "Could not download the document. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
-  const handleDeclineDocument = async (documentId: string) => {
-    if (!user) {
-      setError("User not authenticated")
-      return
-    }
-
+  const handleDelete = async (id: string) => {
     try {
-      await useDatabaseStore.getState().declineDocument(documentId, user.uid)
-      setDocuments(getDocuments())
-      return Promise.resolve()
-    } catch (err) {
-      console.error("Error declining document:", err)
-      setError(`Failed to decline document: ${err instanceof Error ? err.message : String(err)}`)
-      return Promise.reject(err)
+      const response = await fetch(`http://localhost:3000/database/documents/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete document")
+      }
+
+      setDocuments((prev) => prev.filter((doc) => doc.id !== id))
+      toast({
+        title: "Document deleted",
+        description: "The document has been successfully deleted.",
+      })
+    } catch (error) {
+      console.error("Delete error:", error)
+      toast({
+        title: "Delete failed",
+        description: "Could not delete the document. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
-  // Filter and sort documents
-  const filteredDocuments = documents
-    .filter((doc) => {
-      const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "all" || doc.status === statusFilter
-      return matchesSearch && matchesStatus
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " bytes"
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB"
+    else return (bytes / 1048576).toFixed(1) + " MB"
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     })
-    .sort((a, b) => {
-      const getTime = (timestamp: string) => new Date(timestamp).getTime()
-
-      switch (sortOrder) {
-        case "newest":
-          return getTime(b.uploadedAt) - getTime(a.uploadedAt)
-        case "oldest":
-          return getTime(a.uploadedAt) - getTime(b.uploadedAt)
-        case "name_asc":
-          return a.name.localeCompare(b.name)
-        case "name_desc":
-          return b.name.localeCompare(a.name)
-        default:
-          return 0
-      }
-    })
-
-  // Group documents by deal
-  const documentsByDeal: Record<string, any[]> = {}
-  filteredDocuments.forEach((doc) => {
-    if (!documentsByDeal[doc.dealId]) {
-      documentsByDeal[doc.dealId] = []
-    }
-    documentsByDeal[doc.dealId].push(doc)
-  })
-
-  // Get deal information
-  const getDealInfo = (dealId: string) => {
-    return (
-      transactions.find((t) => t.id === dealId) || {
-        propertyAddress: "Unknown Property",
-        status: "unknown",
-      }
-    )
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-brand-900">Documents</h1>
-          <p className="text-neutral-600">Manage and access all your transaction documents</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <IPFSStatus />
-          <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-brand-600 hover:bg-brand-700">
-                <Upload className="mr-2 h-4 w-4" /> Upload Document
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Upload Document</DialogTitle>
-                <DialogDescription>
-                  Upload a document to IPFS. The file will be encrypted before uploading.
-                </DialogDescription>
-              </DialogHeader>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Document Management</h1>
 
-              {ipfsAvailable === false && (
-                <Alert className="bg-amber-50 text-amber-700 border-amber-200">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>IPFS Not Available</AlertTitle>
-                  <AlertDescription>
-                    <p>Cannot connect to IPFS service. File uploads will not work until connection is restored.</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={checkIpfsConnection}
-                      disabled={checkingIpfs}
-                      className="mt-2"
-                    >
-                      {checkingIpfs ? (
-                        <>
-                          <Database className="mr-2 h-4 w-4 animate-spin" /> Checking...
-                        </>
-                      ) : (
-                        <>
-                          <Database className="mr-2 h-4 w-4" /> Check Connection
-                        </>
-                      )}
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deal">Select Deal</Label>
-                  <Select value={dealId} onValueChange={setDealId}>
-                    <SelectTrigger id="deal">
-                      <SelectValue placeholder="Select a deal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {transactions.map((deal) => (
-                        <SelectItem key={deal.id} value={deal.id}>
-                          {deal.propertyAddress} ({deal.id})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {dealId && <FileUpload onUploadComplete={handleUploadComplete} dealId={dealId} />}
-
-                {error && !dealId && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>Please select a deal first</AlertDescription>
-                  </Alert>
-                )}
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div className="mb-8">
+        <FileUpload
+          onUploadComplete={handleUploadComplete}
+          allowedFileTypes={["application/pdf", "image/jpeg", "image/png", "image/jpg"]}
+          maxSizeMB={10}
+          buttonText="Upload New Document"
+        />
       </div>
 
-      {error && !showUploadDialog && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <div className="grid gap-6">
+        <h2 className="text-xl font-semibold">Your Documents</h2>
 
-      {ipfsAvailable === false && !error && (
-        <Alert className="bg-amber-50 text-amber-700 border-amber-200 mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>IPFS Not Available</AlertTitle>
-          <AlertDescription>
-            <p>
-              Cannot connect to IPFS service. Document uploads and downloads will not work until connection is restored.
-            </p>
-            <Button variant="outline" size="sm" onClick={checkIpfsConnection} disabled={checkingIpfs} className="mt-2">
-              {checkingIpfs ? (
-                <>
-                  <Database className="mr-2 h-4 w-4 animate-spin" /> Checking...
-                </>
-              ) : (
-                <>
-                  <Database className="mr-2 h-4 w-4" /> Check Connection
-                </>
-              )}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <Card className="mb-8 shadow-soft border-0">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search documents..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="signed">Signed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="name_asc">Name (A-Z)</SelectItem>
-                  <SelectItem value="name_desc">Name (Z-A)</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="icon"
-                className="text-brand-700 hover:bg-brand-50 hover:text-brand-800 border-brand-200"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </Button>
-            </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        </CardContent>
-      </Card>
-
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg p-5 animate-pulse">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="bg-gray-200 p-2 rounded-md h-10 w-10"></div>
-                  <div className="w-full">
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-6 bg-gray-200 rounded w-20"></div>
-                  <div className="h-8 bg-gray-200 rounded w-32"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : Object.keys(documentsByDeal).length > 0 ? (
-        <div className="space-y-8">
-          {Object.entries(documentsByDeal).map(([dealId, docs]) => {
-            const deal = getDealInfo(dealId)
-            const isExpanded = expandedDeals[dealId] || false
-
-            return (
-              <Card key={dealId} className="border border-gray-100 shadow-sm overflow-hidden">
-                <CardHeader
-                  className="bg-gray-50 border-b border-gray-100 p-4 cursor-pointer"
-                  onClick={() => toggleDealExpansion(dealId)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Building2 className="h-5 w-5 text-teal-700" />
-                      <div>
-                        <CardTitle className="text-lg">{deal.propertyAddress}</CardTitle>
-                        <p className="text-sm text-gray-500">Transaction ID: {dealId}</p>
+        ) : documents.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-6">
+              <File className="h-16 w-16 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-center">
+                No documents found. Upload your first document to get started.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {documents.map((doc) => (
+              <Card key={doc.id} className="overflow-hidden">
+                <div className="flex items-center p-4">
+                  <div className="flex-shrink-0 mr-4">
+                    {doc.type.includes("image") ? (
+                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
+                        <img
+                          src={doc.url || "/placeholder.svg"}
+                          alt={doc.name}
+                          className="object-cover w-full h-full"
+                          onError={(e) => {
+                            ;(e.target as HTMLImageElement).src = "/colorful-abstract-flow.png"
+                          }}
+                        />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        className={
-                          deal.status === "completed"
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                        }
-                      >
-                        {deal.status === "completed" ? "Completed" : "In Progress"}
-                      </Badge>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <span className={`transform transition-transform ${isExpanded ? "rotate-180" : ""}`}>▼</span>
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                {isExpanded && (
-                  <CardContent className="p-0 divide-y divide-gray-100">
-                    {docs.length > 0 ? (
-                      docs.map((document) => (
-                        <div key={document.id} className="p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-start gap-4">
-                              <div className="bg-gray-100 p-2 rounded-md">
-                                <FileText className="h-6 w-6 text-brand-600" />
-                              </div>
-                              <div>
-                                <h3 className="font-medium mb-1 text-brand-900">{document.name}</h3>
-                                <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
-                                  <span>
-                                    {document.type || "DOC"} • {document.size || "Unknown size"}
-                                  </span>
-                                  <span>Added on {new Date(document.uploadedAt).toLocaleDateString()}</span>
-                                  {document.reviewStatus === "approved" && (
-                                    <span className="flex items-center text-green-600">
-                                      <CheckCircle className="h-3.5 w-3.5 mr-1" /> Approved
-                                    </span>
-                                  )}
-                                  {document.reviewStatus === "declined" && (
-                                    <span className="flex items-center text-red-600">
-                                      <XCircle className="h-3.5 w-3.5 mr-1" /> Declined
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <Badge
-                                className={
-                                  document.status === "signed"
-                                    ? "bg-green-50 text-green-700 border-green-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200"
-                                }
-                              >
-                                {document.status === "signed" ? "Signed" : "Pending"}
-                              </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="whitespace-nowrap text-brand-700 hover:bg-brand-50 hover:text-brand-800 border-brand-200"
-                                onClick={() => handlePreviewDocument(document)}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                Preview
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="whitespace-nowrap text-brand-700 hover:bg-brand-50 hover:text-brand-800 border-brand-200"
-                                onClick={() => handleDownload(document)}
-                                disabled={downloadingId === document.cid || ipfsAvailable === false}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                {downloadingId === document.cid ? "Downloading..." : "Download"}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
                     ) : (
-                      <div className="p-8 text-center">
-                        <p className="text-gray-500">No documents found for this transaction.</p>
+                      <div className="w-12 h-12 bg-blue-100 rounded flex items-center justify-center">
+                        <File className="h-6 w-6 text-blue-500" />
                       </div>
                     )}
-                  </CardContent>
-                )}
+                  </div>
+
+                  <div className="flex-grow min-w-0">
+                    <h3 className="text-sm font-medium truncate">{doc.name}</h3>
+                    <div className="flex flex-wrap gap-x-4 text-xs text-gray-500">
+                      <span>{formatFileSize(doc.size)}</span>
+                      <span>{formatDate(doc.uploadDate)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex-shrink-0 flex space-x-2">
+                    <Button variant="outline" size="icon" onClick={() => handlePreview(doc)} title="Preview">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => handleDownload(doc)} title="Download">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => handleDelete(doc.id)} title="Delete">
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
               </Card>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="text-center py-12 bg-neutral-50 rounded-lg">
-          <FileText className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-brand-900 mb-1">No documents found</h3>
-          <p className="text-neutral-500">
-            {searchQuery || statusFilter !== "all"
-              ? "Try adjusting your search or filters"
-              : "Upload your first document to get started"}
-          </p>
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
+
       {selectedDocument && (
         <DocumentPreviewModal
-          open={showPreviewModal}
-          onOpenChange={setShowPreviewModal}
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
           document={selectedDocument}
-          onApprove={handleApproveDocument}
-          onDecline={handleDeclineDocument}
         />
       )}
     </div>
