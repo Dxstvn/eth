@@ -95,7 +95,11 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
             <p className="text-sm text-neutral-500">Amount</p>
             <p className="font-medium text-brand-900">{transaction.amount}</p>
           </div>
-          <Button asChild variant="secondary" size="sm" className="whitespace-nowrap">
+          <Button
+            asChild
+            size="sm"
+            className="whitespace-nowrap bg-gradient-to-r from-teal-700 to-teal-900 text-white hover:from-teal-800 hover:to-teal-950"
+          >
             <Link href={`/transactions/${transaction.id}`} className="flex items-center">
               View Details <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
