@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { LogOut, ExternalLink, Copy, Check } from "lucide-react"
+import { LogOut, ExternalLink, Copy, Check, Wallet } from "lucide-react"
 import { useWallet } from "@/context/wallet-context"
 import {
   DropdownMenu,
@@ -13,7 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 import { useAuth } from "@/context/auth-context"
@@ -29,7 +36,18 @@ export default function ConnectWalletButton({
   size = "default",
   className = "",
 }: ConnectWalletButtonProps) {
-  const { isConnected, isConnecting, address, balance, walletProvider, connectWallet, disconnectWallet } = useWallet()
+  const {
+    isConnected,
+    isConnecting,
+    address,
+    balance,
+    walletProvider,
+    connectWallet,
+    connectAllWallets,
+    disconnectWallet,
+    connectedWallets,
+    setPrimaryWallet,
+  } = useWallet()
   const { isDemoAccount } = useAuth()
   const { addToast } = useToast()
   const [copied, setCopied] = useState(false)
@@ -47,6 +65,23 @@ export default function ConnectWalletButton({
       addToast({
         title: "Connection Failed",
         description: (error as Error).message || "Failed to connect wallet",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleConnectAll = async () => {
+    try {
+      const connectedAddresses = await connectAllWallets()
+      setShowWalletOptions(false)
+      addToast({
+        title: "Wallets Connected",
+        description: `Successfully connected ${connectedAddresses.length} wallet(s).`,
+      })
+    } catch (error) {
+      addToast({
+        title: "Connection Failed",
+        description: (error as Error).message || "Failed to connect wallets",
         variant: "destructive",
       })
     }
@@ -164,7 +199,26 @@ export default function ConnectWalletButton({
                   <span className="text-xs text-white opacity-80">Connect to your Coinbase wallet</span>
                 </div>
               </Button>
+
+              <Button
+                onClick={handleConnectAll}
+                disabled={isConnecting}
+                className="flex items-center justify-center gap-3 h-16 bg-teal-700 hover:bg-teal-600 text-white border border-teal-600"
+              >
+                <div className="h-8 w-8 relative flex items-center justify-center">
+                  <Wallet className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold text-white">Connect All Wallets</span>
+                  <span className="text-xs text-white opacity-80">Connect to all available wallets</span>
+                </div>
+              </Button>
             </div>
+            <DialogFooter className="sm:justify-start">
+              <Button variant="outline" onClick={() => setShowWalletOptions(false)}>
+                Cancel
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </>
@@ -188,6 +242,11 @@ export default function ConnectWalletButton({
           </div>
           <span className="hidden sm:inline mr-1">{formatEth(balance)} ETH</span>
           <span>{formatAddress(address)}</span>
+          {connectedWallets.length > 1 && (
+            <span className="ml-1 text-xs bg-teal-100 text-teal-800 rounded-full px-1.5 py-0.5">
+              +{connectedWallets.length - 1}
+            </span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -199,6 +258,41 @@ export default function ConnectWalletButton({
             <span className="text-xs text-muted-foreground">{formatAddress(address)}</span>
           </div>
         </DropdownMenuLabel>
+
+        {connectedWallets.length > 1 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Other Connected Wallets</DropdownMenuLabel>
+            {connectedWallets
+              .filter((wallet) => wallet.address !== address)
+              .map((wallet) => (
+                <DropdownMenuItem
+                  key={wallet.address}
+                  onClick={() => {
+                    setPrimaryWallet(wallet.address)
+                    addToast({
+                      title: "Primary Wallet Changed",
+                      description: `Switched to ${wallet.provider === "metamask" ? "MetaMask" : "Coinbase Wallet"} wallet.`,
+                    })
+                  }}
+                >
+                  <div className="mr-2 h-4 w-4">
+                    {wallet.provider === "metamask" ? (
+                      <div className="relative w-4 h-4">
+                        <MetamaskFox />
+                      </div>
+                    ) : (
+                      <div className="h-4 w-4 flex items-center justify-center">
+                        <CoinbaseIcon className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                  <span>{formatAddress(wallet.address)}</span>
+                </DropdownMenuItem>
+              ))}
+          </>
+        )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={copyAddress}>
           {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
