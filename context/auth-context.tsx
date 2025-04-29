@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Helper function to check if backend is available
   const checkBackendConnection = async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_URL}/health`, {
+      const response = await fetch(`${API_URL}/health/health`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         signal: AbortSignal.timeout(3000),
