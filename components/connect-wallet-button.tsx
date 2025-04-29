@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { LogOut, ExternalLink, Copy, Check, Wallet } from "lucide-react"
+import { LogOut, ExternalLink, Copy, Check, Wallet, AlertCircle } from "lucide-react"
 import { useWallet } from "@/context/wallet-context"
 import {
   DropdownMenu,
@@ -24,6 +24,7 @@ import {
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 import { useAuth } from "@/context/auth-context"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface ConnectWalletButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "primary"
@@ -47,49 +48,47 @@ export default function ConnectWalletButton({
     disconnectWallet,
     connectedWallets,
     setPrimaryWallet,
+    error: walletError,
   } = useWallet()
   const { isDemoAccount } = useAuth()
-  const { addToast } = useToast()
+  const { toast } = useToast()
   const [copied, setCopied] = useState(false)
   const [showWalletOptions, setShowWalletOptions] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
 
   const handleConnect = async (provider: "metamask" | "coinbase") => {
     try {
+      setConnectionError(null)
       await connectWallet(provider)
       setShowWalletOptions(false)
-      addToast({
+      toast({
         title: `${provider === "metamask" ? "MetaMask" : "Coinbase Wallet"} Connected`,
         description: "Your wallet has been connected successfully.",
       })
     } catch (error) {
-      addToast({
-        title: "Connection Failed",
-        description: (error as Error).message || "Failed to connect wallet",
-        variant: "destructive",
-      })
+      setConnectionError((error as Error).message || `Failed to connect ${provider} wallet. Please try again.`)
+      // Keep the dialog open so user can see the error
     }
   }
 
   const handleConnectAll = async () => {
     try {
+      setConnectionError(null)
       const connectedAddresses = await connectAllWallets()
       setShowWalletOptions(false)
-      addToast({
+      toast({
         title: "Wallets Connected",
-        description: `Successfully connected ${connectedAddresses.length} wallet(s).`,
+        description: `Successfully connected wallet(s).`,
       })
     } catch (error) {
-      addToast({
-        title: "Connection Failed",
-        description: (error as Error).message || "Failed to connect wallets",
-        variant: "destructive",
-      })
+      setConnectionError((error as Error).message || "Failed to connect wallets. Please try again.")
+      // Keep the dialog open so user can see the error
     }
   }
 
   const handleDisconnect = () => {
     disconnectWallet()
-    addToast({
+    toast({
       title: "Wallet Disconnected",
       description: "Your wallet has been disconnected.",
     })
@@ -100,7 +99,7 @@ export default function ConnectWalletButton({
       navigator.clipboard.writeText(address)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-      addToast({
+      toast({
         title: "Address Copied",
         description: "Wallet address copied to clipboard",
       })
@@ -132,7 +131,10 @@ export default function ConnectWalletButton({
         <Button
           variant={variant}
           size={size}
-          onClick={() => setShowWalletOptions(true)}
+          onClick={() => {
+            setShowWalletOptions(true)
+            setConnectionError(null)
+          }}
           disabled={isConnecting}
           className={`connect-wallet-btn flex items-center ${className}`}
         >
@@ -163,12 +165,26 @@ export default function ConnectWalletButton({
           )}
         </Button>
 
-        <Dialog open={showWalletOptions} onOpenChange={setShowWalletOptions}>
+        <Dialog
+          open={showWalletOptions}
+          onOpenChange={(open) => {
+            setShowWalletOptions(open)
+            if (!open) setConnectionError(null)
+          }}
+        >
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Connect Wallet</DialogTitle>
               <DialogDescription>Choose a wallet provider to connect to the application.</DialogDescription>
             </DialogHeader>
+
+            {connectionError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{connectionError}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-1 gap-4 py-4">
               <Button
                 onClick={() => handleConnect("metamask")}
@@ -215,7 +231,13 @@ export default function ConnectWalletButton({
               </Button>
             </div>
             <DialogFooter className="sm:justify-start">
-              <Button variant="outline" onClick={() => setShowWalletOptions(false)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowWalletOptions(false)
+                  setConnectionError(null)
+                }}
+              >
                 Cancel
               </Button>
             </DialogFooter>
@@ -270,7 +292,7 @@ export default function ConnectWalletButton({
                   key={wallet.address}
                   onClick={() => {
                     setPrimaryWallet(wallet.address)
-                    addToast({
+                    toast({
                       title: "Primary Wallet Changed",
                       description: `Switched to ${wallet.provider === "metamask" ? "MetaMask" : "Coinbase Wallet"} wallet.`,
                     })
