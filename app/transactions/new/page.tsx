@@ -162,6 +162,52 @@ export default function NewTransactionPage() {
     setConfirmationOpen(true)
   }
 
+  const sendTransactionToBackend = async (transaction: any) => {
+    try {
+      // Create payload based on Firestore structure
+      const payload = {
+        dealId: transaction.id, // Using the transaction ID as the dealId
+        createdAt: new Date().toISOString(),
+        participants: transaction.participants || [],
+        propertyAddress: transaction.propertyAddress,
+        status: transaction.status,
+        // Additional fields that might be useful
+        amount: transaction.amount,
+        counterparty: transaction.counterparty,
+        description: transaction.description,
+        escrowAddress: transaction.escrowAddress,
+      }
+
+      console.log("Sending transaction data to backend:", payload)
+
+      // Send data to mock backend endpoint
+      const response = await fetch("http://localhost:3000/api/deals/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("Backend response:", data)
+
+      // We don't need to update the UI based on the response
+      // since we're just sending data to the backend
+    } catch (error) {
+      console.error("Error sending transaction to backend:", error)
+      addToast({
+        title: "Backend Sync Warning",
+        description: "Transaction created locally but failed to sync with backend.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleTransactionSuccess = (txHash: string) => {
     // Create a new transaction in the database
     const newTransaction = {
@@ -181,6 +227,9 @@ export default function NewTransactionPage() {
 
     // Set the transaction ID
     setTransactionId(transaction.id)
+
+    // Send transaction data to backend
+    sendTransactionToBackend(transaction)
 
     // Show success message
     addToast({
