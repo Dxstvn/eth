@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app"
 import { getAuth, GoogleAuthProvider } from "firebase/auth"
 
-// Your Firebase configuration
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -13,8 +13,17 @@ const firebaseConfig = {
 }
 
 // Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
 const auth = getAuth(app)
 const googleProvider = new GoogleAuthProvider()
 
-export { auth, googleProvider }
+// Helper function to get the current user's ID token
+export async function getIdToken() {
+  const user = auth.currentUser
+  if (!user) {
+    throw new Error("User not authenticated")
+  }
+  return user.getIdToken(true)
+}
+
+export { app, auth, googleProvider }

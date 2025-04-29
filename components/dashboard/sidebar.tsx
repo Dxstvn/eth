@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-// Add the isDemoAccount to the imports
 import { useAuth } from "@/context/auth-context"
 import { useSidebar } from "@/context/sidebar-context"
 import { useMobile } from "@/hooks/use-mobile"
@@ -29,7 +28,7 @@ interface SidebarProps {
 
 export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname()
-  const { user, isDemoAccount } = useAuth() // Get isDemoAccount
+  const { user, isDemoAccount } = useAuth()
   const { expanded, toggleSidebar } = useSidebar()
   const isMobile = useMobile()
 
