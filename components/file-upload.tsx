@@ -16,6 +16,7 @@ const DOCUMENT_TYPES = [
   { value: "INSPECTION", label: "Inspection Report" },
 ]
 
+// Update the FileUploadProps interface to make documentType optional
 interface FileUploadProps {
   onUploadComplete: (fileData: {
     filename: string
@@ -27,15 +28,22 @@ interface FileUploadProps {
   }) => void
   dealId: string
   userId?: string
+  documentType?: string
 }
 
-export default function FileUpload({ onUploadComplete, dealId, userId = "current-user" }: FileUploadProps) {
+// Changed from default export to named export
+export function FileUpload({
+  onUploadComplete,
+  dealId,
+  userId = "current-user",
+  documentType: initialDocumentType = "",
+}: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [documentType, setDocumentType] = useState<string>("")
+  const [documentType, setDocumentType] = useState<string>(initialDocumentType)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -219,3 +227,5 @@ export default function FileUpload({ onUploadComplete, dealId, userId = "current
     </div>
   )
 }
+
+export default FileUpload

@@ -5,10 +5,11 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, FileText, Calendar, DollarSign, Clock, CheckCircle } from "lucide-react"
+import { ArrowLeft, FileText, Calendar, DollarSign, Clock, CheckCircle, X, Eye, Download } from "lucide-react"
 import TransactionTimeline from "@/components/transaction-timeline"
 import TransactionParties from "@/components/transaction-parties"
 import { useToast } from "@/components/ui/use-toast"
+import { FileUpload } from "@/components/file-upload"
 
 // Mock transaction data
 const mockTransaction = {
@@ -38,6 +39,16 @@ export default function TransactionDetailPage() {
   const { toast } = useToast()
   const [transaction, setTransaction] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  // Add these state variables at the top of the component
+  const [showDocumentModal, setShowDocumentModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [currentDocument, setCurrentDocument] = useState<any>(null)
+  const [requiredDocuments, setRequiredDocuments] = useState([
+    { id: "doc1", name: "Purchase Agreement", type: "AGREEMENT", uploaded: true },
+    { id: "doc2", name: "Property Inspection", type: "INSPECTION", uploaded: false },
+    { id: "doc3", name: "Title Deed", type: "TITLE", uploaded: false },
+  ])
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -153,51 +164,38 @@ export default function TransactionDetailPage() {
                 <CardTitle>Transaction Documents</CardTitle>
                 <CardDescription>Required documents for this transaction</CardDescription>
               </div>
-              <Link href={`/transactions/${id}/documents`}>
-                <Button className="bg-teal-900 hover:bg-teal-800 text-white">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Manage Documents
-                </Button>
-              </Link>
+              <Button onClick={() => setShowDocumentModal(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
+                <FileText className="mr-2 h-4 w-4" />
+                Manage Documents
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-teal-700 mr-3" />
-                    <div>
-                      <p className="font-medium">Purchase Agreement</p>
-                      <p className="text-sm text-muted-foreground">Required for transaction completion</p>
+                {requiredDocuments.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 text-teal-700 mr-3" />
+                      <div>
+                        <p className="font-medium">{doc.name}</p>
+                        <p className="text-sm text-muted-foreground">Required for transaction completion</p>
+                      </div>
                     </div>
+                    {doc.uploaded ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCurrentDocument(doc)
+                          setShowUploadModal(true)
+                        }}
+                      >
+                        Upload
+                      </Button>
+                    )}
                   </div>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-teal-700 mr-3" />
-                    <div>
-                      <p className="font-medium">Property Inspection</p>
-                      <p className="text-sm text-muted-foreground">Required for transaction completion</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Upload
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-teal-700 mr-3" />
-                    <div>
-                      <p className="font-medium">Title Deed</p>
-                      <p className="text-sm text-muted-foreground">Required for transaction completion</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Upload
-                  </Button>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -242,6 +240,96 @@ export default function TransactionDetailPage() {
           </Card>
         </div>
       </div>
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Upload {currentDocument?.name}</h3>
+            <FileUpload
+              dealId={transaction.id}
+              documentType={currentDocument?.type}
+              onUploadComplete={(fileData) => {
+                setRequiredDocuments((prev) =>
+                  prev.map((doc) => (doc.id === currentDocument?.id ? { ...doc, uploaded: true } : doc)),
+                )
+                setShowUploadModal(false)
+              }}
+            />
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setShowUploadModal(false)} className="mr-2">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDocumentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Manage Transaction Documents</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowDocumentModal(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Required Documents</h3>
+                <div className="space-y-3">
+                  {requiredDocuments.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 text-teal-700 mr-3" />
+                        <div>
+                          <p className="font-medium">{doc.name}</p>
+                          <p className="text-sm text-muted-foreground">Required for transaction completion</p>
+                        </div>
+                      </div>
+                      {doc.uploaded ? (
+                        <div className="flex items-center">
+                          <Button variant="ghost" size="sm" className="mr-2">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="mr-2">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCurrentDocument(doc)
+                            setShowDocumentModal(false)
+                            setShowUploadModal(true)
+                          }}
+                        >
+                          Upload
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Additional Documents</h3>
+                <FileUpload
+                  dealId={transaction.id}
+                  onUploadComplete={(fileData) => {
+                    toast({
+                      title: "Document uploaded",
+                      description: "Your document has been uploaded successfully.",
+                    })
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

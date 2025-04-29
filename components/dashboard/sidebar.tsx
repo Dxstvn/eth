@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   LayoutDashboard,
   Building2,
-  FileText,
   Wallet,
   Users,
   Settings,
@@ -78,11 +77,6 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
       name: "Transactions",
       href: "/transactions",
       icon: Building2,
-    },
-    {
-      name: "Documents",
-      href: "/documents",
-      icon: FileText,
     },
     {
       name: "Wallet",
