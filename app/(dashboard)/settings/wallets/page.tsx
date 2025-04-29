@@ -1,7 +1,5 @@
 "use client"
 
-import { DialogFooter } from "@/components/ui/dialog"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,16 +8,17 @@ import Link from "next/link"
 import { useWallet } from "@/context/wallet-context"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 import { useAuth } from "@/context/auth-context"
-
-interface ConnectedWallet {
-  provider: "metamask" | "coinbase"
-  address: string
-  isPrimary: boolean
-}
 
 export default function WalletsSettingsPage() {
   const {
@@ -33,30 +32,27 @@ export default function WalletsSettingsPage() {
   } = useWallet()
   const { isDemoAccount } = useAuth()
   const { toast } = useToast()
-  const [connectedWallets, setConnectedWallets] = useState<ConnectedWallet[]>([])
   const [showAddWalletDialog, setShowAddWalletDialog] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [wallets, setWallets] = useState(contextWallets)
 
-  // Initialize connected wallets
+  // Update wallets when context wallets change
   useEffect(() => {
-    // Use wallets directly from context instead of localStorage
-    if (contextWallets && contextWallets.length > 0) {
-      setConnectedWallets(contextWallets)
-      return
-    }
-
-    // For demo account, show a demo wallet
     if (isDemoAccount) {
-      setConnectedWallets([
+      // For demo account, show a demo wallet
+      setWallets([
         {
           provider: "metamask", // Changed to metamask for consistency
           address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
           isPrimary: true,
         },
       ])
+    } else {
+      // Use wallets directly from context
+      setWallets(contextWallets)
     }
-  }, [isDemoAccount, contextWallets])
+  }, [contextWallets, isDemoAccount])
 
   const handleAddWallet = async (provider: "metamask" | "coinbase") => {
     try {
@@ -75,14 +71,14 @@ export default function WalletsSettingsPage() {
       })
     } catch (err) {
       console.error("Error connecting wallet:", err)
-      setError(`Failed to connect ${provider} wallet. Please try again.`)
+      setError(`${(err as Error).message || `Failed to connect ${provider} wallet. Please try again.`}`)
     } finally {
       setIsConnecting(false)
     }
   }
 
-  const handleSetPrimary = (address: string) => {
-    setPrimaryWallet(address)
+  const handleSetPrimary = (walletAddress: string) => {
+    setPrimaryWallet(walletAddress)
 
     toast({
       title: "Primary Wallet Updated",
@@ -92,7 +88,7 @@ export default function WalletsSettingsPage() {
 
   const handleRemoveWallet = (walletAddress: string) => {
     // Check if this is the primary wallet
-    const isRemovingPrimary = connectedWallets.find((w) => w.address === walletAddress)?.isPrimary
+    const isRemovingPrimary = wallets.find((w) => w.address === walletAddress)?.isPrimary
 
     // If this is the currently connected wallet, disconnect it
     if (walletAddress === address) {
@@ -128,7 +124,7 @@ export default function WalletsSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {connectedWallets.length === 0 ? (
+            {wallets.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">You don't have any wallets connected yet.</p>
                 <Button
@@ -140,7 +136,7 @@ export default function WalletsSettingsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {connectedWallets.map((wallet) => (
+                {wallets.map((wallet) => (
                   <div
                     key={wallet.address}
                     className={`p-4 rounded-lg border ${wallet.isPrimary ? "border-teal-200 bg-teal-50" : "border-gray-200"}`}
