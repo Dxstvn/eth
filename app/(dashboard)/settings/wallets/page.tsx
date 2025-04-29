@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Check, Trash2, Plus, ExternalLink } from "lucide-react"
@@ -20,39 +20,15 @@ import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 import { useAuth } from "@/context/auth-context"
 
+// Update the component to properly handle wallet connection status
 export default function WalletsSettingsPage() {
-  const {
-    isConnected,
-    address,
-    walletProvider,
-    connectWallet,
-    disconnectWallet,
-    setPrimaryWallet,
-    connectedWallets: contextWallets,
-  } = useWallet()
+  const { isConnected, address, walletProvider, connectWallet, disconnectWallet, setPrimaryWallet, connectedWallets } =
+    useWallet()
   const { isDemoAccount } = useAuth()
   const { toast } = useToast()
   const [showAddWalletDialog, setShowAddWalletDialog] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [wallets, setWallets] = useState(contextWallets)
-
-  // Update wallets when context wallets change
-  useEffect(() => {
-    if (isDemoAccount) {
-      // For demo account, show a demo wallet
-      setWallets([
-        {
-          provider: "metamask", // Changed to metamask for consistency
-          address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-          isPrimary: true,
-        },
-      ])
-    } else {
-      // Use wallets directly from context
-      setWallets(contextWallets)
-    }
-  }, [contextWallets, isDemoAccount])
 
   const handleAddWallet = async (provider: "metamask" | "coinbase") => {
     try {
@@ -88,7 +64,7 @@ export default function WalletsSettingsPage() {
 
   const handleRemoveWallet = (walletAddress: string) => {
     // Check if this is the primary wallet
-    const isRemovingPrimary = wallets.find((w) => w.address === walletAddress)?.isPrimary
+    const isRemovingPrimary = connectedWallets.find((w) => w.address === walletAddress)?.isPrimary
 
     // If this is the currently connected wallet, disconnect it
     if (walletAddress === address) {
@@ -104,6 +80,18 @@ export default function WalletsSettingsPage() {
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
+
+  // Use the actual wallets from context
+  const displayWallets =
+    isDemoAccount && connectedWallets.length === 0
+      ? [
+          {
+            provider: "metamask" as const,
+            address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+            isPrimary: true,
+          },
+        ]
+      : connectedWallets
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -124,7 +112,7 @@ export default function WalletsSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {wallets.length === 0 ? (
+            {displayWallets.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">You don't have any wallets connected yet.</p>
                 <Button
@@ -136,7 +124,7 @@ export default function WalletsSettingsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {wallets.map((wallet) => (
+                {displayWallets.map((wallet) => (
                   <div
                     key={wallet.address}
                     className={`p-4 rounded-lg border ${wallet.isPrimary ? "border-teal-200 bg-teal-50" : "border-gray-200"}`}

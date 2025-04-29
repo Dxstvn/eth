@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   LayoutDashboard,
-  Building2,
   Wallet,
   Users,
   Settings,
@@ -16,6 +15,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useSidebar } from "@/context/sidebar-context"
@@ -66,36 +66,42 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
     return emailName
   }
 
-  const routes = [
+  const navigation = [
     {
       name: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
+      current: pathname === "/dashboard",
     },
     {
       name: "Transactions",
       href: "/transactions",
-      icon: Building2,
+      icon: FileText,
+      current: pathname === "/transactions" || pathname.startsWith("/transactions/"),
     },
     {
       name: "Wallet",
       href: "/wallet",
       icon: Wallet,
+      current: pathname === "/wallet",
     },
     {
       name: "Contacts",
       href: "/contacts",
       icon: Users,
+      current: pathname === "/contacts",
     },
     {
       name: "Settings",
       href: "/settings",
       icon: Settings,
+      current: pathname === "/settings" || pathname.startsWith("/settings/"),
     },
     {
       name: "Help & Support",
       href: "/support",
       icon: HelpCircle,
+      current: pathname === "/support",
     },
   ]
 
@@ -138,7 +144,7 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
           {/* Sidebar content */}
           <ScrollArea className="flex-1 px-3 py-2">
             <nav className="flex flex-col gap-1">
-              {routes.map((route) => {
+              {navigation.map((route) => {
                 const isActive = pathname === route.href || pathname?.startsWith(`${route.href}/`)
 
                 return (
@@ -214,7 +220,7 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
       {/* Sidebar content */}
       <ScrollArea className="flex-1 px-3 py-2 h-[calc(100vh-16rem)]">
         <nav className="flex flex-col gap-1">
-          {routes.map((route) => {
+          {navigation.map((route) => {
             const isActive = pathname === route.href || pathname?.startsWith(`${route.href}/`)
 
             return (

@@ -32,6 +32,7 @@ interface ConnectWalletButtonProps {
   className?: string
 }
 
+// Update the component to properly display the wallet provider icon
 export default function ConnectWalletButton({
   variant = "primary",
   size = "default",
@@ -55,6 +56,10 @@ export default function ConnectWalletButton({
   const [copied, setCopied] = useState(false)
   const [showWalletOptions, setShowWalletOptions] = useState(false)
   const [connectionError, setConnectionError] = useState<string | null>(null)
+
+  // Find the primary wallet for accurate provider display
+  const primaryWallet = connectedWallets.find((wallet) => wallet.isPrimary)
+  const currentProvider = primaryWallet?.provider || walletProvider
 
   const handleConnect = async (provider: "metamask" | "coinbase") => {
     try {
@@ -252,7 +257,7 @@ export default function ConnectWalletButton({
       <DropdownMenuTrigger asChild>
         <Button variant={variant} size={size} className={`connect-wallet-btn ${className}`}>
           <div className="mr-2 h-5 w-5 relative">
-            {walletProvider === "metamask" ? (
+            {currentProvider === "metamask" ? (
               <div className="relative w-5 h-5">
                 <MetamaskFox />
               </div>
@@ -275,7 +280,7 @@ export default function ConnectWalletButton({
         <DropdownMenuLabel>
           <div className="flex flex-col">
             <span className="font-bold">
-              Connected to {walletProvider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
+              Connected to {currentProvider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
             </span>
             <span className="text-xs text-muted-foreground">{formatAddress(address)}</span>
           </div>
