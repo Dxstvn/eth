@@ -35,11 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isDemoAccount, setIsDemoAccount] = useState(false)
-  const [backendAuthenticated, setBackendAuthenticated] = useState(false)
 
   // Helper function for redirection after successful authentication
   const redirectToDashboard = () => {
-    // Use setTimeout to ensure state updates have been processed
     setTimeout(() => {
       router.push("/dashboard")
     }, 100)
@@ -51,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch(`${API_URL}/health`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
-        // Short timeout to fail fast if backend is down
         signal: AbortSignal.timeout(3000),
       })
       return response.ok
@@ -63,55 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Set up auth state listener
-    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
-      // If user exists in Firebase but not authenticated with backend, sign them out
-      if (authUser && !backendAuthenticated) {
-        const isBackendAvailable = await checkBackendConnection()
-
-        if (!isBackendAvailable) {
-          // If backend is not available, sign out the user
-          await firebaseSignOut(auth)
-          setUser(null)
-          setLoading(false)
-          router.push("/login")
-          return
-        }
-
-        // Verify with backend that this user is still valid
-        try {
-          const idToken = await authUser.getIdToken(true)
-          const response = await fetch(`${API_URL}/auth/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken }),
-          })
-
-          if (!response.ok) {
-            // If backend rejects the token, sign out
-            await firebaseSignOut(auth)
-            setUser(null)
-            setLoading(false)
-            router.push("/login")
-            return
-          }
-
-          // Backend confirmed user is valid
-          setBackendAuthenticated(true)
-        } catch (error) {
-          console.error("Backend verification error:", error)
-          // If verification fails, sign out
-          await firebaseSignOut(auth)
-          setUser(null)
-          setLoading(false)
-          router.push("/login")
-          return
-        }
-      }
-
+    const unsubscribe = auth.onAuthStateChanged((authUser) => {
       setUser(authUser)
       setLoading(false)
 
-      if (authUser && backendAuthenticated) {
+      if (authUser) {
         // If user is authenticated, check if it's the demo account
         setIsDemoAccount(authUser.email === "jasmindustin@gmail.com")
 
@@ -122,13 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setIsAdmin(false)
         setIsDemoAccount(false)
-        setBackendAuthenticated(false)
       }
     })
 
     // Clean up subscription
     return () => unsubscribe()
-  }, [router, backendAuthenticated])
+  }, [router])
 
   const signInWithGoogle = async () => {
     try {
@@ -145,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Failed to authenticate with Google")
       }
 
-      // 2. Use the exact pattern from Firebase docs to get and send the ID token
+      // 2. Get the ID token
       const idToken = await result.user.getIdToken(true)
 
       // 3. Send token to backend for verification
@@ -160,20 +112,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) {
         // If backend rejects the authentication, sign out from Firebase
         await firebaseSignOut(auth)
-        throw new Error("Backend authentication failed")
+        const data = await response.json()
+        throw new Error(data.error || "Backend authentication failed")
       }
 
       const data = await response.json()
 
-      if (!data || data.error) {
-        // If there's an error in the response, sign out from Firebase
-        await firebaseSignOut(auth)
-        throw new Error(data?.error || "Authentication failed")
-      }
-
       // Set admin status based on backend response
       setIsAdmin(data.isAdmin || false)
-      setBackendAuthenticated(true)
 
       // Explicitly redirect to dashboard after successful authentication
       redirectToDashboard()
@@ -217,10 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 3. Only if backend authentication succeeds, sign in with Firebase client
       await signInWithEmailAndPassword(auth, email, password)
 
-      // 4. Mark as authenticated with backend
-      setBackendAuthenticated(true)
-
-      // 5. Explicitly redirect to dashboard after successful authentication
+      // 4. Explicitly redirect to dashboard after successful authentication
       redirectToDashboard()
 
       return data
@@ -268,10 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 3. Only if backend registration succeeds, create user with Firebase client
       await createUserWithEmailAndPassword(auth, email, password)
 
-      // 4. Mark as authenticated with backend
-      setBackendAuthenticated(true)
-
-      // 5. Explicitly redirect to dashboard after successful authentication
+      // 4. Explicitly redirect to dashboard after successful authentication
       redirectToDashboard()
 
       return data
@@ -288,7 +228,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    setBackendAuthenticated(false)
     await firebaseSignOut(auth)
     // Redirect to home page after sign out
     router.push("/")
