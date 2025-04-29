@@ -158,7 +158,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
           updatedWallets.push({
             address: randomAddress,
-            provider: providerType,
+            provider: providerType, // Use the explicitly requested provider type
             isPrimary,
           })
 
@@ -170,8 +170,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setBalance(mockEthBalance)
         setIsConnected(true)
         setChainId(1) // Ethereum Mainnet
-        setWalletProvider(providerType)
-
+        setWalletProvider(providerType) // Use the explicitly requested provider type
         return
       }
 
@@ -214,17 +213,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const updatedWallets = [...connectedWallets]
 
       if (existingWalletIndex >= 0) {
-        // Update the existing wallet's provider if it changed
+        // Update the existing wallet's provider to match the explicitly requested type
         updatedWallets[existingWalletIndex] = {
           ...updatedWallets[existingWalletIndex],
-          provider: providerType,
+          provider: providerType, // Use the explicitly requested provider type
         }
       } else {
         // Add the new wallet
         const isPrimary = updatedWallets.length === 0
         updatedWallets.push({
           address: newAddress,
-          provider: providerType,
+          provider: providerType, // Use the explicitly requested provider type
           isPrimary,
         })
       }
@@ -236,7 +235,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setBalance(newBalance)
       setIsConnected(true)
       setChainId(newChainId)
-      setWalletProvider(providerType)
+      setWalletProvider(providerType) // Use the explicitly requested provider type
     } catch (err) {
       console.error(`Error connecting ${providerType} wallet:`, err)
       setError(`${(err as Error).message || `Failed to connect ${providerType} wallet. Please try again.`}`)

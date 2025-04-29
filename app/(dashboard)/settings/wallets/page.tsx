@@ -22,9 +22,17 @@ interface ConnectedWallet {
 }
 
 export default function WalletsSettingsPage() {
-  const { isConnected, address, walletProvider, connectWallet, disconnectWallet, setPrimaryWallet } = useWallet()
+  const {
+    isConnected,
+    address,
+    walletProvider,
+    connectWallet,
+    disconnectWallet,
+    setPrimaryWallet,
+    connectedWallets: contextWallets,
+  } = useWallet()
   const { isDemoAccount } = useAuth()
-  const { addToast } = useToast()
+  const { toast } = useToast()
   const [connectedWallets, setConnectedWallets] = useState<ConnectedWallet[]>([])
   const [showAddWalletDialog, setShowAddWalletDialog] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -32,91 +40,23 @@ export default function WalletsSettingsPage() {
 
   // Initialize connected wallets
   useEffect(() => {
+    // Use wallets directly from context instead of localStorage
+    if (contextWallets && contextWallets.length > 0) {
+      setConnectedWallets(contextWallets)
+      return
+    }
+
     // For demo account, show a demo wallet
     if (isDemoAccount) {
       setConnectedWallets([
         {
-          provider: "coinbase",
+          provider: "metamask", // Changed to metamask for consistency
           address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
           isPrimary: true,
         },
       ])
-      return
     }
-
-    // For non-demo accounts, load from localStorage if available
-    const savedWallets = localStorage.getItem("connectedWallets")
-    if (savedWallets) {
-      try {
-        // Get the wallets from localStorage
-        const allWallets = JSON.parse(savedWallets)
-
-        // Get the current user email to use as a key
-        const userEmail = localStorage.getItem("current-user-email")
-
-        // If we have wallets for this user, use them
-        if (userEmail && allWallets[userEmail]) {
-          setConnectedWallets(allWallets[userEmail])
-        } else {
-          // Otherwise start with an empty array
-          setConnectedWallets([])
-        }
-      } catch (err) {
-        console.error("Error parsing saved wallets:", err)
-        setConnectedWallets([])
-      }
-    }
-
-    // Add current wallet if connected and not already in the list
-    if (isConnected && address && walletProvider) {
-      setConnectedWallets((prev) => {
-        // Check if this wallet is already in our list
-        if (prev.some((wallet) => wallet.address === address)) {
-          return prev // Return unchanged if already exists
-        }
-
-        // Only set as primary if there are no other wallets
-        const isPrimary = prev.length === 0
-
-        return [
-          ...prev,
-          {
-            provider: walletProvider,
-            address,
-            isPrimary,
-          },
-        ]
-      })
-    }
-  }, [isConnected, address, walletProvider, isDemoAccount]) // Remove connectedWallets from dependencies
-
-  // Save wallets to localStorage when they change
-  useEffect(() => {
-    if (!isDemoAccount && connectedWallets.length >= 0) {
-      try {
-        // Get the current user email to use as a key
-        const userEmail = localStorage.getItem("current-user-email")
-
-        if (userEmail) {
-          // Get all wallets from localStorage
-          const savedWallets = localStorage.getItem("connectedWallets")
-          let allWallets = {}
-
-          if (savedWallets) {
-            allWallets = JSON.parse(savedWallets)
-          }
-
-          // Update the wallets for this user
-          allWallets[userEmail] = connectedWallets
-
-          // Save back to localStorage
-          localStorage.setItem("connectedWallets", JSON.stringify(allWallets))
-        }
-      } catch (err) {
-        console.error("Error saving wallets:", err)
-      }
-    }
-  }, [connectedWallets, isDemoAccount])
+  }, [isDemoAccount, contextWallets])
 
   const handleAddWallet = async (provider: "metamask" | "coinbase") => {
     try {
@@ -129,7 +69,7 @@ export default function WalletsSettingsPage() {
       // Close the dialog
       setShowAddWalletDialog(false)
 
-      addToast({
+      toast({
         title: "Wallet Connected",
         description: `Your ${provider === "metamask" ? "MetaMask" : "Coinbase"} wallet has been connected successfully.`,
       })
@@ -144,41 +84,22 @@ export default function WalletsSettingsPage() {
   const handleSetPrimary = (address: string) => {
     setPrimaryWallet(address)
 
-    setConnectedWallets((prev) =>
-      prev.map((wallet) => ({
-        ...wallet,
-        isPrimary: wallet.address === address,
-      })),
-    )
-
-    addToast({
+    toast({
       title: "Primary Wallet Updated",
       description: "Your primary wallet has been updated successfully.",
     })
   }
 
-  const handleRemoveWallet = (address: string) => {
+  const handleRemoveWallet = (walletAddress: string) => {
     // Check if this is the primary wallet
-    const isRemovingPrimary = connectedWallets.find((w) => w.address === address)?.isPrimary
-
-    // Remove the wallet
-    setConnectedWallets((prev) => {
-      const filtered = prev.filter((wallet) => wallet.address !== address)
-
-      // If we removed the primary wallet and there are other wallets, set the first one as primary
-      if (isRemovingPrimary && filtered.length > 0) {
-        filtered[0].isPrimary = true
-      }
-
-      return filtered
-    })
+    const isRemovingPrimary = connectedWallets.find((w) => w.address === walletAddress)?.isPrimary
 
     // If this is the currently connected wallet, disconnect it
-    if (address === address) {
+    if (walletAddress === address) {
       disconnectWallet()
     }
 
-    addToast({
+    toast({
       title: "Wallet Removed",
       description: "The wallet has been removed successfully.",
     })
