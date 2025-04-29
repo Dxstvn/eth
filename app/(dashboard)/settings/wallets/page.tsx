@@ -20,7 +20,6 @@ import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 import { useAuth } from "@/context/auth-context"
 
-// Update the component to properly handle wallet connection status
 export default function WalletsSettingsPage() {
   const { isConnected, address, walletProvider, connectWallet, disconnectWallet, setPrimaryWallet, connectedWallets } =
     useWallet()
@@ -189,9 +188,11 @@ export default function WalletsSettingsPage() {
             )}
           </CardContent>
           <CardFooter>
-            <Button onClick={() => setShowAddWalletDialog(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
-              <Plus className="mr-2 h-4 w-4" /> Connect Another Wallet
-            </Button>
+            {displayWallets.length > 0 && (
+              <Button onClick={() => setShowAddWalletDialog(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
+                <Plus className="mr-2 h-4 w-4" /> Connect Another Wallet
+              </Button>
+            )}
           </CardFooter>
         </Card>
 

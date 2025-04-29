@@ -49,9 +49,6 @@ export default function WalletSettingsPage() {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
 
-  // Find the primary wallet
-  const primaryWallet = connectedWallets.find((wallet) => wallet.isPrimary)
-
   return (
     <div className="space-y-6">
       <div>
@@ -71,7 +68,7 @@ export default function WalletSettingsPage() {
               <CardDescription>Manage your connected cryptocurrency wallets</CardDescription>
             </CardHeader>
             <CardContent>
-              {!primaryWallet ? (
+              {connectedWallets.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">You don't have any wallets connected yet.</p>
                   <Button
@@ -83,87 +80,76 @@ export default function WalletSettingsPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="p-4 rounded-lg border border-teal-200 bg-teal-50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 relative flex items-center justify-center">
-                          {primaryWallet.provider === "metamask" ? (
-                            <div className="relative w-10 h-10">
-                              <MetamaskFox />
-                            </div>
-                          ) : (
-                            <div className="h-10 w-10 flex items-center justify-center">
-                              <CoinbaseIcon className="h-10 w-10" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">
-                              {primaryWallet.provider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
-                            </p>
-                            <span className="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">Primary</span>
-                          </div>
-                          <p className="text-sm text-gray-500 font-mono">{formatAddress(primaryWallet.address)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-gray-600"
-                          onClick={() => window.open(`https://etherscan.io/address/${primaryWallet.address}`, "_blank")}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1" /> View
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {connectedWallets.length > 1 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">Other Connected Wallets</h4>
-                      {connectedWallets
-                        .filter((wallet) => !wallet.isPrimary)
-                        .map((wallet) => (
-                          <div key={wallet.address} className="p-4 rounded-lg border border-gray-200 mb-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 relative flex items-center justify-center">
-                                  {wallet.provider === "metamask" ? (
-                                    <div className="relative w-8 h-8">
-                                      <MetamaskFox />
-                                    </div>
-                                  ) : (
-                                    <div className="h-8 w-8 flex items-center justify-center">
-                                      <CoinbaseIcon className="h-8 w-8" />
-                                    </div>
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">
-                                    {wallet.provider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
-                                  </p>
-                                  <p className="text-xs text-gray-500 font-mono">{formatAddress(wallet.address)}</p>
-                                </div>
+                  {connectedWallets.map((wallet) => (
+                    <div
+                      key={wallet.address}
+                      className={`p-4 rounded-lg border ${
+                        wallet.isPrimary ? "border-teal-200 bg-teal-50" : "border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 relative flex items-center justify-center">
+                            {wallet.provider === "metamask" ? (
+                              <div className="relative w-10 h-10">
+                                <MetamaskFox />
                               </div>
-                            </div>
+                            ) : (
+                              <div className="h-10 w-10 flex items-center justify-center">
+                                <CoinbaseIcon className="h-10 w-10" />
+                              </div>
+                            )}
                           </div>
-                        ))}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">
+                                {wallet.provider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
+                              </p>
+                              {wallet.isPrimary && (
+                                <span className="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">
+                                  Primary
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 font-mono">{formatAddress(wallet.address)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-gray-600"
+                            onClick={() => window.open(`https://etherscan.io/address/${wallet.address}`, "_blank")}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" /> View
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button onClick={() => setShowConnectDialog(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
-                <Plus className="mr-2 h-4 w-4" /> Connect Wallet
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/settings/wallets">
-                  <Settings className="mr-2 h-4 w-4" /> Manage Wallets
-                </Link>
-              </Button>
+              {connectedWallets.length === 0 ? (
+                <Button onClick={() => setShowConnectDialog(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
+                  <Plus className="mr-2 h-4 w-4" /> Connect Wallet
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => setShowConnectDialog(true)}
+                    className="bg-teal-900 hover:bg-teal-800 text-white"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Connect Another Wallet
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/settings/wallets">
+                      <Settings className="mr-2 h-4 w-4" /> Manage Wallets
+                    </Link>
+                  </Button>
+                </>
+              )}
             </CardFooter>
           </Card>
         </TabsContent>
