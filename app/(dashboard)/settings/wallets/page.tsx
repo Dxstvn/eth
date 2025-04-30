@@ -29,6 +29,9 @@ export default function WalletsSettingsPage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Debug log for connected wallets
+  console.log("Wallet Settings Page - Connected Wallets:", connectedWallets)
+
   const handleAddWallet = async (provider: "metamask" | "coinbase") => {
     try {
       setIsConnecting(true)

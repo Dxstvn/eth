@@ -64,15 +64,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // Check if wallet was previously connected
   useEffect(() => {
     const savedWallets = localStorage.getItem("connectedWallets")
+    console.log("Initializing wallet context, saved wallets:", savedWallets)
 
     if (savedWallets) {
       try {
         const wallets = JSON.parse(savedWallets)
+        console.log("Parsed wallets from localStorage:", wallets)
+
+        // Validate the wallets array
+        if (!Array.isArray(wallets)) {
+          throw new Error("Invalid wallets data format")
+        }
+
         setConnectedWallets(wallets)
 
         // Find the primary wallet
         const primaryWallet = wallets.find((w: any) => w.isPrimary)
         if (primaryWallet) {
+          console.log("Found primary wallet:", primaryWallet)
           setAddress(primaryWallet.address)
           setWalletProvider(primaryWallet.provider)
           setIsConnected(true)
@@ -81,6 +90,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           const mockEthBalance = (Math.random() * 10).toFixed(4)
           setBalance(mockEthBalance)
         } else {
+          console.log("No primary wallet found")
           // No primary wallet found, reset connection state
           setAddress(null)
           setWalletProvider(null)
@@ -98,6 +108,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setConnectedWallets([])
       }
     } else {
+      console.log("No saved wallets found")
       // No saved wallets, ensure connection state is reset
       setAddress(null)
       setWalletProvider(null)
@@ -158,6 +169,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setIsConnecting(true)
       setError(null)
 
+      console.log("Starting wallet connection for:", providerType)
+      console.log("Current connectedWallets:", connectedWallets)
+
       // For demo accounts, use mock data
       if (process.env.NODE_ENV === "development" && !window.ethereum) {
         await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -168,17 +182,43 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         // Generate a random ETH balance between 0.1 and 10
         const mockEthBalance = (Math.random() * 10).toFixed(4)
 
-        // Update connected wallets
-        const updatedWallets = connectedWallets.filter((w) => !w.isPrimary) // Remove any existing primary wallet
+        // Create a copy of the current wallets array
+        const updatedWallets = [...connectedWallets]
 
-        // Add the new wallet as primary
-        updatedWallets.push({
-          address: randomAddress,
-          provider: providerType,
-          isPrimary: true,
-        })
+        // Check if this wallet already exists
+        const existingWalletIndex = updatedWallets.findIndex(
+          (w) => w.address.toLowerCase() === randomAddress.toLowerCase(),
+        )
 
+        // If wallet exists but is not primary, make it primary
+        if (existingWalletIndex >= 0) {
+          // First, set all wallets to non-primary
+          updatedWallets.forEach((wallet) => (wallet.isPrimary = false))
+
+          // Then set this wallet to primary
+          updatedWallets[existingWalletIndex] = {
+            ...updatedWallets[existingWalletIndex],
+            provider: providerType,
+            isPrimary: true,
+          }
+        } else {
+          // First, set all wallets to non-primary
+          updatedWallets.forEach((wallet) => (wallet.isPrimary = false))
+
+          // Add the new wallet as primary
+          updatedWallets.push({
+            address: randomAddress,
+            provider: providerType,
+            isPrimary: true,
+          })
+        }
+
+        console.log("Updated wallets (mock):", updatedWallets)
+
+        // Update state with the new wallets array
         setConnectedWallets(updatedWallets)
+
+        // Update localStorage
         localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
 
         // Update state with the newly connected wallet
@@ -187,6 +227,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true)
         setChainId(1) // Ethereum Mainnet
         setWalletProvider(providerType)
+
+        console.log("Wallet connected successfully (mock)")
         return
       }
 
@@ -204,6 +246,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
 
       const newAddress = accounts[0]
+      console.log("Connected to address:", newAddress)
 
       // Get chain ID
       const chainIdHex = await provider.request({
@@ -221,20 +264,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const balanceInEth = balanceInWei / 1e18
       const newBalance = balanceInEth.toFixed(4)
 
-      // Update connected wallets - remove any existing primary wallet
-      const updatedWallets = connectedWallets.filter((w) => !w.isPrimary)
+      // Create a copy of the current wallets array
+      const updatedWallets = [...connectedWallets]
 
-      // Check if this wallet already exists (but is not primary)
+      // Check if this wallet already exists
       const existingWalletIndex = updatedWallets.findIndex((w) => w.address.toLowerCase() === newAddress.toLowerCase())
 
+      // If wallet exists but is not primary, make it primary
       if (existingWalletIndex >= 0) {
-        // Update the existing wallet to be primary and ensure provider is correct
+        // First, set all wallets to non-primary
+        updatedWallets.forEach((wallet) => (wallet.isPrimary = false))
+
+        // Then set this wallet to primary
         updatedWallets[existingWalletIndex] = {
           ...updatedWallets[existingWalletIndex],
           provider: providerType,
           isPrimary: true,
         }
       } else {
+        // First, set all wallets to non-primary
+        updatedWallets.forEach((wallet) => (wallet.isPrimary = false))
+
         // Add the new wallet as primary
         updatedWallets.push({
           address: newAddress,
@@ -243,7 +293,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         })
       }
 
+      console.log("Updated wallets:", updatedWallets)
+
+      // Update state with the new wallets array
       setConnectedWallets(updatedWallets)
+
+      // Update localStorage
       localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
 
       // Update state with the newly connected wallet
@@ -252,6 +307,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setIsConnected(true)
       setChainId(newChainId)
       setWalletProvider(providerType)
+
+      console.log("Wallet connected successfully")
     } catch (err) {
       console.error(`Error connecting ${providerType} wallet:`, err)
       setError(`${(err as Error).message || `Failed to connect ${providerType} wallet. Please try again.`}`)
@@ -309,20 +366,31 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Disconnect wallet function
   const disconnectWallet = () => {
+    console.log("Disconnecting wallet, current wallets:", connectedWallets)
+
     // Get the current primary wallet
     const primaryWallet = connectedWallets.find((w) => w.isPrimary)
 
     if (!primaryWallet) {
+      console.log("No primary wallet to disconnect")
       // No primary wallet to disconnect
       return
     }
 
-    // Remove the primary wallet from the list
+    console.log("Disconnecting primary wallet:", primaryWallet)
+
+    // Create a copy of the current wallets array
     const updatedWallets = connectedWallets.filter((w) => w.address !== primaryWallet.address)
+    console.log("Wallets after removal:", updatedWallets)
 
     // If there are still wallets, set the first one as primary
     if (updatedWallets.length > 0) {
-      updatedWallets[0].isPrimary = true
+      updatedWallets[0] = {
+        ...updatedWallets[0],
+        isPrimary: true,
+      }
+
+      console.log("Setting new primary wallet:", updatedWallets[0])
       setConnectedWallets(updatedWallets)
       localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
 
@@ -335,6 +403,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const mockEthBalance = (Math.random() * 10).toFixed(4)
       setBalance(mockEthBalance)
     } else {
+      console.log("No wallets left, resetting everything")
       // No wallets left, reset everything
       setConnectedWallets([])
       localStorage.setItem("connectedWallets", JSON.stringify([]))
@@ -347,6 +416,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Set primary wallet
   const setPrimaryWallet = (walletAddress: string) => {
+    console.log("Setting primary wallet:", walletAddress)
+    console.log("Current wallets:", connectedWallets)
+
     const targetWallet = connectedWallets.find((w) => w.address === walletAddress)
 
     if (!targetWallet) {
@@ -354,10 +426,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    // Create a new array with updated isPrimary flags
     const updatedWallets = connectedWallets.map((w) => ({
       ...w,
       isPrimary: w.address === walletAddress,
     }))
+
+    console.log("Updated wallets with new primary:", updatedWallets)
 
     setConnectedWallets(updatedWallets)
     localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))

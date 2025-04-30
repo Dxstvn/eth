@@ -57,6 +57,9 @@ export default function ConnectWalletButton({
   const [showWalletOptions, setShowWalletOptions] = useState(false)
   const [connectionError, setConnectionError] = useState<string | null>(null)
 
+  // Debug log for connected wallets
+  console.log("Connect Wallet Button - Connected Wallets:", connectedWallets)
+
   // Find the primary wallet for accurate provider display
   const primaryWallet = connectedWallets.find((wallet) => wallet.isPrimary)
   const currentProvider = primaryWallet?.provider || walletProvider
