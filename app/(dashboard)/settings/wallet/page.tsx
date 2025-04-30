@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import Link from "next/link"
-import { ExternalLink, Plus, Settings } from "lucide-react"
+import { ExternalLink, Plus, Settings, Check } from "lucide-react"
 
 export default function WalletSettingsPage() {
-  const { isConnected, address, walletProvider, connectWallet, connectedWallets } = useWallet()
+  const { isConnected, address, walletProvider, connectWallet, connectedWallets, setPrimaryWallet } = useWallet()
   const { toast } = useToast()
   const [showConnectDialog, setShowConnectDialog] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -123,6 +123,16 @@ export default function WalletSettingsPage() {
                           >
                             <ExternalLink className="h-4 w-4 mr-1" /> View
                           </Button>
+                          {!wallet.isPrimary && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-teal-700 border-teal-200 hover:bg-teal-50"
+                              onClick={() => setPrimaryWallet(wallet.address)}
+                            >
+                              <Check className="h-4 w-4 mr-1" /> Set Primary
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
