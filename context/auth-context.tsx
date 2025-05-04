@@ -85,10 +85,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       // First check if backend is available
-      const isBackendAvailable = await checkBackendConnection()
-      if (!isBackendAvailable) {
-        throw new Error("Authentication server is currently unavailable. Please try again later.")
-      }
+      //const isBackendAvailable = await checkBackendConnection()
+      //if (!isBackendAvailable) {
+      //  throw new Error("Authentication server is currently unavailable. Please try again later.")
+      //}
 
       // 1. Sign in with Google to get credentials
       const result = await signInWithPopup(auth, googleProvider)
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Get the ID token
       const idToken = await result.user.getIdToken(true)
-
+      console.log("Sending ID Token:", idToken)
       // 3. Send token to backend for verification
       const response = await fetch(`${API_URL}/auth/signInGoogle`, {
         method: "POST",
