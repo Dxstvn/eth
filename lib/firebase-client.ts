@@ -23,7 +23,9 @@ export async function getIdToken() {
   if (!user) {
     throw new Error("User not authenticated")
   }
-  return user.getIdToken(true)
+  const idToken = await user.getIdToken(true)
+  console.log("Generated ID Token:", idToken)
+  return idToken
 }
 
 export { app, auth, googleProvider }
