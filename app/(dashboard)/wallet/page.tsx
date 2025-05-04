@@ -3,71 +3,115 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useState, useEffect } from "react"
-import { useDatabaseStore } from "@/lib/mock-database"
 import { useWallet } from "@/context/wallet-context"
 import { useToast } from "@/components/ui/use-toast"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
-import { useAuth } from "@/context/auth-context"
+import { Wallet } from "lucide-react"
 
 export default function WalletPage() {
-  const { getAssets, getActivities } = useDatabaseStore()
-  const { address, isConnected, balance, connectWallet, isConnecting, error, walletProvider, connectedWallets } =
-    useWallet()
-  const { isDemoAccount } = useAuth()
-  const { addToast } = useToast()
-  const [assets, setAssets] = useState(getAssets())
-  const [activities, setActivities] = useState(
-    getActivities().filter((a) => a.type === "payment_sent" || a.type === "payment_received"),
-  )
+  const { currentAddress, isConnected, connectWallet, connectedWallets, getBalance, getTransactions } = useWallet()
+  const { toast } = useToast()
+  const [balance, setBalance] = useState("0")
+  const [assets, setAssets] = useState<any[]>([])
+  const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [copiedAddress, setCopiedAddress] = useState(false)
   const [activeTab, setActiveTab] = useState("assets")
-  const [checkingIpfs, setCheckingIpfs] = useState(false)
 
-  // Simulate loading
+  // Find the current wallet
+  const currentWallet = connectedWallets.find((wallet) => wallet.address === currentAddress)
+
+  // Fetch wallet data when address changes or on refresh
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+    if (currentAddress) {
+      fetchWalletData()
+    }
+  }, [currentAddress])
 
-    return () => clearTimeout(timer)
-  }, [])
+  // Fetch wallet data from the injection provider
+  const fetchWalletData = async () => {
+    if (!currentAddress) return
+
+    setLoading(true)
+
+    try {
+      // Get balance from injection provider
+      const walletBalance = await getBalance(currentAddress)
+      setBalance(walletBalance)
+
+      // Get transactions from injection provider
+      const transactions = await getTransactions(currentAddress)
+
+      // Format transactions as activities
+      const formattedActivities = transactions.map((tx, index) => ({
+        id: index + 1,
+        type: tx.type === "sent" ? "payment_sent" : "payment_received",
+        title: tx.type === "sent" ? "Payment Sent" : "Payment Received",
+        description:
+          tx.type === "sent"
+            ? `To ${tx.to.slice(0, 6)}...${tx.to.slice(-4)}`
+            : `From ${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`,
+        date: new Date(tx.timestamp).toISOString(),
+        time: new Date(tx.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        value: tx.value,
+        hash: tx.hash,
+      }))
+
+      setActivities(formattedActivities)
+
+      // For demo purposes, create some mock assets based on the balance
+      const ethBalance = Number.parseFloat(walletBalance)
+      const mockAssets = [
+        {
+          id: 1,
+          name: "Ethereum",
+          symbol: "ETH",
+          amount: ethBalance,
+          price: "2000",
+          value: ethBalance * 2000,
+          change: "+1.2%",
+          trend: "up",
+        },
+        {
+          id: 2,
+          name: "USD Coin",
+          symbol: "USDC",
+          amount: ethBalance * 500,
+          price: "1",
+          value: ethBalance * 500,
+          change: "0.0%",
+          trend: "neutral",
+        },
+      ]
+
+      setAssets(mockAssets)
+    } catch (error) {
+      console.error("Error fetching wallet data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch wallet data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true)
-
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Update assets with small random changes
-    const updatedAssets = assets.map((asset) => {
-      const changePercent = (Math.random() * 2 - 1) * 2 // Random between -2% and +2%
-      const newPrice = Number.parseFloat(asset.price.replace("$", "")) * (1 + changePercent / 100)
-      const newValue = asset.amount * newPrice
-      const newChange = `${changePercent > 0 ? "+" : ""}${changePercent.toFixed(1)}%`
-
-      return {
-        ...asset,
-        price: `${newPrice.toFixed(2)}`,
-        value: newValue,
-        change: newChange,
-        trend: changePercent > 0 ? "up" : changePercent < 0 ? "down" : "neutral",
-      }
-    })
-
-    setAssets(updatedAssets)
+    await fetchWalletData()
     setRefreshing(false)
   }
 
   // Handle copy address
   const handleCopyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address)
+    if (currentAddress) {
+      navigator.clipboard.writeText(currentAddress)
       setCopiedAddress(true)
-      addToast({
+      toast({
         title: "Address Copied",
         description: "Wallet address copied to clipboard",
       })
@@ -77,33 +121,36 @@ export default function WalletPage() {
 
   // Handle view on explorer
   const handleViewOnExplorer = () => {
-    if (address) {
-      window.open(`https://etherscan.io/address/${address}`, "_blank")
+    if (currentAddress) {
+      window.open(`https://etherscan.io/address/${currentAddress}`, "_blank")
     }
   }
 
-  // Add this function to handle wallet connection with provider parameter
-  const handleConnectWallet = async (provider: "metamask" | "coinbase") => {
+  // Handle connect wallet
+  const handleConnectWallet = async () => {
     try {
-      setCheckingIpfs(true) // Reuse the existing loading state
-      await connectWallet(provider)
-      addToast({
-        title: `${provider === "metamask" ? "MetaMask" : "Coinbase Wallet"} Connected`,
+      await connectWallet()
+      toast({
+        title: "Wallet Connected",
         description: "Your wallet has been connected successfully.",
       })
     } catch (err) {
-      addToast({
+      toast({
         title: "Connection Failed",
-        description: error || "Failed to connect wallet. Please try again.",
+        description: (err as Error).message || "Failed to connect wallet. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setCheckingIpfs(false)
     }
   }
 
   // Calculate total balance
   const totalBalance = assets.reduce((sum, asset) => sum + asset.value, 0)
+
+  // Format address
+  const formatAddress = (addr: string | null) => {
+    if (!addr) return ""
+    return `${addr.slice(0, 8)}...${addr.slice(-6)}`
+  }
 
   // If not connected, show wallet connection UI
   if (!isConnected) {
@@ -120,39 +167,33 @@ export default function WalletPage() {
 
         <Card className="shadow-md border-0 max-w-2xl mx-auto">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">Choose a Wallet Provider</CardTitle>
+            <CardTitle className="text-2xl">Connect a Wallet</CardTitle>
             <CardDescription>Connect your wallet to view your balance and transaction history</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {["metamask", "coinbase"].map((provider) => (
-                <Button
-                  key={provider}
-                  onClick={() => handleConnectWallet(provider as "metamask" | "coinbase")}
-                  disabled={isConnecting}
-                  className="flex items-center justify-center gap-3 h-32 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
-                >
-                  <div className="h-12 w-12 relative flex items-center justify-center">
-                    {provider === "metamask" ? (
-                      <div className="relative w-10 h-10">
-                        <MetamaskFox />
-                      </div>
-                    ) : (
-                      <div className="h-10 w-10 flex items-center justify-center">
-                        <CoinbaseIcon className="h-10 w-10" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="font-semibold text-white">
-                      {provider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
-                    </span>
-                    <span className="text-xs text-white opacity-80">
-                      {provider === "metamask" ? "Popular Ethereum Wallet" : "Coinbase's Crypto Wallet"}
-                    </span>
-                  </div>
-                </Button>
-              ))}
+            <div className="text-center">
+              <Button
+                onClick={handleConnectWallet}
+                className="bg-teal-900 hover:bg-teal-800 text-white px-8 py-6 text-lg"
+              >
+                <div className="mr-3 h-6 w-6 relative">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                Connect Wallet
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -208,32 +249,31 @@ export default function WalletPage() {
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              {/* Update the connected wallet display */}
               <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center text-teal-800">
-                {walletProvider === "metamask" ? (
+                {currentWallet?.name === "MetaMask" ? (
                   <div className="relative w-12 h-12">
                     <MetamaskFox />
                   </div>
-                ) : (
+                ) : currentWallet?.name === "Coinbase Wallet" ? (
                   <div className="h-10 w-10 flex items-center justify-center">
                     <CoinbaseIcon className="h-10 w-10" />
                   </div>
+                ) : (
+                  <Wallet className="h-10 w-10" />
                 )}
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-teal-900 font-display">
-                  {walletProvider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
+                  {currentWallet?.name || "Connected Wallet"}
                 </h2>
                 <p className="text-sm text-neutral-500 font-mono">
-                  {address ? `${address.slice(0, 8)}...${address.slice(-6)}` : ""}
+                  {currentAddress ? formatAddress(currentAddress) : ""}
                 </p>
               </div>
             </div>
             <div className="text-center md:text-right">
-              <p className="text-sm text-neutral-500">Total Balance</p>
-              <p className="text-3xl font-bold text-teal-900 font-display">
-                ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
+              <p className="text-sm text-neutral-500">ETH Balance</p>
+              <p className="text-3xl font-bold text-teal-900 font-display">{balance} ETH</p>
             </div>
           </div>
         </CardContent>

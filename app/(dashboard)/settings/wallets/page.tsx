@@ -3,97 +3,57 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Check, Trash2, Plus, ExternalLink } from "lucide-react"
+import { ArrowLeft, Trash2, Plus, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useWallet } from "@/context/wallet-context"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
-import { useAuth } from "@/context/auth-context"
+import { Wallet } from "lucide-react"
 
 export default function WalletsSettingsPage() {
-  const { isConnected, address, walletProvider, connectWallet, disconnectWallet, setPrimaryWallet, connectedWallets } =
-    useWallet()
-  const { isDemoAccount } = useAuth()
+  const { connectWallet, disconnectWallet, isConnecting, connectedWallets, refreshWallets } = useWallet()
   const { toast } = useToast()
-  const [showAddWalletDialog, setShowAddWalletDialog] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Debug log for connected wallets
   console.log("Wallet Settings Page - Connected Wallets:", connectedWallets)
 
-  const handleAddWallet = async (provider: "metamask" | "coinbase") => {
+  const handleAddWallet = async () => {
     try {
-      setIsConnecting(true)
       setError(null)
-
-      // Connect the wallet
-      await connectWallet(provider)
-
-      // Close the dialog
-      setShowAddWalletDialog(false)
-
+      await connectWallet()
       toast({
         title: "Wallet Connected",
-        description: `Your ${provider === "metamask" ? "MetaMask" : "Coinbase"} wallet has been connected successfully.`,
+        description: "Your wallet has been connected successfully.",
       })
     } catch (err) {
       console.error("Error connecting wallet:", err)
-      setError(`${(err as Error).message || `Failed to connect ${provider} wallet. Please try again.`}`)
-    } finally {
-      setIsConnecting(false)
+      setError(`${(err as Error).message || "Failed to connect wallet. Please try again."}`)
     }
   }
 
-  const handleSetPrimary = (walletAddress: string) => {
-    setPrimaryWallet(walletAddress)
-
-    toast({
-      title: "Primary Wallet Updated",
-      description: "Your primary wallet has been updated successfully.",
-    })
-  }
-
-  const handleRemoveWallet = (walletAddress: string) => {
-    // Check if this is the primary wallet
-    const isRemovingPrimary = connectedWallets.find((w) => w.address === walletAddress)?.isPrimary
-
-    // If this is the currently connected wallet, disconnect it
-    if (walletAddress === address) {
-      disconnectWallet()
+  const handleRemoveWallet = async (address: string) => {
+    try {
+      await disconnectWallet(address)
+      toast({
+        title: "Wallet Removed",
+        description: "The wallet has been removed successfully.",
+      })
+    } catch (err) {
+      console.error("Error removing wallet:", err)
+      toast({
+        title: "Error",
+        description: `Failed to remove wallet: ${(err as Error).message}`,
+        variant: "destructive",
+      })
     }
-
-    toast({
-      title: "Wallet Removed",
-      description: "The wallet has been removed successfully.",
-    })
   }
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
-
-  // Use the actual wallets from context
-  const displayWallets =
-    isDemoAccount && connectedWallets.length === 0
-      ? [
-          {
-            provider: "metamask" as const,
-            address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-            isPrimary: true,
-          },
-        ]
-      : connectedWallets
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -109,49 +69,38 @@ export default function WalletsSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Connected Wallets</CardTitle>
-            <CardDescription>
-              Manage your connected wallets. The primary wallet will be used for transactions by default.
-            </CardDescription>
+            <CardDescription>Manage your connected wallets.</CardDescription>
           </CardHeader>
           <CardContent>
-            {displayWallets.length === 0 ? (
+            {connectedWallets.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">You don't have any wallets connected yet.</p>
-                <Button
-                  onClick={() => setShowAddWalletDialog(true)}
-                  className="bg-teal-900 hover:bg-teal-800 text-white"
-                >
+                <Button onClick={handleAddWallet} className="bg-teal-900 hover:bg-teal-800 text-white">
                   <Plus className="mr-2 h-4 w-4" /> Connect a Wallet
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
-                {displayWallets.map((wallet) => (
-                  <div
-                    key={wallet.address}
-                    className={`p-4 rounded-lg border ${wallet.isPrimary ? "border-teal-200 bg-teal-50" : "border-gray-200"}`}
-                  >
+                {connectedWallets.map((wallet) => (
+                  <div key={wallet.address} className="p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 relative flex items-center justify-center">
-                          {wallet.provider === "metamask" ? (
+                          {wallet.name === "MetaMask" ? (
                             <div className="relative w-10 h-10">
                               <MetamaskFox />
                             </div>
-                          ) : (
+                          ) : wallet.name === "Coinbase Wallet" ? (
                             <div className="h-10 w-10 flex items-center justify-center">
                               <CoinbaseIcon className="h-10 w-10" />
                             </div>
+                          ) : (
+                            <Wallet className="h-10 w-10" />
                           )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">
-                              {wallet.provider === "metamask" ? "MetaMask" : "Coinbase Wallet"}
-                            </p>
-                            {wallet.isPrimary && (
-                              <span className="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">Primary</span>
-                            )}
+                            <p className="font-medium">{wallet.name}</p>
                           </div>
                           <p className="text-sm text-gray-500 font-mono">{formatAddress(wallet.address)}</p>
                         </div>
@@ -165,16 +114,6 @@ export default function WalletsSettingsPage() {
                         >
                           <ExternalLink className="h-4 w-4 mr-1" /> View
                         </Button>
-                        {!wallet.isPrimary && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-teal-700 border-teal-200 hover:bg-teal-50"
-                            onClick={() => handleSetPrimary(wallet.address)}
-                          >
-                            <Check className="h-4 w-4 mr-1" /> Set Primary
-                          </Button>
-                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -191,13 +130,20 @@ export default function WalletsSettingsPage() {
             )}
           </CardContent>
           <CardFooter>
-            {displayWallets.length > 0 && (
-              <Button onClick={() => setShowAddWalletDialog(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
+            {connectedWallets.length > 0 && (
+              <Button onClick={handleAddWallet} className="bg-teal-900 hover:bg-teal-800 text-white">
                 <Plus className="mr-2 h-4 w-4" /> Connect Another Wallet
               </Button>
             )}
           </CardFooter>
         </Card>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Card>
           <CardHeader>
@@ -206,10 +152,10 @@ export default function WalletsSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h3 className="font-medium mb-2">Primary Wallet</h3>
+              <h3 className="font-medium mb-2">Wallet Security</h3>
               <p className="text-sm text-gray-600">
-                Your primary wallet is used by default for all transactions. You can change your primary wallet at any
-                time.
+                CryptoEscrow never stores your private keys. All transactions are signed directly through your wallet
+                provider.
               </p>
             </div>
             <div>
@@ -219,68 +165,9 @@ export default function WalletsSettingsPage() {
                 different transactions.
               </p>
             </div>
-            <div>
-              <h3 className="font-medium mb-2">Wallet Security</h3>
-              <p className="text-sm text-gray-600">
-                CryptoEscrow never stores your private keys. All transactions are signed directly through your wallet
-                provider.
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Add Wallet Dialog */}
-      <Dialog open={showAddWalletDialog} onOpenChange={setShowAddWalletDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Connect a Wallet</DialogTitle>
-            <DialogDescription>Choose a wallet provider to connect to your account.</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-1 gap-4 py-4">
-            <Button
-              onClick={() => handleAddWallet("metamask")}
-              disabled={isConnecting}
-              className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
-            >
-              <div className="h-8 w-8 relative flex items-center justify-center">
-                <div className="relative w-8 h-8">
-                  <MetamaskFox />
-                </div>
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="font-semibold text-white">MetaMask</span>
-                <span className="text-xs text-white opacity-80">Connect to your MetaMask wallet</span>
-              </div>
-            </Button>
-
-            <Button
-              onClick={() => handleAddWallet("coinbase")}
-              disabled={isConnecting}
-              className="flex items-center justify-center gap-3 h-16 bg-teal-900 hover:bg-teal-800 text-white border border-teal-800"
-            >
-              <div className="h-8 w-8 relative flex items-center justify-center">
-                <CoinbaseIcon className="h-8 w-8" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="font-semibold text-white">Coinbase Wallet</span>
-                <span className="text-xs text-white opacity-80">Connect to your Coinbase wallet</span>
-              </div>
-            </Button>
-          </div>
-          {error && (
-            <Alert variant="destructive">
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddWalletDialog(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
