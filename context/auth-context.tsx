@@ -12,6 +12,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase-client"
+import 'dotenv/config';
 
 type AuthContextType = {
   user: User | null
@@ -90,13 +91,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log(`MESSAGING SENDER ID: '${process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}'`);
     console.log(`APP ID: '${process.env.NEXT_PUBLIC_FIREBASE_APP_ID}'`);
     console.log(`MEASUREMENT ID: '${process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}'`);
-    
+
     try {
       // First check if backend is available
-      //const isBackendAvailable = await checkBackendConnection()
-      //if (!isBackendAvailable) {
-      //  throw new Error("Authentication server is currently unavailable. Please try again later.")
-      //}
+      const isBackendAvailable = await checkBackendConnection()
+      if (!isBackendAvailable) {
+        throw new Error("Authentication server is currently unavailable. Please try again later.")
+      }
 
       // 1. Sign in with Google to get credentials
       const result = await signInWithPopup(auth, googleProvider)
