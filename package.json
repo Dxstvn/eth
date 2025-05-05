@@ -64,7 +64,8 @@
     "firebase": "latest",
     "framer-motion": "latest",
     "zustand": "latest",
-    "@aws-sdk/client-s3": "latest"
+    "@aws-sdk/client-s3": "latest",
+    "dotenv": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
