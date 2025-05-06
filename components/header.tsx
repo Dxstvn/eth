@@ -54,7 +54,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-x-4">
-        <ConnectWalletButton variant="outline" size="default" />
+        <ConnectWalletButton variant="ghost" size="default" />
 
         {user && (
           <DropdownMenu>

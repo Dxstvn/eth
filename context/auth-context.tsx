@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Get the ID token
       const idToken = await result.user.getIdToken(true)
-      console.log("Sending ID Token:", idToken)
+      //console.log("Sending ID Token:", idToken)
       // 3. Send token to backend for verification
       const response = await fetch(`${API_URL}/auth/signInGoogle`, {
         method: "POST",

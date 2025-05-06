@@ -1,4 +1,3 @@
-// EIP-6963 interfaces
 export interface EIP6963ProviderInfo {
   uuid: string
   name: string
@@ -11,15 +10,17 @@ export interface EIP6963ProviderDetail {
   provider: any
 }
 
-export interface EIP6963AnnounceProviderEvent extends CustomEvent {
-  type: "eip6963:announceProvider"
-  detail: EIP6963ProviderDetail
-}
-
 export interface ConnectedWallet {
   address: string
   name: string
   icon?: string
-  provider?: any
+  provider: any
   isPrimary?: boolean
+}
+
+// Extend the global Window interface
+declare global {
+  interface Window {
+    ethereum?: any
+  }
 }

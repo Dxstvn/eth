@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
 import WalletConnectModal from "./wallet-connect-modal"
+import { MetamaskFox } from "@/components/icons/metamask-fox"
+import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
 import Image from "next/image"
 
 interface ConnectWalletButtonProps {
@@ -140,24 +142,41 @@ export default function ConnectWalletButton({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={variant} size={size} className={`connect-wallet-btn ${className}`}>
-            <div className="mr-2 h-5 w-5 relative">
-              {currentWallet?.icon ? (
-                <div className="relative w-5 h-5">
-                  <Image
-                    src={currentWallet.icon || "/placeholder.svg"}
-                    alt={currentWallet.name}
-                    width={20}
-                    height={20}
-                  />
-                </div>
+          <Button
+            variant={variant === "primary" ? "ghost" : variant}
+            size={size}
+            className={`connect-wallet-btn ${className} ${variant === "primary" ? "hover:bg-transparent" : ""}`}
+          >
+            <div className="relative h-6 w-6">
+              {currentWallet?.name === "MetaMask" ? (
+                <MetamaskFox className="h-6 w-6" />
+              ) : currentWallet?.name === "Coinbase Wallet" ? (
+                <CoinbaseIcon className="h-6 w-6" />
+              ) : currentWallet?.icon ? (
+                <Image
+                  src={currentWallet.icon || "/placeholder.svg"}
+                  alt={currentWallet.name}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
               ) : (
                 <Wallet className="h-5 w-5" />
               )}
+              {isConnected && (
+                <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
+                  <span className="animate-none relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                </span>
+              )}
             </div>
-            <span className="hidden sm:inline mr-1">{balance} ETH</span>
-            <span>{formatAddress(currentAddress)}</span>
-            <ChevronDown className="ml-1 h-4 w-4" />
+            {variant !== "ghost" && (
+              <>
+                <span className="hidden sm:inline ml-2 mr-1">{balance} ETH</span>
+                <span>{formatAddress(currentAddress)}</span>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </>
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -165,6 +184,7 @@ export default function ConnectWalletButton({
             <div className="flex flex-col">
               <span className="font-bold">{currentWallet?.name || "Connected Wallet"}</span>
               <span className="text-xs text-muted-foreground">{formatAddress(currentAddress)}</span>
+              <span className="text-xs font-medium text-green-600 mt-1">{balance} ETH</span>
             </div>
           </DropdownMenuLabel>
 
@@ -177,10 +197,18 @@ export default function ConnectWalletButton({
                 .map((wallet) => (
                   <DropdownMenuItem key={wallet.address} onClick={() => handleSetPrimary(wallet.address)}>
                     <div className="mr-2 h-4 w-4">
-                      {wallet.icon ? (
-                        <div className="relative w-4 h-4">
-                          <Image src={wallet.icon || "/placeholder.svg"} alt={wallet.name} width={16} height={16} />
-                        </div>
+                      {wallet.name === "MetaMask" ? (
+                        <MetamaskFox className="h-4 w-4" />
+                      ) : wallet.name === "Coinbase Wallet" ? (
+                        <CoinbaseIcon className="h-4 w-4" />
+                      ) : wallet.icon ? (
+                        <Image
+                          src={wallet.icon || "/placeholder.svg"}
+                          alt={wallet.name}
+                          width={16}
+                          height={16}
+                          className="rounded-full"
+                        />
                       ) : (
                         <Wallet className="h-4 w-4" />
                       )}
