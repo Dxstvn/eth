@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { walletApi } from "@/services/wallet-api"
+import type { EIP6963ProviderDetail, ConnectedWallet } from "@/types/wallet"
 
 // Define the shape of our wallet context
 type WalletContextType = {
@@ -9,10 +9,11 @@ type WalletContextType = {
   isConnected: boolean
   isConnecting: boolean
   error: string | null
-  connectedWallets: Array<{ address: string; name: string }>
-  connectWallet: () => Promise<void>
+  connectedWallets: ConnectedWallet[]
+  discoveredProviders: EIP6963ProviderDetail[]
+  connectWallet: (provider: any) => Promise<void>
   disconnectWallet: (address: string) => Promise<void>
-  refreshWallets: () => Promise<void>
+  setPrimaryWallet: (address: string) => void
   getBalance: (address: string) => Promise<string>
   getTransactions: (address: string) => Promise<any[]>
 }
@@ -24,9 +25,10 @@ const WalletContext = createContext<WalletContextType>({
   isConnecting: false,
   error: null,
   connectedWallets: [],
+  discoveredProviders: [],
   connectWallet: async () => {},
   disconnectWallet: async () => {},
-  refreshWallets: async () => {},
+  setPrimaryWallet: () => {},
   getBalance: async () => "0",
   getTransactions: async () => [],
 })
@@ -36,46 +38,97 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [connectedWallets, setConnectedWallets] = useState<Array<{ address: string; name: string }>>([])
+  const [connectedWallets, setConnectedWallets] = useState<ConnectedWallet[]>([])
+  const [discoveredProviders, setDiscoveredProviders] = useState<EIP6963ProviderDetail[]>([])
 
-  // Fetch connected wallets on mount
+  // Initialize wallet state from localStorage
   useEffect(() => {
-    refreshWallets()
+    const savedWallets = localStorage.getItem("connectedWallets")
+    if (savedWallets) {
+      try {
+        const parsedWallets = JSON.parse(savedWallets) as ConnectedWallet[]
+        console.log("Loaded wallets from localStorage:", parsedWallets)
+        setConnectedWallets(parsedWallets)
+
+        // Set the primary wallet as current
+        const primaryWallet = parsedWallets.find((wallet) => wallet.isPrimary)
+        if (primaryWallet) {
+          setCurrentAddress(primaryWallet.address)
+          setIsConnected(true)
+        } else if (parsedWallets.length > 0) {
+          // If no primary wallet, set the first one as primary
+          setCurrentAddress(parsedWallets[0].address)
+          setIsConnected(true)
+
+          // Update the first wallet to be primary
+          const updatedWallets = parsedWallets.map((wallet, index) => ({
+            ...wallet,
+            isPrimary: index === 0,
+          }))
+          setConnectedWallets(updatedWallets)
+          localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
+        }
+      } catch (err) {
+        console.error("Error parsing saved wallets:", err)
+      }
+    }
   }, [])
 
-  // Function to refresh the list of connected wallets from the backend
-  const refreshWallets = async () => {
-    try {
-      const wallets = await walletApi.getConnectedWallets()
-      console.log("Fetched wallets from backend:", wallets)
-      setConnectedWallets(wallets)
+  // Listen for EIP-6963 wallet announcements
+  useEffect(() => {
+    const handleAnnouncement = (event: any) => {
+      const providerDetail = event.detail
+      console.log("EIP-6963 provider announced:", providerDetail)
 
-      // If we have wallets but no current address, set the first one as current
-      if (wallets.length > 0 && !currentAddress) {
-        setCurrentAddress(wallets[0].address)
-        setIsConnected(true)
-      } else if (wallets.length === 0) {
-        setCurrentAddress(null)
-        setIsConnected(false)
-      }
-    } catch (err) {
-      console.error("Error fetching wallets:", err)
+      setDiscoveredProviders((prev) => {
+        // Check if this provider is already in the list
+        const exists = prev.some((p) => p.info.uuid === providerDetail.info.uuid)
+        if (exists) return prev
+        return [...prev, providerDetail]
+      })
     }
-  }
 
-  // Connect wallet function - uses window.ethereum directly
-  const connectWallet = async () => {
+    // Listen for wallet announcements
+    window.addEventListener("eip6963:announceProvider", handleAnnouncement as EventListener)
+
+    // Request providers to announce themselves
+    window.dispatchEvent(new Event("eip6963:requestProvider"))
+
+    // Legacy fallback for window.ethereum
+    if (window.ethereum && !discoveredProviders.length) {
+      const legacyProvider = {
+        info: {
+          uuid: "legacy-ethereum",
+          name: window.ethereum.isMetaMask
+            ? "MetaMask"
+            : window.ethereum.isCoinbaseWallet
+              ? "Coinbase Wallet"
+              : "Injected Wallet",
+          icon: "",
+          rdns: window.ethereum.isMetaMask
+            ? "io.metamask"
+            : window.ethereum.isCoinbaseWallet
+              ? "com.coinbase.wallet"
+              : "unknown",
+        },
+        provider: window.ethereum,
+      }
+      setDiscoveredProviders((prev) => [...prev, legacyProvider])
+    }
+
+    return () => {
+      window.removeEventListener("eip6963:announceProvider", handleAnnouncement as EventListener)
+    }
+  }, [])
+
+  // Connect wallet function
+  const connectWallet = async (provider: any) => {
     try {
       setIsConnecting(true)
       setError(null)
 
-      // Check if ethereum is available
-      if (typeof window === "undefined" || typeof window.ethereum === "undefined") {
-        throw new Error("No wallet provider found. Please install MetaMask or another compatible wallet.")
-      }
-
       // Request accounts
-      const accounts = await window.ethereum.request({
+      const accounts = await provider.request({
         method: "eth_requestAccounts",
         params: [],
       })
@@ -87,23 +140,59 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const newAddress = accounts[0]
       console.log("Connected to address:", newAddress)
 
-      // Determine wallet name
+      // Determine wallet name and icon
       let walletName = "Unknown Wallet"
-      if (window.ethereum.isMetaMask) {
+      let walletIcon = ""
+
+      // Find the provider in discovered providers
+      const discoveredProvider = discoveredProviders.find((p) => p.provider === provider)
+      if (discoveredProvider) {
+        walletName = discoveredProvider.info.name
+        walletIcon = discoveredProvider.info.icon
+      } else if (provider.isMetaMask) {
         walletName = "MetaMask"
-      } else if (window.ethereum.isCoinbaseWallet) {
+      } else if (provider.isCoinbaseWallet) {
         walletName = "Coinbase Wallet"
       }
 
-      // Register wallet with backend
-      await walletApi.registerWallet(newAddress, walletName)
+      // Check if this wallet is already connected
+      const existingWalletIndex = connectedWallets.findIndex(
+        (wallet) => wallet.address.toLowerCase() === newAddress.toLowerCase(),
+      )
 
-      // Refresh wallets from backend
-      await refreshWallets()
+      let updatedWallets: ConnectedWallet[]
 
-      // Set current address
+      if (existingWalletIndex >= 0) {
+        // Update existing wallet
+        updatedWallets = [...connectedWallets]
+        updatedWallets[existingWalletIndex] = {
+          ...updatedWallets[existingWalletIndex],
+          name: walletName,
+          icon: walletIcon,
+          provider: provider,
+        }
+      } else {
+        // Add new wallet
+        const newWallet: ConnectedWallet = {
+          address: newAddress,
+          name: walletName,
+          icon: walletIcon,
+          provider: provider,
+          isPrimary: connectedWallets.length === 0, // First wallet is primary
+        }
+
+        updatedWallets = [...connectedWallets, newWallet]
+      }
+
+      // Update state
+      setConnectedWallets(updatedWallets)
       setCurrentAddress(newAddress)
       setIsConnected(true)
+
+      // Save to localStorage
+      localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
+
+      console.log("Updated connected wallets:", updatedWallets)
 
       return { address: newAddress, name: walletName }
     } catch (err) {
@@ -118,27 +207,41 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // Disconnect wallet function
   const disconnectWallet = async (address: string) => {
     try {
-      await walletApi.removeWallet(address)
+      // Remove wallet from state
+      const updatedWallets = connectedWallets.filter((wallet) => wallet.address.toLowerCase() !== address.toLowerCase())
 
-      // Refresh wallets from backend
-      await refreshWallets()
+      // Update state
+      setConnectedWallets(updatedWallets)
 
       // If we disconnected the current address, reset it
-      if (currentAddress === address) {
-        if (connectedWallets.length > 0) {
+      if (currentAddress?.toLowerCase() === address.toLowerCase()) {
+        if (updatedWallets.length > 0) {
           // Set another wallet as current if available
-          const remainingWallets = connectedWallets.filter((w) => w.address !== address)
-          if (remainingWallets.length > 0) {
-            setCurrentAddress(remainingWallets[0].address)
+          const primaryWallet = updatedWallets.find((wallet) => wallet.isPrimary)
+          if (primaryWallet) {
+            setCurrentAddress(primaryWallet.address)
           } else {
-            setCurrentAddress(null)
-            setIsConnected(false)
+            // Make the first wallet primary
+            const firstWallet = updatedWallets[0]
+            const walletsWithPrimary = updatedWallets.map((wallet, index) => ({
+              ...wallet,
+              isPrimary: index === 0,
+            }))
+            setConnectedWallets(walletsWithPrimary)
+            setCurrentAddress(firstWallet.address)
+            localStorage.setItem("connectedWallets", JSON.stringify(walletsWithPrimary))
           }
         } else {
           setCurrentAddress(null)
           setIsConnected(false)
         }
       }
+
+      // Save to localStorage
+      localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
+
+      console.log("Disconnected wallet:", address)
+      console.log("Remaining wallets:", updatedWallets)
 
       return { success: true }
     } catch (err) {
@@ -147,15 +250,35 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Get balance using the injection provider
+  // Set primary wallet
+  const setPrimaryWallet = (address: string) => {
+    const updatedWallets = connectedWallets.map((wallet) => ({
+      ...wallet,
+      isPrimary: wallet.address.toLowerCase() === address.toLowerCase(),
+    }))
+
+    setConnectedWallets(updatedWallets)
+    setCurrentAddress(address)
+
+    // Save to localStorage
+    localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
+
+    console.log("Set primary wallet:", address)
+    console.log("Updated wallets:", updatedWallets)
+  }
+
+  // Get balance using the wallet provider
   const getBalance = async (address: string): Promise<string> => {
     try {
-      if (typeof window === "undefined" || typeof window.ethereum === "undefined") {
-        throw new Error("No wallet provider found")
+      // Find the wallet with this address
+      const wallet = connectedWallets.find((w) => w.address.toLowerCase() === address.toLowerCase())
+
+      if (!wallet || !wallet.provider) {
+        throw new Error("Wallet provider not found")
       }
 
-      // Use the injection provider to get balance
-      const balanceHex = await window.ethereum.request({
+      // Use the wallet's provider to get balance
+      const balanceHex = await wallet.provider.request({
         method: "eth_getBalance",
         params: [address, "latest"],
       })
@@ -176,10 +299,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Get transactions using the injection provider
+  // Get transactions using the wallet provider
   const getTransactions = async (address: string): Promise<any[]> => {
     try {
-      // In a real implementation, you would use the injection provider or an API
+      // In a real implementation, you would use the wallet provider or an API
       // to fetch transactions for the given address
 
       // For now, return mock data
@@ -215,9 +338,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isConnecting,
         error,
         connectedWallets,
+        discoveredProviders,
         connectWallet,
         disconnectWallet,
-        refreshWallets,
+        setPrimaryWallet,
         getBalance,
         getTransactions,
       }}

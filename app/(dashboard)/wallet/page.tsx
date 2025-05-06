@@ -5,12 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useState, useEffect } from "react"
 import { useWallet } from "@/context/wallet-context"
 import { useToast } from "@/components/ui/use-toast"
-import { MetamaskFox } from "@/components/icons/metamask-fox"
-import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
-import { Wallet } from "lucide-react"
+import { Wallet, RefreshCw, Copy, ExternalLink } from "lucide-react"
+import WalletConnectModal from "@/components/wallet-connect-modal"
+import Image from "next/image"
 
 export default function WalletPage() {
-  const { currentAddress, isConnected, connectWallet, connectedWallets, getBalance, getTransactions } = useWallet()
+  const { currentAddress, isConnected, connectedWallets, getBalance, getTransactions } = useWallet()
   const { toast } = useToast()
   const [balance, setBalance] = useState("0")
   const [assets, setAssets] = useState<any[]>([])
@@ -19,6 +19,7 @@ export default function WalletPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [copiedAddress, setCopiedAddress] = useState(false)
   const [activeTab, setActiveTab] = useState("assets")
+  const [showConnectModal, setShowConnectModal] = useState(false)
 
   // Find the current wallet
   const currentWallet = connectedWallets.find((wallet) => wallet.address === currentAddress)
@@ -30,18 +31,18 @@ export default function WalletPage() {
     }
   }, [currentAddress])
 
-  // Fetch wallet data from the injection provider
+  // Fetch wallet data from the wallet provider
   const fetchWalletData = async () => {
     if (!currentAddress) return
 
     setLoading(true)
 
     try {
-      // Get balance from injection provider
+      // Get balance from wallet provider
       const walletBalance = await getBalance(currentAddress)
       setBalance(walletBalance)
 
-      // Get transactions from injection provider
+      // Get transactions from wallet provider
       const transactions = await getTransactions(currentAddress)
 
       // Format transactions as activities
@@ -126,23 +127,6 @@ export default function WalletPage() {
     }
   }
 
-  // Handle connect wallet
-  const handleConnectWallet = async () => {
-    try {
-      await connectWallet()
-      toast({
-        title: "Wallet Connected",
-        description: "Your wallet has been connected successfully.",
-      })
-    } catch (err) {
-      toast({
-        title: "Connection Failed",
-        description: (err as Error).message || "Failed to connect wallet. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
   // Calculate total balance
   const totalBalance = assets.reduce((sum, asset) => sum + asset.value, 0)
 
@@ -173,7 +157,7 @@ export default function WalletPage() {
           <CardContent className="pt-6 space-y-6">
             <div className="text-center">
               <Button
-                onClick={handleConnectWallet}
+                onClick={() => setShowConnectModal(true)}
                 className="bg-teal-900 hover:bg-teal-800 text-white px-8 py-6 text-lg"
               >
                 <div className="mr-3 h-6 w-6 relative">
@@ -197,6 +181,7 @@ export default function WalletPage() {
             </div>
           </CardContent>
         </Card>
+        <WalletConnectModal open={showConnectModal} onOpenChange={setShowConnectModal} />
       </div>
     )
   }
@@ -219,10 +204,12 @@ export default function WalletPage() {
             >
               {refreshing ? (
                 <>
-                  <span className="animate-spin mr-2">⟳</span> Refreshing...
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Refreshing...
                 </>
               ) : (
-                <>⟳ Refresh</>
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                </>
               )}
             </Button>
             <Button
@@ -231,7 +218,15 @@ export default function WalletPage() {
               onClick={handleCopyAddress}
               className="text-teal-700 border-teal-200 hover:bg-teal-50"
             >
-              {copiedAddress ? "✓ Copied" : "Copy Address"}
+              {copiedAddress ? (
+                <>
+                  <Copy className="mr-2 h-4 w-4" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" /> Copy Address
+                </>
+              )}
             </Button>
             <Button
               variant="outline"
@@ -239,7 +234,7 @@ export default function WalletPage() {
               onClick={handleViewOnExplorer}
               className="text-teal-700 border-teal-200 hover:bg-teal-50"
             >
-              View on Explorer
+              <ExternalLink className="mr-2 h-4 w-4" /> View on Explorer
             </Button>
           </div>
         </div>
@@ -250,13 +245,14 @@ export default function WalletPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center text-teal-800">
-                {currentWallet?.name === "MetaMask" ? (
+                {currentWallet?.icon ? (
                   <div className="relative w-12 h-12">
-                    <MetamaskFox />
-                  </div>
-                ) : currentWallet?.name === "Coinbase Wallet" ? (
-                  <div className="h-10 w-10 flex items-center justify-center">
-                    <CoinbaseIcon className="h-10 w-10" />
+                    <Image
+                      src={currentWallet.icon || "/placeholder.svg"}
+                      alt={currentWallet.name}
+                      width={48}
+                      height={48}
+                    />
                   </div>
                 ) : (
                   <Wallet className="h-10 w-10" />
@@ -378,55 +374,62 @@ export default function WalletPage() {
 
       {activeTab === "activity" && (
         <div className="space-y-4">
-          {loading
-            ? // Loading skeleton for activity
-              Array(4)
-                .fill(0)
-                .map((_, i) => (
-                  <div key={i} className="bg-white border border-neutral-100 rounded-lg p-5 animate-pulse">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-neutral-200 rounded-full"></div>
-                        <div>
-                          <div className="h-5 bg-neutral-200 rounded w-32 mb-1"></div>
-                          <div className="h-4 bg-neutral-200 rounded w-48"></div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="h-5 bg-neutral-200 rounded w-20 mb-1"></div>
-                        <div className="h-4 bg-neutral-200 rounded w-16"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-            : activities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="bg-white border border-neutral-100 rounded-lg p-5 hover:shadow-md transition-all duration-300"
-                >
+          {loading ? (
+            // Loading skeleton for activity
+            Array(4)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className="bg-white border border-neutral-100 rounded-lg p-5 animate-pulse">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          activity.type === "payment_sent" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
-                        }`}
-                      >
-                        {activity.type === "payment_sent" ? "↑" : "↓"}
-                      </div>
+                      <div className="w-10 h-10 bg-neutral-200 rounded-full"></div>
                       <div>
-                        <p className="font-medium text-teal-900">{activity.title}</p>
-                        <p className="text-sm text-neutral-500">{activity.description}</p>
+                        <div className="h-5 bg-neutral-200 rounded w-32 mb-1"></div>
+                        <div className="h-4 bg-neutral-200 rounded w-48"></div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-teal-900">{new Date(activity.date).toLocaleDateString()}</p>
-                      <p className="text-sm text-neutral-500">{activity.time}</p>
+                      <div className="h-5 bg-neutral-200 rounded w-20 mb-1"></div>
+                      <div className="h-4 bg-neutral-200 rounded w-16"></div>
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+          ) : activities.length > 0 ? (
+            activities.map((activity) => (
+              <div
+                key={activity.id}
+                className="bg-white border border-neutral-100 rounded-lg p-5 hover:shadow-md transition-all duration-300"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        activity.type === "payment_sent" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                      }`}
+                    >
+                      {activity.type === "payment_sent" ? "↑" : "↓"}
+                    </div>
+                    <div>
+                      <p className="font-medium text-teal-900">{activity.title}</p>
+                      <p className="text-sm text-neutral-500">{activity.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-teal-900">{new Date(activity.date).toLocaleDateString()}</p>
+                    <p className="text-sm text-neutral-500">{activity.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No transaction activity found.</p>
+            </div>
+          )}
         </div>
       )}
+      <WalletConnectModal open={showConnectModal} onOpenChange={setShowConnectModal} />
     </div>
   )
 }
