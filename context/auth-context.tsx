@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+    /*
       console.log(`API KEY: '${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}'`);
       console.log(`AUTH DOMAIN: '${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}'`);
       console.log(`PROJECT ID: '${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}'`);
@@ -92,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log(`APP ID: '${process.env.NEXT_PUBLIC_FIREBASE_APP_ID}'`);
       console.log(`MEASUREMENT ID: '${process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}'`);
       // First check if backend is available
+      */
       const isBackendAvailable = await checkBackendConnection()
       if (!isBackendAvailable) {
         throw new Error("Authentication server is currently unavailable. Please try again later.")
