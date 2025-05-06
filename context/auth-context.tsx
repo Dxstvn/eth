@@ -12,7 +12,6 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase-client"
-import 'dotenv/config';
 
 type AuthContextType = {
   user: User | null
