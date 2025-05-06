@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle, FileText, LockKeyhole, UserCheck, DollarSign, AlertCircle } from "lucide-react"
+import { CheckCircle, FileText, LockKeyhole, UserCheck, DollarSign, AlertCircle, Eye, ListChecks } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type TransactionStage =
@@ -11,6 +11,9 @@ export type TransactionStage =
   | "completed"
   | "cancelled"
   | "disputed"
+  | "pending_buyer_review"
+  | "pending_conditions"
+  | "awaiting_seller_confirmation"
 
 interface TransactionStageIndicatorProps {
   stage: TransactionStage
@@ -61,6 +64,21 @@ export default function TransactionStageIndicator({
       icon: AlertCircle,
       label: "Disputed",
       color: "bg-red-50 text-red-700 border-red-200",
+    },
+    pending_buyer_review: {
+      icon: Eye,
+      label: "Pending Buyer Review",
+      color: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    },
+    pending_conditions: {
+      icon: ListChecks,
+      label: "Pending Conditions",
+      color: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    },
+    awaiting_seller_confirmation: {
+      icon: UserCheck,
+      label: "Awaiting Seller Confirmation",
+      color: "bg-emerald-50 text-emerald-700 border-emerald-200",
     },
   }
 

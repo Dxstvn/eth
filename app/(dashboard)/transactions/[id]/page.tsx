@@ -5,42 +5,26 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, FileText, Calendar, DollarSign, Clock, CheckCircle, X, Eye, Download } from "lucide-react"
+import { ArrowLeft, FileText, Calendar, DollarSign, Clock, CheckCircle, X, Eye, Download, Shield } from "lucide-react"
 import TransactionTimeline from "@/components/transaction-timeline"
 import TransactionParties from "@/components/transaction-parties"
 import { useToast } from "@/components/ui/use-toast"
 import { FileUpload } from "@/components/file-upload"
-
-// Mock transaction data
-const mockTransaction = {
-  id: "TX123456",
-  propertyAddress: "123 Blockchain Ave, Crypto City",
-  amount: "2.5 ETH",
-  status: "verification",
-  counterparty: "John Smith",
-  date: "2023-04-15",
-  progress: 40,
-  description: "3 bedroom, 2 bathroom single-family home with modern amenities and a spacious backyard.",
-  escrowAddress: "0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t",
-  participants: ["user123", "user456"],
-  timeline: [
-    { id: "t1", date: "2023-04-15", event: "Transaction created", status: "completed" },
-    { id: "t2", date: "2023-04-15", event: "KYC verification initiated", status: "completed" },
-    { id: "t3", date: "2023-04-16", event: "Smart contract deployed", status: "completed" },
-    { id: "t4", date: "2023-04-18", event: "Awaiting property inspection", status: "in_progress" },
-    { id: "t5", date: "2023-04-25", event: "Title transfer", status: "pending" },
-    { id: "t6", date: "2023-05-01", event: "Funds release", status: "pending" },
-  ],
-}
+import { useDatabaseStore } from "@/lib/mock-database"
+import { useAuth } from "@/context/auth-context"
+import TransactionReview from "@/components/transaction-review"
+import SellerConfirmation from "@/components/seller-confirmation"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import TransactionStageIndicator from "@/components/transaction-stage-indicator"
 
 export default function TransactionDetailPage() {
   const { id } = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const { getTransactionById, updateTransaction } = useDatabaseStore()
   const [transaction, setTransaction] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-
-  // Add these state variables at the top of the component
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [currentDocument, setCurrentDocument] = useState<any>(null)
@@ -54,9 +38,11 @@ export default function TransactionDetailPage() {
     const fetchTransaction = async () => {
       setLoading(true)
       try {
-        // In a real app, this would be an API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        setTransaction(mockTransaction)
+        // Get transaction from the database
+        const txData = getTransactionById(id as string)
+        if (txData) {
+          setTransaction(txData)
+        }
       } catch (error) {
         console.error("Error fetching transaction:", error)
         toast({
@@ -69,8 +55,36 @@ export default function TransactionDetailPage() {
       }
     }
 
-    fetchTransaction()
-  }, [id, toast])
+    if (id) {
+      fetchTransaction()
+    }
+  }, [id, toast, getTransactionById])
+
+  // Determine if the current user is the buyer or seller
+  const isBuyer = transaction?.initiatedBy === "seller"
+  const isSeller = transaction?.initiatedBy === "buyer" || !transaction?.initiatedBy
+
+  // For seller-initiated transactions where the buyer needs to review
+  const needsBuyerReview = transaction?.status === "pending_buyer_review" && isBuyer
+
+  // For buyer-initiated transactions where the seller needs to confirm conditions
+  const needsSellerConfirmation = transaction?.status === "awaiting_seller_confirmation" && isSeller
+
+  const handleBuyerReviewComplete = () => {
+    // Refresh the transaction data
+    const updatedTx = getTransactionById(id as string)
+    if (updatedTx) {
+      setTransaction(updatedTx)
+    }
+  }
+
+  const handleSellerConfirmationComplete = () => {
+    // Refresh the transaction data
+    const updatedTx = getTransactionById(id as string)
+    if (updatedTx) {
+      setTransaction(updatedTx)
+    }
+  }
 
   if (loading) {
     return (
@@ -98,15 +112,103 @@ export default function TransactionDetailPage() {
     )
   }
 
+  // If the transaction needs buyer review, show the review component
+  if (needsBuyerReview) {
+    return (
+      <div className="container px-4 md:px-6 py-10">
+        <div className="mb-8">
+          <Link href="/transactions" className="flex items-center text-muted-foreground hover:text-foreground mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Transactions
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight">Review Transaction</h1>
+          <p className="text-muted-foreground">Transaction ID: {transaction.id}</p>
+        </div>
+
+        <div className="max-w-3xl mx-auto">
+          <TransactionReview
+            transactionId={transaction.id}
+            propertyAddress={transaction.propertyAddress}
+            propertyDescription={transaction.description}
+            amount={transaction.amount}
+            counterpartyName={transaction.counterparty}
+            counterpartyWallet="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" // Mock wallet address
+            onReviewComplete={handleBuyerReviewComplete}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // If the transaction needs seller confirmation, show the confirmation component
+  if (needsSellerConfirmation) {
+    return (
+      <div className="container px-4 md:px-6 py-10">
+        <div className="mb-8">
+          <Link href="/transactions" className="flex items-center text-muted-foreground hover:text-foreground mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Transactions
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight">Confirm Transaction Conditions</h1>
+          <p className="text-muted-foreground">Transaction ID: {transaction.id}</p>
+        </div>
+
+        <div className="max-w-3xl mx-auto">
+          <SellerConfirmation
+            transactionId={transaction.id}
+            propertyAddress={transaction.propertyAddress}
+            amount={transaction.amount}
+            buyerName={transaction.counterparty}
+            buyerConditions={
+              transaction.buyerConditions || {
+                titleVerification: true,
+                inspectionReport: true,
+                appraisalService: false,
+                fundingRequired: true,
+                escrowPeriod: 30,
+                automaticRelease: true,
+                disputeResolution: true,
+              }
+            }
+            onConfirmationComplete={handleSellerConfirmationComplete}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Standard transaction detail view
   return (
     <div className="container px-4 md:px-6 py-10">
       <div className="mb-8">
         <Link href="/transactions" className="flex items-center text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Transactions
         </Link>
-        <h1 className="text-3xl font-bold tracking-tight">{transaction.propertyAddress}</h1>
-        <p className="text-muted-foreground">Transaction ID: {transaction.id}</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{transaction.propertyAddress}</h1>
+            <p className="text-muted-foreground">Transaction ID: {transaction.id}</p>
+          </div>
+          <TransactionStageIndicator stage={transaction.status} size="lg" />
+        </div>
       </div>
+
+      {/* Transaction Role Banner */}
+      {transaction.initiatedBy && (
+        <Alert
+          className={
+            transaction.initiatedBy === "seller" ? "bg-teal-50 border-teal-200 mb-6" : "bg-blue-50 border-blue-200 mb-6"
+          }
+        >
+          <Shield className={`h-4 w-4 ${transaction.initiatedBy === "seller" ? "text-teal-600" : "text-blue-600"}`} />
+          <AlertTitle>
+            {transaction.initiatedBy === "seller" ? "Seller Initiated Transaction" : "Buyer Initiated Transaction"}
+          </AlertTitle>
+          <AlertDescription>
+            {transaction.initiatedBy === "seller"
+              ? "This transaction was initiated by the seller. The buyer needs to review and add conditions before funding the escrow."
+              : "This transaction was initiated by the buyer. The seller will be notified once funds are placed in escrow."}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
@@ -128,7 +230,7 @@ export default function TransactionDetailPage() {
           <CardContent>
             <div className="flex items-center">
               <Clock className="h-5 w-5 text-amber-500 mr-2" />
-              <span className="text-lg font-medium capitalize">{transaction.status.replace("_", " ")}</span>
+              <span className="text-lg font-medium capitalize">{transaction.status.replace(/_/g, " ")}</span>
             </div>
           </CardContent>
         </Card>
@@ -154,7 +256,13 @@ export default function TransactionDetailPage() {
               <CardDescription>Track the progress of your transaction</CardDescription>
             </CardHeader>
             <CardContent>
-              <TransactionTimeline events={transaction.timeline} />
+              {transaction.timeline ? (
+                <TransactionTimeline events={transaction.timeline} />
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  No timeline events available for this transaction.
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -209,11 +317,64 @@ export default function TransactionDetailPage() {
             </CardHeader>
             <CardContent>
               <TransactionParties
-                buyer={{ name: "You", email: "you@example.com" }}
-                seller={{ name: transaction.counterparty, email: "john.smith@example.com" }}
+                buyer={{
+                  name: transaction.initiatedBy === "buyer" ? "You" : transaction.counterparty,
+                  email: "buyer@example.com",
+                }}
+                seller={{
+                  name: transaction.initiatedBy === "seller" ? "You" : transaction.counterparty,
+                  email: "seller@example.com",
+                }}
               />
             </CardContent>
           </Card>
+
+          {transaction.buyerConditions && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Transaction Conditions</CardTitle>
+                <CardDescription>Conditions set by the buyer</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {transaction.buyerConditions.titleVerification && (
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Title Deeds Submission</span>
+                    </div>
+                  )}
+                  {transaction.buyerConditions.inspectionReport && (
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Inspection Report</span>
+                    </div>
+                  )}
+                  {transaction.buyerConditions.appraisalService && (
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Property Appraisal</span>
+                    </div>
+                  )}
+                  <div className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    <span>Escrow Period: {transaction.buyerConditions.escrowPeriod} days</span>
+                  </div>
+                  {transaction.buyerConditions.automaticRelease && (
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Automatic Release When Verified</span>
+                    </div>
+                  )}
+                  {transaction.buyerConditions.disputeResolution && (
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Dispute Resolution Mechanism</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>
@@ -231,15 +392,18 @@ export default function TransactionDetailPage() {
                   <p>{transaction.description}</p>
                 </div>
 
-                <div>
-                  <p className="text-sm text-muted-foreground">Escrow Address</p>
-                  <p className="font-mono text-xs break-all">{transaction.escrowAddress}</p>
-                </div>
+                {transaction.escrowAddress && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Escrow Address</p>
+                    <p className="font-mono text-xs break-all">{transaction.escrowAddress}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-md p-6">

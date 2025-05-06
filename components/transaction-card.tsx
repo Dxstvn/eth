@@ -11,6 +11,8 @@ import {
   Building,
   Calendar,
   User,
+  Eye,
+  ListChecks,
 } from "lucide-react"
 import Link from "next/link"
 import type { Transaction } from "@/lib/mock-database"
@@ -53,6 +55,24 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
           color: "bg-green-50 text-green-700 border-green-200",
           icon: <CheckCircle className="h-4 w-4 mr-1" />,
         }
+      case "pending_buyer_review":
+        return {
+          label: "Pending Buyer Review",
+          color: "bg-indigo-50 text-indigo-700 border-indigo-200",
+          icon: <Eye className="h-4 w-4 mr-1" />,
+        }
+      case "pending_conditions":
+        return {
+          label: "Pending Conditions",
+          color: "bg-cyan-50 text-cyan-700 border-cyan-200",
+          icon: <ListChecks className="h-4 w-4 mr-1" />,
+        }
+      case "awaiting_seller_confirmation":
+        return {
+          label: "Awaiting Seller Confirmation",
+          color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+          icon: <UserCheck className="h-4 w-4 mr-1" />,
+        }
       default:
         return {
           label: "Unknown Status",
@@ -67,6 +87,10 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   // Extract currency from amount (e.g., "2.5 ETH" -> "ETH")
   const currency = transaction.amount.split(" ").length > 1 ? transaction.amount.split(" ")[1] : ""
 
+  // Determine if this is a seller or buyer initiated transaction
+  const isSeller = transaction.initiatedBy === "seller"
+  const isBuyer = transaction.initiatedBy === "buyer" || !transaction.initiatedBy
+
   return (
     <div className="glass-card p-5 rounded-xl hover:shadow-md transition-all duration-300">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
@@ -74,6 +98,11 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <h3 className="font-medium text-brand-900 font-display">{transaction.propertyAddress}</h3>
             <TransactionStageIndicator stage={transaction.status} />
+            {isSeller && (
+              <span className="text-xs px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full">
+                Seller Initiated
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
             <div className="flex items-center gap-1">

@@ -208,18 +208,20 @@ export default function NewTransactionPage() {
     }
   }
 
+  // Update the handleTransactionSuccess function to handle seller-initiated transactions
   const handleTransactionSuccess = (txHash: string) => {
     // Create a new transaction in the database
     const newTransaction = {
       propertyAddress,
       amount: `${amount} ${currency.toUpperCase()}`,
-      status: transactionType === "purchase" ? "awaiting_funds" : ("verification" as any),
+      status: transactionType === "purchase" ? "awaiting_funds" : "pending_buyer_review",
       counterparty: counterpartyName,
       date: new Date().toISOString().split("T")[0],
-      progress: 20,
+      progress: transactionType === "purchase" ? 20 : 15,
       description: propertyDescription,
       participants: user ? [user.uid] : [],
-      escrowAddress: txHash,
+      escrowAddress: transactionType === "purchase" ? txHash : undefined,
+      initiatedBy: transactionType === "purchase" ? "buyer" : "seller",
     }
 
     // Add the transaction to the database

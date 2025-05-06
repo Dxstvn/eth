@@ -6,7 +6,15 @@ export interface Transaction {
   id: string
   propertyAddress: string
   amount: string
-  status: "verification" | "awaiting_funds" | "in_escrow" | "pending_approval" | "completed"
+  status:
+    | "verification"
+    | "awaiting_funds"
+    | "in_escrow"
+    | "pending_approval"
+    | "completed"
+    | "pending_buyer_review"
+    | "pending_conditions"
+    | "awaiting_seller_confirmation"
   counterparty: string
   date: string
   progress: number
@@ -15,6 +23,9 @@ export interface Transaction {
   participants?: string[]
   escrowAddress?: string
   timeline?: TimelineEvent[]
+  initiatedBy?: "buyer" | "seller"
+  buyerConditions?: ContractRequirements
+  sellerAccepted?: boolean
 }
 
 // Update the Document interface to include reviewStatus
@@ -80,6 +91,11 @@ export interface CryptoAsset {
   trend: "up" | "down" | "neutral"
 }
 
+export interface ContractRequirements {
+  requirement1: string
+  requirement2: string
+}
+
 // Initial mock data
 const initialTransactions: Transaction[] = [
   {
@@ -93,6 +109,7 @@ const initialTransactions: Transaction[] = [
     description: "3 bedroom, 2 bathroom single-family home with modern amenities and a spacious backyard.",
     escrowAddress: "0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t",
     participants: ["user123", "user456"],
+    initiatedBy: "buyer",
     timeline: [
       { id: "t1", date: "2023-04-15", event: "Transaction created", status: "completed" },
       { id: "t2", date: "2023-04-15", event: "KYC verification initiated", status: "completed" },
@@ -101,6 +118,8 @@ const initialTransactions: Transaction[] = [
       { id: "t5", date: "2023-04-25", event: "Title transfer", status: "pending" },
       { id: "t6", date: "2023-05-01", event: "Funds release", status: "pending" },
     ],
+    buyerConditions: { requirement1: "Clean title", requirement2: "Passed inspection" },
+    sellerAccepted: true,
   },
   {
     id: "TX789012",
@@ -112,6 +131,9 @@ const initialTransactions: Transaction[] = [
     progress: 20,
     description: "Commercial property with 5 office spaces and ground floor retail.",
     participants: ["user123", "user789"],
+    initiatedBy: "buyer",
+    buyerConditions: { requirement1: "Appraisal at value", requirement2: "No environmental issues" },
+    sellerAccepted: false,
   },
   {
     id: "TX345678",
@@ -122,6 +144,9 @@ const initialTransactions: Transaction[] = [
     date: "2023-03-28",
     progress: 100,
     participants: ["user123", "user321"],
+    initiatedBy: "buyer",
+    buyerConditions: { requirement1: "N/A", requirement2: "N/A" },
+    sellerAccepted: true,
   },
   {
     id: "TX901234",
@@ -132,6 +157,48 @@ const initialTransactions: Transaction[] = [
     date: "2023-03-15",
     progress: 100,
     participants: ["user123", "user654"],
+    initiatedBy: "buyer",
+    buyerConditions: { requirement1: "N/A", requirement2: "N/A" },
+    sellerAccepted: true,
+  },
+  // Add new seller-initiated transactions
+  {
+    id: "TX567890",
+    propertyAddress: "555 Seller Ave, Blockchain City",
+    amount: "4.5 ETH",
+    status: "pending_buyer_review",
+    counterparty: "Alex Johnson",
+    date: "2023-04-20",
+    progress: 15,
+    description: "Luxury penthouse with panoramic city views and private rooftop terrace.",
+    participants: ["user123", "user789"],
+    initiatedBy: "seller",
+    timeline: [
+      { id: "t1", date: "2023-04-20", event: "Transaction created by seller", status: "completed" },
+      { id: "t2", date: "2023-04-20", event: "Awaiting buyer review", status: "in_progress" },
+    ],
+    buyerConditions: { requirement1: "Buyer approval", requirement2: "Clear title" },
+    sellerAccepted: false,
+  },
+  {
+    id: "TX678901",
+    propertyAddress: "777 Escrow Lane, Token Heights",
+    amount: "3.8 ETH",
+    status: "pending_conditions",
+    counterparty: "Jamie Williams",
+    date: "2023-04-18",
+    progress: 30,
+    description: "Modern townhouse with smart home features and energy-efficient design.",
+    participants: ["user123", "user456"],
+    initiatedBy: "seller",
+    timeline: [
+      { id: "t1", date: "2023-04-18", event: "Transaction created by seller", status: "completed" },
+      { id: "t2", date: "2023-04-19", event: "Buyer reviewed transaction", status: "completed" },
+      { id: "t3", date: "2023-04-19", event: "Buyer added conditions", status: "completed" },
+      { id: "t4", date: "2023-04-19", event: "Awaiting seller confirmation", status: "in_progress" },
+    ],
+    buyerConditions: { requirement1: "Seller disclosure", requirement2: "Inspection report" },
+    sellerAccepted: false,
   },
 ]
 
