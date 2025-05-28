@@ -1,164 +1,198 @@
-# Crypto Escrow Platform
-
-A decentralized escrow platform for secure property transactions using blockchain technology, smart contracts, and secure document storage.
-
-![Crypto Escrow Platform](/public/blockchain-real-estate-overview.png)
+# CryptoEscrow Platform
 
 ## Overview
 
-Crypto Escrow is a Next.js application that facilitates secure property transactions between buyers and sellers using blockchain technology. The platform leverages smart contracts to create a trustless escrow system, allowing parties to transact without requiring a traditional third-party intermediary.
+CryptoEscrow is a secure, blockchain-powered escrow platform designed for real estate and high-value asset transactions. It provides a trustless environment where buyers and sellers can conduct transactions with confidence, leveraging smart contracts for secure fund management and condition verification.
 
 ## Current Status
 
-**⚠️ IMPORTANT: This is currently a simulation/prototype**
-
-- The application uses mock data and simulated blockchain interactions
-- Smart contracts are not deployed to a live blockchain
-- Firebase authentication is functional but using a development configuration
-- Document storage uses Firestore Database and Google Cloud Storage
-- Wallet connections use EIP-6963 for discovery but transactions are simulated
+**IMPORTANT**: This application is currently a **simulation/prototype**. While the user interface and flows are fully functional, the blockchain interactions are simulated, and the backend uses mock data for demonstration purposes. The Firebase authentication and Google Cloud Storage integration are functional, but the smart contract deployment and blockchain transactions are simulated.
 
 ## Features
 
-### Authentication
-- Email/password authentication via Firebase
+### Authentication & User Management
+- Secure user authentication via Firebase Auth
+- Email/password and Google sign-in options
 - User profile management
-- Secure routes and protected pages
-
-### Wallet Integration
-- Support for multiple wallet providers (MetaMask, Coinbase Wallet, etc.)
-- EIP-6963 wallet discovery
-- Wallet connection management
-- Transaction history and balance display
+- Wallet address association
 
 ### Contact Management
-- Send and receive contact invitations
-- Manage your network of contacts
-- Select contacts for transactions
+- Contact invitation system
+- Contact list management
+- Secure counterparty selection for transactions
 
-### Document Management
-- Upload and store documents securely with Google Cloud Storage
-- Document verification and signing
-- Secure document sharing between transaction parties
+### Wallet Integration
+- Connect multiple cryptocurrency wallets
+- Support for MetaMask, Coinbase Wallet, and other providers
+- Wallet balance display
+- Transaction history
 
 ### Two-Stage Transaction Process
-- **Seller-Initiated Transactions**:
-  1. Seller creates transaction with property details
-  2. Buyer reviews and adds conditions (title deeds, inspections, etc.)
-  3. Buyer deposits funds into smart contract
-  4. Seller confirms conditions
-  5. Smart contract is deployed
-
+- **Seller-Initiated Transactions**: 
+  - Seller creates transaction details
+  - Buyer reviews and adds conditions
+  - Buyer deposits funds
+  - Seller confirms conditions
+  - Smart contract deployment
+  
 - **Buyer-Initiated Transactions**:
-  1. Buyer creates transaction with property details and conditions
-  2. Buyer deposits funds into smart contract
-  3. Seller is notified of the transaction
+  - Buyer creates transaction with conditions
+  - Buyer deposits funds
+  - Seller reviews and confirms
+  - Smart contract deployment
 
-### Dashboard & Analytics
-- Transaction overview and statistics
-- Recent activity tracking
-- Upcoming deadlines and reminders
+### Document Management
+- Secure document upload and storage via Google Cloud Storage
+- Document verification and approval
+- Document association with transaction conditions
+
+### Transaction Lifecycle Management
+- Comprehensive status tracking
+- Timeline visualization
+- Condition fulfillment tracking
+- Dispute resolution mechanism
+- Automated deadline management
+
+### Smart Contract Integration (Simulated)
+- Escrow fund management
+- Condition verification
+- Automated fund release
+- Dispute handling
 
 ## Technology Stack
 
-- **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
-- **Authentication**: Firebase Authentication
-- **Database**: Firestore Database
-- **Storage**: Google Cloud Storage
-- **Blockchain Integration**: EIP-6963 for wallet discovery
-- **State Management**: React Context API
-- **Styling**: Tailwind CSS with shadcn/ui components
+### Frontend
+- Next.js (App Router)
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui components
+- Ethers.js for blockchain interactions
+
+### Backend
+- Node.js
+- Express
+- Firebase Admin SDK
+- Google Cloud Storage
+- Firestore Database
+
+### Authentication
+- Firebase Authentication
+
+### Storage
+- Google Cloud Storage for document storage
+- Firestore for application data
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm/yarn
-- Firebase account (for authentication, Firestore, and Storage)
-- MetaMask or another EIP-6963 compatible wallet
+- Node.js 18+ and npm
+- Firebase project with Authentication and Firestore enabled
+- Google Cloud Storage bucket
+- Ethereum wallet (MetaMask, Coinbase Wallet, etc.) for testing
 
 ### Environment Variables
-
 Create a `.env.local` file with the following variables:
 
 \`\`\`
 # Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_firebase_measurement_id
 
-# Google Cloud Storage (optional if using default Firebase Storage)
-GOOGLE_CLOUD_PROJECT_ID=your_gcp_project_id
-GOOGLE_CLOUD_PRIVATE_KEY=your_gcp_private_key
-GOOGLE_CLOUD_CLIENT_EMAIL=your_gcp_client_email
+# Google Cloud Storage
+GOOGLE_CLOUD_PROJECT_ID=your_google_cloud_project_id
+GOOGLE_CLOUD_STORAGE_BUCKET=your_storage_bucket_name
+
+# Backend API
+NEXT_PUBLIC_API_URL=http://44.202.141.56:3000
 \`\`\`
 
 ### Installation
 
-1. Clone the repository
-   \`\`\`bash
-   git clone https://github.com/yourusername/crypto-escrow.git
-   cd crypto-escrow
-   \`\`\`
+1. Clone the repository:
+\`\`\`bash
+git clone https://github.com/yourusername/crypto-escrow.git
+cd crypto-escrow
+\`\`\`
 
-2. Install dependencies
-   \`\`\`bash
-   npm install
-   # or
-   yarn install
-   \`\`\`
+2. Install dependencies:
+\`\`\`bash
+npm install
+\`\`\`
 
-3. Run the development server
-   \`\`\`bash
-   npm run dev
-   # or
-   yarn dev
-   \`\`\`
+3. Run the development server:
+\`\`\`bash
+npm run dev
+\`\`\`
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Transaction Flow
 
-### Creating a New Transaction (Seller)
+### Seller-Initiated Transaction
 
-1. Navigate to the Transactions page
-2. Click "New Transaction"
-3. Select "I am the Seller"
-4. Fill in property details and select the buyer from your contacts
-5. Submit the transaction
-6. The buyer will be notified to review the transaction
+1. **Seller Creates Transaction**:
+   - Seller provides property details, price, and selects buyer from contacts
+   - System assigns status `PENDING_BUYER_REVIEW`
+   - Buyer receives notification
 
-### Reviewing a Transaction (Buyer)
+2. **Buyer Reviews Transaction**:
+   - Buyer reviews property details and price
+   - Buyer adds conditions (title deeds, inspections, etc.)
+   - Buyer confirms review, status changes to `AWAITING_FUNDS`
 
-1. Navigate to the Transactions page
-2. Find the pending transaction and click "Review"
-3. Review property details
-4. Add conditions (title deeds, inspections, appraisals)
-5. Deposit funds to the smart contract
-6. The seller will be notified to confirm the conditions
+3. **Buyer Deposits Funds**:
+   - Buyer deposits funds into the smart contract
+   - Status changes to `AWAITING_SELLER_CONFIRMATION`
 
-### Confirming Conditions (Seller)
+4. **Seller Confirms Conditions**:
+   - Seller reviews and confirms buyer's conditions
+   - Smart contract is deployed with agreed conditions
+   - Status changes to `IN_ESCROW`
 
-1. Navigate to the Transactions page
-2. Find the pending transaction and click "Review Conditions"
-3. Review the conditions added by the buyer
-4. Confirm the conditions
-5. The smart contract will be deployed
+5. **Condition Fulfillment**:
+   - Seller uploads required documents
+   - Buyer verifies and approves each condition
+   - When all conditions are met, status changes to `READY_FOR_FINAL_APPROVAL`
+
+6. **Final Approval and Completion**:
+   - Final approval period begins (typically 48 hours)
+   - If no disputes, funds are released to seller
+   - Status changes to `COMPLETED`
+
+### Buyer-Initiated Transaction
+
+1. **Buyer Creates Transaction**:
+   - Buyer provides property details, price, conditions
+   - Buyer deposits funds into smart contract
+   - Status is set to `AWAITING_SELLER_CONFIRMATION`
+
+2. **Seller Confirmation**:
+   - Seller reviews transaction details and conditions
+   - Upon acceptance, status changes to `IN_ESCROW`
+
+3. **Condition Fulfillment and Completion**:
+   - Same as steps 5-6 in the Seller-Initiated flow
 
 ## Development Roadmap
 
-### Planned Features
+### Current Limitations
+- Smart contract interactions are simulated
+- Limited blockchain network support
+- Basic dispute resolution mechanism
 
-- Integration with live blockchain networks (Ethereum, Polygon)
-- Real smart contract deployment
+### Planned Features
+- Real blockchain integration with Ethereum and other networks
 - Multi-signature wallet support
-- Escrow dispute resolution mechanism
+- Advanced dispute resolution with arbitration
 - Mobile application
 - Enhanced analytics and reporting
-- Automated document verification
+- Multi-currency support
 
 ## Contributing
 
@@ -171,10 +205,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgements
 
 - [Next.js](https://nextjs.org/)
-- [Firebase](https://firebase.google.com/)
-- [Google Cloud Storage](https://cloud.google.com/storage)
-- [MetaMask](https://metamask.io/)
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
 - [shadcn/ui](https://ui.shadcn.com/)
-\`\`\`
-
-Now, let's create a detailed README specifically for the transactions feature:
+- [Firebase](https://firebase.google.com/)
+- [Ethers.js](https://docs.ethers.io/)

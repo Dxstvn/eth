@@ -24,8 +24,8 @@ type AuthContextType = {
   signOut: () => Promise<void>
 }
 
-// Backend API URL
-const API_URL = "http://localhost:3000"
+// Backend API URL - Updated to point to the deployed backend
+const API_URL = "http://44.202.141.56:3000"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Helper function to check if backend is available
   const checkBackendConnection = async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_URL}/health/health`, {
+      const response = await fetch(`${API_URL}/health`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         signal: AbortSignal.timeout(3000),
@@ -84,16 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-    /*
-      console.log(`API KEY: '${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}'`);
-      console.log(`AUTH DOMAIN: '${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}'`);
-      console.log(`PROJECT ID: '${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}'`);
-      console.log(`STORAGE BUCKET: '${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}'`);
-      console.log(`MESSAGING SENDER ID: '${process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}'`);
-      console.log(`APP ID: '${process.env.NEXT_PUBLIC_FIREBASE_APP_ID}'`);
-      console.log(`MEASUREMENT ID: '${process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}'`);
       // First check if backend is available
-      */
       const isBackendAvailable = await checkBackendConnection()
       if (!isBackendAvailable) {
         throw new Error("Authentication server is currently unavailable. Please try again later.")
@@ -108,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Get the ID token
       const idToken = await result.user.getIdToken(true)
-      //console.log("Sending ID Token:", idToken)
+
       // 3. Send token to backend for verification
       const response = await fetch(`${API_URL}/auth/signInGoogle`, {
         method: "POST",

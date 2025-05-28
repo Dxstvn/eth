@@ -1,45 +1,27 @@
 "use client"
 
+import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Search, SlidersHorizontal } from "lucide-react"
+import { Search, SlidersHorizontal, PlusCircle } from "lucide-react"
 import Link from "next/link"
 import TransactionCard from "@/components/transaction-card"
-import PageTitle from "@/components/page-title"
-import { useDatabaseStore } from "@/lib/mock-database"
-import { useState, useEffect } from "react"
+import { useTransaction } from "@/context/transaction-context"
+import { useEffect } from "react"
 
 export default function TransactionsPage() {
-  const { getTransactions } = useDatabaseStore()
-  const [transactions, setTransactions] = useState(getTransactions())
-  const [loading, setLoading] = useState(true)
+  const { transactions, fetchTransactions, loading } = useTransaction()
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [fetchTransactions])
+
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortOrder, setSortOrder] = useState("newest")
-
-  // Simulate loading and fetch transactions
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // Refresh transactions from the store to ensure we have the latest data
-      setTransactions(getTransactions())
-      setLoading(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [getTransactions])
-
-  // Refresh transactions when the component is focused
-  useEffect(() => {
-    const handleFocus = () => {
-      // Refresh transactions from the store when the window regains focus
-      setTransactions(getTransactions())
-    }
-
-    window.addEventListener("focus", handleFocus)
-    return () => window.removeEventListener("focus", handleFocus)
-  }, [getTransactions])
 
   // Filter and sort transactions
   const filteredTransactions = transactions
@@ -74,18 +56,18 @@ export default function TransactionsPage() {
     })
 
   return (
-    <div className="container px-4 md:px-6">
-      <PageTitle
-        title="Transactions"
-        description="Manage all your real estate escrow transactions"
-        actions={
-          <Button asChild className="bg-teal-900 hover:text-gold-300 text-white">
-            <Link href="/transactions/new">
-              <Plus className="mr-2 h-4 w-4" /> New Transaction
-            </Link>
-          </Button>
-        }
-      />
+    <div className="container px-4 md:px-6 py-10">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
+          <p className="text-muted-foreground">Manage your escrow transactions</p>
+        </div>
+        <Button asChild className="mt-4 md:mt-0 bg-teal-900 hover:bg-teal-800 text-white">
+          <Link href="/transactions/new" className="flex items-center">
+            <PlusCircle className="mr-2 h-5 w-5" /> New Transaction
+          </Link>
+        </Button>
+      </div>
 
       <Card className="mb-8 shadow-soft border-0">
         <CardContent className="p-4">
@@ -137,50 +119,29 @@ export default function TransactionsPage() {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        {loading ? (
-          // Loading skeleton
-          Array(3)
-            .fill(0)
-            .map((_, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg p-5 animate-pulse">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div className="flex-1">
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-6 bg-gray-200 rounded w-20"></div>
-                    <div className="h-8 bg-gray-200 rounded w-32"></div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                    <div className="h-4 bg-gray-200 rounded w-12"></div>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded"></div>
-                </div>
-              </div>
-            ))
-        ) : filteredTransactions.length > 0 ? (
-          filteredTransactions.map((transaction) => <TransactionCard key={transaction.id} transaction={transaction} />)
-        ) : (
-          <div className="text-center py-12 bg-neutral-50 rounded-lg">
-            <h3 className="text-lg font-medium text-brand-900 mb-1">No transactions found</h3>
-            <p className="text-neutral-500">
-              {searchQuery || statusFilter !== "all"
-                ? "Try adjusting your search or filters"
-                : "Create your first transaction to get started"}
-            </p>
-            <Button asChild className="mt-4 bg-teal-900 hover:text-gold-300 text-white">
-              <Link href="/transactions/new">
-                <Plus className="mr-2 h-4 w-4" /> New Transaction
-              </Link>
-            </Button>
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700"></div>
+        </div>
+      ) : filteredTransactions.length > 0 ? (
+        <div className="space-y-6">
+          {filteredTransactions.map((transaction) => (
+            <TransactionCard key={transaction.id} transaction={transaction} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 border rounded-lg bg-gray-50">
+          <h3 className="text-lg font-medium mb-2">No Transactions Yet</h3>
+          <p className="text-muted-foreground mb-6">
+            You haven't created any transactions yet. Start by creating a new transaction.
+          </p>
+          <Button asChild className="bg-teal-900 hover:bg-teal-800 text-white">
+            <Link href="/transactions/new">
+              <PlusCircle className="mr-2 h-5 w-5" /> Create Your First Transaction
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

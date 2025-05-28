@@ -5,26 +5,24 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, FileText, Calendar, DollarSign, Clock, CheckCircle, X, Eye, Download, Shield } from "lucide-react"
+import { ArrowLeft, FileText, Calendar, DollarSign, Clock, CheckCircle, X, Shield } from "lucide-react"
 import TransactionTimeline from "@/components/transaction-timeline"
 import TransactionParties from "@/components/transaction-parties"
 import { useToast } from "@/components/ui/use-toast"
-import { FileUpload } from "@/components/file-upload"
-import { useDatabaseStore } from "@/lib/mock-database"
 import { useAuth } from "@/context/auth-context"
 import TransactionReview from "@/components/transaction-review"
 import SellerConfirmation from "@/components/seller-confirmation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import TransactionStageIndicator from "@/components/transaction-stage-indicator"
+import { useTransaction } from "@/context/transaction-context"
 
 export default function TransactionDetailPage() {
   const { id } = useParams()
   const router = useRouter()
   const { toast } = useToast()
   const { user } = useAuth()
-  const { getTransactionById, updateTransaction } = useDatabaseStore()
+  const { fetchTransactionById, updateCondition, loading } = useTransaction()
   const [transaction, setTransaction] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [currentDocument, setCurrentDocument] = useState<any>(null)
@@ -35,58 +33,81 @@ export default function TransactionDetailPage() {
   ])
 
   useEffect(() => {
-    const fetchTransaction = async () => {
-      setLoading(true)
-      try {
-        // Get transaction from the database
-        const txData = getTransactionById(id as string)
-        if (txData) {
-          setTransaction(txData)
+    const loadTransaction = async () => {
+      if (id && typeof id === "string") {
+        try {
+          const data = await fetchTransactionById(id)
+          setTransaction(data)
+
+          // Update required documents based on transaction conditions
+          if (data.conditions && Array.isArray(data.conditions)) {
+            const docs = data.conditions.map((condition: any) => ({
+              id: condition.id,
+              name: condition.description || condition.type,
+              type: condition.type,
+              uploaded: condition.status === "FULFILLED_BY_BUYER",
+            }))
+            setRequiredDocuments(docs)
+          }
+        } catch (error) {
+          console.error("Error loading transaction:", error)
         }
-      } catch (error) {
-        console.error("Error fetching transaction:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load transaction details. Please try again later.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
       }
     }
 
-    if (id) {
-      fetchTransaction()
-    }
-  }, [id, toast, getTransactionById])
+    loadTransaction()
+  }, [id, fetchTransactionById])
 
   // Determine if the current user is the buyer or seller
-  const isBuyer = transaction?.initiatedBy === "seller"
-  const isSeller = transaction?.initiatedBy === "buyer" || !transaction?.initiatedBy
+  const isBuyer = transaction?.initiatedBy === "SELLER" || transaction?.buyerId === user?.uid
+  const isSeller = transaction?.initiatedBy === "BUYER" || transaction?.sellerId === user?.uid
 
   // For seller-initiated transactions where the buyer needs to review
-  const needsBuyerReview = transaction?.status === "pending_buyer_review" && isBuyer
+  const needsBuyerReview = transaction?.status === "PENDING_BUYER_REVIEW" && isBuyer
 
   // For buyer-initiated transactions where the seller needs to confirm conditions
-  const needsSellerConfirmation = transaction?.status === "awaiting_seller_confirmation" && isSeller
+  const needsSellerConfirmation = transaction?.status === "AWAITING_SELLER_CONFIRMATION" && isSeller
 
-  const handleBuyerReviewComplete = () => {
-    // Refresh the transaction data
-    const updatedTx = getTransactionById(id as string)
-    if (updatedTx) {
-      setTransaction(updatedTx)
+  const handleBuyerReviewComplete = async () => {
+    if (id && typeof id === "string") {
+      const data = await fetchTransactionById(id)
+      setTransaction(data)
     }
   }
 
-  const handleSellerConfirmationComplete = () => {
-    // Refresh the transaction data
-    const updatedTx = getTransactionById(id as string)
-    if (updatedTx) {
-      setTransaction(updatedTx)
+  const handleSellerConfirmationComplete = async () => {
+    if (id && typeof id === "string") {
+      const data = await fetchTransactionById(id)
+      setTransaction(data)
     }
   }
 
-  if (loading) {
+  const handleConditionUpdate = async (conditionId: string, fulfilled: boolean) => {
+    if (!transaction || !id) return
+
+    try {
+      const status = fulfilled ? "FULFILLED_BY_BUYER" : "PENDING_BUYER_ACTION"
+      await updateCondition(id.toString(), conditionId, status)
+
+      // Update local state
+      setRequiredDocuments((prev) =>
+        prev.map((doc) => (doc.id === conditionId ? { ...doc, uploaded: fulfilled } : doc)),
+      )
+
+      toast({
+        title: fulfilled ? "Condition Fulfilled" : "Condition Pending",
+        description: `Condition has been marked as ${fulfilled ? "fulfilled" : "pending"}.`,
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update condition",
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (loading && !transaction) {
     return (
       <div className="container px-4 md:px-6 py-10">
         <div className="flex justify-center items-center h-64">
@@ -129,9 +150,9 @@ export default function TransactionDetailPage() {
             transactionId={transaction.id}
             propertyAddress={transaction.propertyAddress}
             propertyDescription={transaction.description}
-            amount={transaction.amount}
-            counterpartyName={transaction.counterparty}
-            counterpartyWallet="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" // Mock wallet address
+            amount={`${transaction.amount} ${transaction.currency}`}
+            counterpartyName={transaction.sellerName || "Seller"}
+            counterpartyWallet={transaction.sellerWalletAddress}
             onReviewComplete={handleBuyerReviewComplete}
           />
         </div>
@@ -155,10 +176,10 @@ export default function TransactionDetailPage() {
           <SellerConfirmation
             transactionId={transaction.id}
             propertyAddress={transaction.propertyAddress}
-            amount={transaction.amount}
-            buyerName={transaction.counterparty}
+            amount={`${transaction.amount} ${transaction.currency}`}
+            buyerName={transaction.buyerName || "Buyer"}
             buyerConditions={
-              transaction.buyerConditions || {
+              transaction.conditions || {
                 titleVerification: true,
                 inspectionReport: true,
                 appraisalService: false,
@@ -187,7 +208,7 @@ export default function TransactionDetailPage() {
             <h1 className="text-3xl font-bold tracking-tight">{transaction.propertyAddress}</h1>
             <p className="text-muted-foreground">Transaction ID: {transaction.id}</p>
           </div>
-          <TransactionStageIndicator stage={transaction.status} size="lg" />
+          <TransactionStageIndicator stage={transaction.status.toLowerCase()} size="lg" />
         </div>
       </div>
 
@@ -195,15 +216,15 @@ export default function TransactionDetailPage() {
       {transaction.initiatedBy && (
         <Alert
           className={
-            transaction.initiatedBy === "seller" ? "bg-teal-50 border-teal-200 mb-6" : "bg-blue-50 border-blue-200 mb-6"
+            transaction.initiatedBy === "SELLER" ? "bg-teal-50 border-teal-200 mb-6" : "bg-blue-50 border-blue-200 mb-6"
           }
         >
-          <Shield className={`h-4 w-4 ${transaction.initiatedBy === "seller" ? "text-teal-600" : "text-blue-600"}`} />
+          <Shield className={`h-4 w-4 ${transaction.initiatedBy === "SELLER" ? "text-teal-600" : "text-blue-600"}`} />
           <AlertTitle>
-            {transaction.initiatedBy === "seller" ? "Seller Initiated Transaction" : "Buyer Initiated Transaction"}
+            {transaction.initiatedBy === "SELLER" ? "Seller Initiated Transaction" : "Buyer Initiated Transaction"}
           </AlertTitle>
           <AlertDescription>
-            {transaction.initiatedBy === "seller"
+            {transaction.initiatedBy === "SELLER"
               ? "This transaction was initiated by the seller. The buyer needs to review and add conditions before funding the escrow."
               : "This transaction was initiated by the buyer. The seller will be notified once funds are placed in escrow."}
           </AlertDescription>
@@ -218,7 +239,9 @@ export default function TransactionDetailPage() {
           <CardContent>
             <div className="flex items-center">
               <DollarSign className="h-5 w-5 text-teal-700 mr-2" />
-              <span className="text-2xl font-bold">{transaction.amount}</span>
+              <span className="text-2xl font-bold">
+                {transaction.amount} {transaction.currency}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -230,7 +253,9 @@ export default function TransactionDetailPage() {
           <CardContent>
             <div className="flex items-center">
               <Clock className="h-5 w-5 text-amber-500 mr-2" />
-              <span className="text-lg font-medium capitalize">{transaction.status.replace(/_/g, " ")}</span>
+              <span className="text-lg font-medium capitalize">
+                {transaction.status.replace(/_/g, " ").toLowerCase()}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -242,7 +267,7 @@ export default function TransactionDetailPage() {
           <CardContent>
             <div className="flex items-center">
               <Calendar className="h-5 w-5 text-teal-700 mr-2" />
-              <span className="text-lg font-medium">{transaction.date}</span>
+              <span className="text-lg font-medium">{new Date(transaction.createdAt).toLocaleDateString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -256,8 +281,15 @@ export default function TransactionDetailPage() {
               <CardDescription>Track the progress of your transaction</CardDescription>
             </CardHeader>
             <CardContent>
-              {transaction.timeline ? (
-                <TransactionTimeline events={transaction.timeline} />
+              {transaction.timeline && transaction.timeline.length > 0 ? (
+                <TransactionTimeline
+                  events={transaction.timeline.map((event: any) => ({
+                    id: event.id || `event-${event.timestamp}`,
+                    date: new Date(event.timestamp).toISOString().split("T")[0],
+                    event: event.event,
+                    status: event.status || "completed",
+                  }))}
+                />
               ) : (
                 <div className="text-center py-6 text-muted-foreground">
                   No timeline events available for this transaction.
@@ -269,41 +301,63 @@ export default function TransactionDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Transaction Documents</CardTitle>
-                <CardDescription>Required documents for this transaction</CardDescription>
+                <CardTitle>Transaction Conditions</CardTitle>
+                <CardDescription>Required conditions for this transaction</CardDescription>
               </div>
-              <Button onClick={() => setShowDocumentModal(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
-                <FileText className="mr-2 h-4 w-4" />
-                Manage Documents
-              </Button>
+              {isBuyer && transaction.status === "AWAITING_FULFILLMENT" && (
+                <Button onClick={() => setShowDocumentModal(true)} className="bg-teal-900 hover:bg-teal-800 text-white">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Manage Conditions
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {requiredDocuments.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center">
-                      <FileText className="h-5 w-5 text-teal-700 mr-3" />
-                      <div>
-                        <p className="font-medium">{doc.name}</p>
-                        <p className="text-sm text-muted-foreground">Required for transaction completion</p>
+                {transaction.conditions &&
+                  transaction.conditions.map((condition: any) => (
+                    <div key={condition.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 text-teal-700 mr-3" />
+                        <div>
+                          <p className="font-medium">{condition.description || condition.type}</p>
+                          <p className="text-sm text-muted-foreground">Required for transaction completion</p>
+                        </div>
                       </div>
+                      {isBuyer && transaction.status === "AWAITING_FULFILLMENT" ? (
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant={condition.status === "FULFILLED_BY_BUYER" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleConditionUpdate(condition.id, true)}
+                            disabled={condition.status === "FULFILLED_BY_BUYER"}
+                          >
+                            {condition.status === "FULFILLED_BY_BUYER" ? (
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                            ) : null}
+                            Fulfilled
+                          </Button>
+                          <Button
+                            variant={condition.status !== "FULFILLED_BY_BUYER" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleConditionUpdate(condition.id, false)}
+                            disabled={condition.status !== "FULFILLED_BY_BUYER"}
+                          >
+                            Pending
+                          </Button>
+                        </div>
+                      ) : condition.status === "FULFILLED_BY_BUYER" ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Clock className="h-5 w-5 text-amber-500" />
+                      )}
                     </div>
-                    {doc.uploaded ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setCurrentDocument(doc)
-                          setShowUploadModal(true)
-                        }}
-                      >
-                        Upload
-                      </Button>
-                    )}
+                  ))}
+
+                {(!transaction.conditions || transaction.conditions.length === 0) && (
+                  <div className="text-center py-6 text-muted-foreground">
+                    No conditions have been set for this transaction.
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -318,59 +372,35 @@ export default function TransactionDetailPage() {
             <CardContent>
               <TransactionParties
                 buyer={{
-                  name: transaction.initiatedBy === "buyer" ? "You" : transaction.counterparty,
-                  email: "buyer@example.com",
+                  name: isBuyer ? "You" : transaction.buyerName || "Buyer",
+                  email: transaction.buyerEmail || "buyer@example.com",
                 }}
                 seller={{
-                  name: transaction.initiatedBy === "seller" ? "You" : transaction.counterparty,
-                  email: "seller@example.com",
+                  name: isSeller ? "You" : transaction.sellerName || "Seller",
+                  email: transaction.sellerEmail || "seller@example.com",
                 }}
               />
             </CardContent>
           </Card>
 
-          {transaction.buyerConditions && (
+          {transaction.conditions && transaction.conditions.length > 0 && (
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle>Transaction Conditions</CardTitle>
-                <CardDescription>Conditions set by the buyer</CardDescription>
+                <CardTitle>Condition Status</CardTitle>
+                <CardDescription>Current status of all conditions</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {transaction.buyerConditions.titleVerification && (
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span>Title Deeds Submission</span>
+                  {transaction.conditions.map((condition: any) => (
+                    <div key={condition.id} className="flex items-center">
+                      {condition.status === "FULFILLED_BY_BUYER" ? (
+                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      ) : (
+                        <Clock className="h-4 w-4 text-amber-500 mr-2" />
+                      )}
+                      <span>{condition.description || condition.type}</span>
                     </div>
-                  )}
-                  {transaction.buyerConditions.inspectionReport && (
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span>Inspection Report</span>
-                    </div>
-                  )}
-                  {transaction.buyerConditions.appraisalService && (
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span>Property Appraisal</span>
-                    </div>
-                  )}
-                  <div className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    <span>Escrow Period: {transaction.buyerConditions.escrowPeriod} days</span>
-                  </div>
-                  {transaction.buyerConditions.automaticRelease && (
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span>Automatic Release When Verified</span>
-                    </div>
-                  )}
-                  {transaction.buyerConditions.disputeResolution && (
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span>Dispute Resolution Mechanism</span>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -387,15 +417,31 @@ export default function TransactionDetailPage() {
                   <p className="font-medium">{transaction.propertyAddress}</p>
                 </div>
 
-                <div>
-                  <p className="text-sm text-muted-foreground">Description</p>
-                  <p>{transaction.description}</p>
-                </div>
-
-                {transaction.escrowAddress && (
+                {transaction.description && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Escrow Address</p>
-                    <p className="font-mono text-xs break-all">{transaction.escrowAddress}</p>
+                    <p className="text-sm text-muted-foreground">Description</p>
+                    <p>{transaction.description}</p>
+                  </div>
+                )}
+
+                {transaction.propertyType && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Property Type</p>
+                    <p className="font-medium">{transaction.propertyType}</p>
+                  </div>
+                )}
+
+                {transaction.propertyId && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Property ID</p>
+                    <p className="font-medium">{transaction.propertyId}</p>
+                  </div>
+                )}
+
+                {transaction.smartContractAddress && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Smart Contract Address</p>
+                    <p className="font-mono text-xs break-all">{transaction.smartContractAddress}</p>
                   </div>
                 )}
               </div>
@@ -404,34 +450,11 @@ export default function TransactionDetailPage() {
         </div>
       </div>
 
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Upload {currentDocument?.name}</h3>
-            <FileUpload
-              dealId={transaction.id}
-              documentType={currentDocument?.type}
-              onUploadComplete={(fileData) => {
-                setRequiredDocuments((prev) =>
-                  prev.map((doc) => (doc.id === currentDocument?.id ? { ...doc, uploaded: true } : doc)),
-                )
-                setShowUploadModal(false)
-              }}
-            />
-            <div className="flex justify-end mt-4">
-              <Button variant="outline" onClick={() => setShowUploadModal(false)} className="mr-2">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showDocumentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Manage Transaction Documents</h2>
+              <h2 className="text-xl font-bold">Manage Transaction Conditions</h2>
               <Button variant="ghost" size="icon" onClick={() => setShowDocumentModal(false)}>
                 <X className="h-5 w-5" />
               </Button>
@@ -439,56 +462,40 @@ export default function TransactionDetailPage() {
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-3">Required Documents</h3>
+                <h3 className="text-lg font-semibold mb-3">Required Conditions</h3>
                 <div className="space-y-3">
-                  {requiredDocuments.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center">
-                        <FileText className="h-5 w-5 text-teal-700 mr-3" />
-                        <div>
-                          <p className="font-medium">{doc.name}</p>
-                          <p className="text-sm text-muted-foreground">Required for transaction completion</p>
+                  {transaction.conditions &&
+                    transaction.conditions.map((condition: any) => (
+                      <div key={condition.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center">
+                          <FileText className="h-5 w-5 text-teal-700 mr-3" />
+                          <div>
+                            <p className="font-medium">{condition.description || condition.type}</p>
+                            <p className="text-sm text-muted-foreground">Required for transaction completion</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant={condition.status === "FULFILLED_BY_BUYER" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleConditionUpdate(condition.id, true)}
+                          >
+                            {condition.status === "FULFILLED_BY_BUYER" ? (
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                            ) : null}
+                            Mark as Fulfilled
+                          </Button>
+                          <Button
+                            variant={condition.status !== "FULFILLED_BY_BUYER" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleConditionUpdate(condition.id, false)}
+                          >
+                            Mark as Pending
+                          </Button>
                         </div>
                       </div>
-                      {doc.uploaded ? (
-                        <div className="flex items-center">
-                          <Button variant="ghost" size="sm" className="mr-2">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="mr-2">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        </div>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setCurrentDocument(doc)
-                            setShowDocumentModal(false)
-                            setShowUploadModal(true)
-                          }}
-                        >
-                          Upload
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                    ))}
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Additional Documents</h3>
-                <FileUpload
-                  dealId={transaction.id}
-                  onUploadComplete={(fileData) => {
-                    toast({
-                      title: "Document uploaded",
-                      description: "Your document has been uploaded successfully.",
-                    })
-                  }}
-                />
               </div>
             </div>
           </div>

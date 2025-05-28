@@ -17,9 +17,9 @@ import TransactionConfirmationModal from "@/components/transaction-confirmation-
 import TransactionSuccess from "@/components/transaction-success"
 import RoleBasedRequirements, { type ContractRequirements } from "@/components/role-based-requirements"
 import { CompactInfo } from "@/components/compact-info"
-import { useDatabaseStore } from "@/lib/mock-database"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
+import { useTransaction } from "@/context/transaction-context"
 
 // Mock contacts data
 const mockContacts = [
@@ -47,7 +47,7 @@ export default function NewTransactionPage() {
   const { isConnected, connectWallet, isConnecting, error: walletError } = useWallet()
   const { user } = useAuth()
   const { addToast } = useToast()
-  const { addTransaction } = useDatabaseStore()
+  const { createNewTransaction } = useTransaction()
   const router = useRouter()
 
   const [step, setStep] = useState(1)
@@ -162,90 +162,81 @@ export default function NewTransactionPage() {
     setConfirmationOpen(true)
   }
 
-  const sendTransactionToBackend = async (transaction: any) => {
+  // Update the handleTransactionSuccess function to use our API
+  const handleTransactionSuccess = async (txHash: string) => {
     try {
-      // Create payload based on Firestore structure
-      const payload = {
-        dealId: transaction.id, // Using the transaction ID as the dealId
-        createdAt: new Date().toISOString(),
-        participants: transaction.participants || [],
-        propertyAddress: transaction.propertyAddress,
-        status: transaction.status,
-        // Additional fields that might be useful
-        amount: transaction.amount,
-        counterparty: transaction.counterparty,
-        description: transaction.description,
-        escrowAddress: transaction.escrowAddress,
+      // Convert contract requirements to initial conditions format
+      const initialConditions = []
+
+      if (contractRequirements.titleVerification) {
+        initialConditions.push({
+          id: "cond-title-v1",
+          type: "TITLE_DEED",
+          description: "Title deed clear and verified.",
+        })
       }
 
-      console.log("Sending transaction data to backend:", payload)
+      if (contractRequirements.inspectionReport) {
+        initialConditions.push({
+          id: "cond-insp-v1",
+          type: "INSPECTION",
+          description: "Property inspection satisfactory.",
+        })
+      }
 
-      // Send data to mock backend endpoint
-      const response = await fetch("http://localhost:3000/api/deals/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      if (contractRequirements.appraisalService) {
+        initialConditions.push({
+          id: "cond-appr-v1",
+          type: "APPRAISAL",
+          description: "Property appraisal completed and satisfactory.",
+        })
+      }
+
+      // Create transaction data object
+      const transactionData = {
+        initiatedBy: transactionType === "purchase" ? "BUYER" : "SELLER",
+        propertyAddress,
+        amount: Number.parseFloat(amount),
+        currency: currency.toUpperCase(),
+        otherPartyEmail: counterpartyEmail,
+        buyerWalletAddress: transactionType === "purchase" ? user?.walletAddress : counterpartyWallet,
+        sellerWalletAddress: transactionType === "purchase" ? counterpartyWallet : user?.walletAddress,
+        initialConditions,
+        propertyType,
+        propertyId,
+        description: propertyDescription,
+        escrowPeriod: contractRequirements.escrowPeriod,
+        automaticRelease: contractRequirements.automaticRelease,
+        disputeResolution: contractRequirements.disputeResolution,
+        smartContractTxHash: txHash, // If available from wallet transaction
+      }
+
+      // Call API to create transaction
+      const result = await createNewTransaction(transactionData)
+
+      // Set the transaction ID from the API response
+      setTransactionId(result.transactionId)
+
+      // Show success message
+      addToast({
+        title: "Transaction Created",
+        description: `Your transaction has been created successfully. Transaction ID: ${result.transactionId}`,
       })
 
-      if (!response.ok) {
-        throw new Error(`Backend error: ${response.status}`)
-      }
+      // Show success screen
+      setTransactionCreated(true)
 
-      const data = await response.json()
-      console.log("Backend response:", data)
-
-      // We don't need to update the UI based on the response
-      // since we're just sending data to the backend
-    } catch (error) {
-      console.error("Error sending transaction to backend:", error)
+      // After a delay, redirect to the transactions page
+      setTimeout(() => {
+        router.push("/transactions")
+      }, 5000)
+    } catch (error: any) {
       addToast({
-        title: "Backend Sync Warning",
-        description: "Transaction created locally but failed to sync with backend.",
+        title: "Error",
+        description: error.message || "Failed to create transaction",
         variant: "destructive",
       })
     }
-  }
-
-  // Update the handleTransactionSuccess function to handle seller-initiated transactions
-  const handleTransactionSuccess = (txHash: string) => {
-    // Create a new transaction in the database
-    const newTransaction = {
-      propertyAddress,
-      amount: `${amount} ${currency.toUpperCase()}`,
-      status: transactionType === "purchase" ? "awaiting_funds" : "pending_buyer_review",
-      counterparty: counterpartyName,
-      date: new Date().toISOString().split("T")[0],
-      progress: transactionType === "purchase" ? 20 : 15,
-      description: propertyDescription,
-      participants: user ? [user.uid] : [],
-      escrowAddress: transactionType === "purchase" ? txHash : undefined,
-      initiatedBy: transactionType === "purchase" ? "buyer" : "seller",
-    }
-
-    // Add the transaction to the database
-    const transaction = addTransaction(newTransaction)
-
-    // Set the transaction ID
-    setTransactionId(transaction.id)
-
-    // Send transaction data to backend
-    sendTransactionToBackend(transaction)
-
-    // Show success message
-    addToast({
-      title: "Transaction Created",
-      description: `Your transaction has been created successfully. Transaction ID: ${transaction.id}`,
-    })
-
-    // Show success screen
-    setTransactionCreated(true)
-
-    // After a delay, redirect to the transactions page
-    setTimeout(() => {
-      router.push("/transactions")
-    }, 5000)
   }
 
   // If transaction is created, show success screen

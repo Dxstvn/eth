@@ -1,190 +1,186 @@
-# Transaction System Documentation
-
-This document provides comprehensive information about the transaction system in the Crypto Escrow platform.
-
-![Transaction Flow](/public/blockchain-real-estate-flow.png)
+# CryptoEscrow Transactions Feature
 
 ## Overview
 
-The transaction system is the core functionality of the Crypto Escrow platform, enabling secure property transactions between buyers and sellers through a structured, two-stage process secured by blockchain technology.
+The Transactions feature is the core functionality of the CryptoEscrow platform, enabling secure property transactions between buyers and sellers using blockchain technology. This document provides a comprehensive guide to the transactions system, including its workflow, technical implementation, and customization options.
 
-## Transaction Types
+## Two-Stage Transaction Process
 
-The platform supports two primary transaction flows:
+The CryptoEscrow platform implements a sophisticated two-stage transaction process that accommodates both seller-initiated and buyer-initiated transactions, ensuring flexibility and security for all parties involved.
 
-### Seller-Initiated Transactions
+### Seller-Initiated Transaction Flow
 
-In this flow, the seller initiates the transaction process:
-
-1. **Creation Phase**: 
-   - Seller creates a transaction with property details
-   - Specifies the buyer (must be a contact)
-   - Sets the proposed amount
-
-2. **Buyer Review Phase**:
+1. **Transaction Creation**: 
+   - Seller creates a transaction with property details, price, and initial conditions
+   - System assigns status `PENDING_BUYER_REVIEW`
    - Buyer receives notification to review the transaction
-   - Reviews property details and proposed amount
-   - Can add conditions (e.g., title deed verification, property inspection)
-   - Deposits funds to the smart contract escrow
 
-3. **Seller Confirmation Phase**:
-   - Seller reviews buyer's conditions
-   - Accepts or negotiates conditions
-   - Once accepted, smart contract is deployed
+2. **Buyer Review**:
+   - Buyer reviews property details and price
+   - Buyer can add or modify conditions (title deeds, inspections, appraisals)
+   - Buyer confirms review, status changes to `AWAITING_FUNDS`
 
-4. **Execution Phase**:
-   - Conditions are verified through document uploads
-   - Once all conditions are met, funds are released
-   - Transaction is marked as complete
+3. **Fund Deposit**:
+   - Buyer deposits funds into the smart contract
+   - System updates status to `AWAITING_SELLER_CONFIRMATION`
+   - Seller receives notification of fund deposit
 
-### Buyer-Initiated Transactions
+4. **Seller Confirmation**:
+   - Seller reviews and confirms buyer's conditions
+   - Smart contract is deployed with agreed conditions
+   - Status changes to `IN_ESCROW`
 
-In this flow, the buyer initiates the transaction process:
+5. **Condition Fulfillment**:
+   - Seller provides required documentation
+   - Buyer verifies and approves each condition
+   - When all conditions are met, status changes to `READY_FOR_FINAL_APPROVAL`
 
-1. **Creation Phase**:
-   - Buyer creates transaction with property details
-   - Specifies the seller (must be a contact)
-   - Sets conditions upfront
-   - Deposits funds to the smart contract escrow
+6. **Final Approval Period**:
+   - A fixed-duration countdown begins (typically 48 hours)
+   - Buyer can raise disputes during this period
+   - If no disputes, funds are released to seller at end of period
 
-2. **Seller Review Phase**:
-   - Seller receives notification to review the transaction
-   - Reviews property details, amount, and conditions
-   - Accepts or negotiates terms
-   - Once accepted, smart contract is deployed
+7. **Transaction Completion**:
+   - Funds are released to seller
+   - Status changes to `COMPLETED`
+   - Transaction record is maintained for reference
 
-3. **Execution Phase**:
-   - Conditions are verified through document uploads
-   - Once all conditions are met, funds are released
-   - Transaction is marked as complete
+### Buyer-Initiated Transaction Flow
+
+1. **Transaction Creation**:
+   - Buyer creates transaction with property details, price, and conditions
+   - Buyer deposits funds into smart contract
+   - Status is set to `AWAITING_SELLER_CONFIRMATION`
+
+2. **Seller Confirmation**:
+   - Seller reviews transaction details and conditions
+   - Seller accepts or rejects conditions
+   - Upon acceptance, status changes to `IN_ESCROW`
+
+3. **Condition Fulfillment** through **Transaction Completion**:
+   - Same as steps 5-7 in the Seller-Initiated flow
 
 ## Transaction Statuses
 
-Transactions progress through several statuses:
+The system tracks transactions through various statuses that reflect their current state:
 
-- `DRAFT` - Initial creation, not yet submitted
-- `PENDING_BUYER_REVIEW` - Awaiting buyer review (seller-initiated)
-- `PENDING_SELLER_REVIEW` - Awaiting seller review (buyer-initiated)
-- `AWAITING_PAYMENT` - Approved by both parties, awaiting fund deposit
-- `PENDING_CONDITIONS` - Funds deposited, waiting for condition fulfillment
-- `AWAITING_SELLER_CONFIRMATION` - Conditions added by buyer, waiting for seller confirmation
-- `IN_PROGRESS` - Active transaction with conditions
-- `COMPLETED` - All conditions met, funds released
-- `CANCELLED` - Transaction cancelled by either party
-- `DISPUTED` - Transaction under dispute
+| Status | Description |
+|--------|-------------|
+| `PENDING_BUYER_REVIEW` | Transaction created by seller, awaiting buyer review |
+| `AWAITING_FUNDS` | Buyer has reviewed and accepted, needs to deposit funds |
+| `AWAITING_SELLER_CONFIRMATION` | Funds deposited, waiting for seller to confirm conditions |
+| `IN_ESCROW` | Both parties have agreed, funds are in escrow |
+| `PENDING_CONDITIONS` | Waiting for conditions to be fulfilled |
+| `READY_FOR_FINAL_APPROVAL` | All conditions met, ready for final approval period |
+| `IN_FINAL_APPROVAL` | Final approval period active (typically 48 hours) |
+| `IN_DISPUTE` | Buyer has raised a dispute |
+| `COMPLETED` | Transaction successfully completed, funds released |
+| `CANCELLED` | Transaction cancelled, funds returned to buyer |
 
 ## Condition Types
 
 The platform supports various condition types that can be added to transactions:
 
-- **Title Deed Verification** - Requires uploading and verification of property title
-- **Property Inspection** - Requires satisfactory inspection report
-- **Appraisal** - Requires property value appraisal matching or exceeding transaction amount
-- **Mortgage Approval** - Requires proof of mortgage approval
-- **Custom Conditions** - User-defined conditions with specific requirements
+1. **Title Deed Verification**: Confirmation that the property title is clear and verified
+2. **Property Inspection**: Verification that the property has passed inspection
+3. **Property Appraisal**: Confirmation that the property has been appraised at the agreed value
+4. **Document Submission**: Various legal documents required for the transaction
+5. **Custom Conditions**: User-defined conditions specific to the transaction
 
 ## Document Management
 
-Each transaction contains a document management system:
+Documents related to transaction conditions can be uploaded, stored, and verified:
 
-- Documents are securely stored in Google Cloud Storage
-- Each document is associated with a specific condition
-- Documents can be uploaded by either party based on condition requirements
-- Document status tracking (pending, verified, rejected)
-- Secure viewing permissions based on transaction participation
+1. **Upload**: Users can upload documents to fulfill conditions
+2. **Storage**: Documents are securely stored in Google Cloud Storage
+3. **Verification**: The counterparty can review and verify uploaded documents
+4. **Access Control**: Only transaction participants can access the documents
 
 ## Technical Implementation
 
 ### Data Model
+
+The transaction system uses the following data model:
 
 \`\`\`typescript
 interface Transaction {
   id: string;
   propertyAddress: string;
   amount: number;
-  sellerId: string;
-  buyerId: string;
+  currency: string;
   status: TransactionStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  initiatedBy: 'BUYER' | 'SELLER';
+  initiatedBy: "BUYER" | "SELLER";
+  buyerId: string;
+  sellerId: string;
+  buyerWalletAddress: string;
+  sellerWalletAddress: string;
   conditions: Condition[];
-  documents: Document[];
   timeline: TimelineEvent[];
   smartContractAddress?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Condition {
   id: string;
   type: ConditionType;
   description: string;
-  status: 'PENDING' | 'FULFILLED' | 'REJECTED';
-  requiredDocuments: string[];
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
+  status: "PENDING_BUYER_ACTION" | "FULFILLED_BY_BUYER" | "ACTION_WITHDRAWN_BY_BUYER";
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface Document {
+interface TimelineEvent {
   id: string;
-  name: string;
-  url: string;
-  contentType: string;
-  size: number;
-  uploadedBy: string;
-  uploadedAt: Date;
-  conditionId?: string;
-  status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  event: string;
+  timestamp: string;
+  userId?: string;
+  status: "completed" | "in_progress" | "pending";
 }
 \`\`\`
 
 ### Component Architecture
 
-The transaction system consists of the following key components:
+The transaction feature is implemented using the following components:
 
-1. **Transaction Creation Form** - For initiating new transactions
-2. **Transaction Review Component** - For reviewing and adding conditions
-3. **Transaction Card** - For displaying transaction overview in listings
-4. **Transaction Detail Page** - For comprehensive transaction management
-5. **Condition Management** - For adding and tracking conditions
-6. **Document Upload** - For condition fulfillment through documentation
-7. **Transaction Timeline** - For tracking transaction progression
-8. **Smart Contract Interface** - For managing escrow funds
+1. **Transaction Context**: Provides global state management and API integration
+2. **Transaction Card**: Displays transaction summary in the transactions list
+3. **Transaction Stage Indicator**: Visual indicator of transaction status
+4. **Transaction Review**: Interface for buyers to review seller-initiated transactions
+5. **Seller Confirmation**: Interface for sellers to confirm buyer conditions
+6. **Transaction Timeline**: Visual representation of transaction history
+7. **Transaction Parties**: Displays information about transaction participants
 
 ### State Management
 
-Transaction state is managed through:
+The transaction state is managed through:
 
-- Firestore Database for persistent storage
-- React Context for client-side state management
-- Server actions for secure operations
-- Real-time updates using Firestore listeners
+1. **Context API**: Global state management for transactions
+2. **API Integration**: Communication with backend services
+3. **Real-time Updates**: Firestore listeners for live updates
+4. **Local State**: Component-level state for UI interactions
 
 ## User Experience Considerations
 
 ### Role-Based Views
 
-The interface adapts based on the user's role in the transaction:
+The UI adapts based on the user's role in the transaction:
 
-- **Buyer View** - Focuses on review, conditions, and payment actions
-- **Seller View** - Emphasizes property details and condition confirmation
+1. **Buyer View**: 
+   - For seller-initiated transactions: Review interface, condition management
+   - For buyer-initiated transactions: Transaction monitoring, dispute options
+
+2. **Seller View**:
+   - For seller-initiated transactions: Transaction monitoring, document upload
+   - For buyer-initiated transactions: Confirmation interface, condition fulfillment
 
 ### Notifications
 
-Users receive notifications for key transaction events:
+Users receive notifications for important transaction events:
 
-- New transaction invitations
-- Condition updates
-- Document uploads
-- Payment confirmations
-- Transaction status changes
-
-### Security Features
-
-- All transaction actions require authentication
-- Document access is restricted to transaction participants
-- Smart contract operations require wallet signature
-- Sensitive operations use server-side validation
+1. **Email Notifications**: For transaction creation, status changes, and deadlines
+2. **In-App Notifications**: Real-time updates on transaction progress
+3. **Timeline Updates**: Visual record of all transaction events
 
 ## Customization and Extension
 
@@ -192,40 +188,62 @@ Users receive notifications for key transaction events:
 
 To add a new condition type:
 
-1. Update the `ConditionType` enum in `types/transaction.ts`
-2. Add validation logic in `lib/transaction-validator.ts`
-3. Create UI components for the new condition type
-4. Update the condition form to include the new type
+1. Update the `ConditionType` enum in the data model
+2. Add UI components for the new condition type
+3. Implement backend validation for the new condition type
 
-### Custom Document Verification
+### Custom Transaction Workflows
 
-The document verification process can be customized by:
+The transaction system can be extended with custom workflows:
 
-1. Implementing verification providers in `lib/document-verification/`
-2. Adding verification UI components
-3. Configuring verification requirements per condition type
+1. **Multi-Party Transactions**: Adding more participants beyond buyer and seller
+2. **Staged Payments**: Implementing milestone-based fund releases
+3. **Automated Verification**: Integrating with external verification services
 
 ## Troubleshooting
 
 ### Common Issues
 
-- **Transaction Stuck in Status**: Usually due to unmet conditions or pending documents
-- **Payment Not Confirming**: Check wallet connection and transaction approval
-- **Document Upload Failures**: Verify file size and type restrictions
+1. **Transaction Stuck in Status**: Check for pending actions required by either party
+2. **Condition Verification Failure**: Ensure documents meet requirements
+3. **Smart Contract Deployment Issues**: Verify wallet connections and gas fees
 
-### Support Resources
+### Error Handling
 
-- Check Firebase console for transaction data issues
-- Verify Google Cloud Storage permissions for document access problems
-- Review client-side errors in browser console
+The system implements comprehensive error handling:
+
+1. **User-Friendly Messages**: Clear explanations of errors
+2. **Detailed Logging**: Backend logging for debugging
+3. **Recovery Options**: Mechanisms to recover from failed states
+
+## Integration with Other Features
+
+The transaction system integrates with:
+
+1. **Authentication**: User identity verification
+2. **Wallet Management**: Blockchain interactions
+3. **Contact Management**: Selection of transaction counterparties
+4. **Document Storage**: Secure storage and retrieval of transaction documents
 
 ## Future Enhancements
 
-Planned improvements to the transaction system:
+Planned enhancements to the transaction system include:
 
-- Multi-party transactions (beyond buyer/seller)
-- Advanced dispute resolution mechanisms
-- AI-assisted document verification
-- Transaction templates for common property types
-- Integration with property registration systems
-- Partial payment scheduling
+1. **Multi-Currency Support**: Handling transactions in various cryptocurrencies
+2. **Advanced Dispute Resolution**: Implementing arbitration mechanisms
+3. **Transaction Templates**: Pre-defined transaction types for common scenarios
+4. **Blockchain Analytics**: Advanced reporting on transaction metrics
+
+## API Reference
+
+The transaction system interacts with the following API endpoints:
+
+- `POST /transaction/create`: Create a new transaction
+- `GET /transaction/list`: List user's transactions
+- `GET /transaction/:id`: Get transaction details
+- `PUT /transaction/:id/conditions/:conditionId/buyer-review`: Update condition status
+- `PUT /transaction/:id/sync-status`: Sync transaction status with blockchain
+- `POST /transaction/:id/sc/start-final-approval`: Start final approval period
+- `POST /transaction/:id/sc/raise-dispute`: Raise a dispute
+
+For detailed API documentation, refer to the backend API documentation.
