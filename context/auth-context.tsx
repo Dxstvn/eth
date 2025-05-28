@@ -25,7 +25,7 @@ type AuthContextType = {
 }
 
 // Backend API URL - Updated to point to the deployed backend
-const API_URL = "http://44.202.141.56:3000"
+const API_URL = "http://44.202.141.56"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
