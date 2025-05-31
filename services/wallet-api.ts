@@ -1,63 +1,318 @@
-// Mock backend data store - only stores wallet addresses and names
-let connectedWallets: Array<{
-  address: string
-  name: string
-}> = []
+import type { ConnectedWallet, BlockchainNetwork } from '@/types/wallet'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 /**
- * Mock API service for wallet connections
- * This only tracks which wallets are connected, not their balances or transactions
+ * API service for wallet connections with backend integration
  */
-export const walletApi = {
+export class WalletApiService {
+  
+  /**
+   * Get authorization headers with Firebase ID token
+   */
+  private async getAuthHeaders(): Promise<HeadersInit> {
+    try {
+      // Try to get Firebase user and token
+      const { getAuth } = await import('firebase/auth')
+      const auth = getAuth()
+      const user = auth.currentUser
+      
+      if (user) {
+        const token = await user.getIdToken()
+        return {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    } catch (error) {
+      console.warn('Could not get Firebase auth token:', error)
+    }
+    
+    return {
+      'Content-Type': 'application/json'
+    }
+  }
+
   /**
    * Register a connected wallet with the backend
    */
-  async registerWallet(address: string, name: string): Promise<{ success: boolean }> {
-    console.log("Registering wallet with backend:", { address, name })
+  async registerWallet(wallet: ConnectedWallet): Promise<{ success: boolean; message?: string }> {
+    try {
+      console.log('Registering wallet with backend:', {
+        address: wallet.address,
+        name: wallet.name,
+        network: wallet.network
+      })
 
-    // Check if wallet already exists
-    const existingWalletIndex = connectedWallets.findIndex(
-      (wallet) => wallet.address.toLowerCase() === address.toLowerCase(),
-    )
+      const headers = await this.getAuthHeaders()
+      
+      const response = await fetch(`${API_BASE_URL}/api/wallets/register`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          address: wallet.address,
+          name: wallet.name,
+          network: wallet.network,
+          publicKey: wallet.publicKey, // For Solana wallets
+          isPrimary: wallet.isPrimary || false
+        })
+      })
 
-    if (existingWalletIndex >= 0) {
-      // Update existing wallet
-      connectedWallets[existingWalletIndex] = { address, name }
-    } else {
-      // Add new wallet
-      connectedWallets.push({ address, name })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('✅ Wallet registered successfully:', data)
+      
+      return { success: true, message: data.message }
+    } catch (error) {
+      console.error('❌ Error registering wallet:', error)
+      
+      // In development mode, don't fail completely
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('🔧 Development mode: Simulating successful wallet registration')
+        return { success: true, message: 'Wallet registered (development mode)' }
+      }
+      
+      return { 
+        success: false, 
+        message: (error as Error).message || 'Failed to register wallet with backend' 
+      }
     }
+  }
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+  /**
+   * Update user profile with wallet address during authentication
+   */
+  async updateUserProfile(updates: {
+    walletAddress?: string
+    walletAddresses?: Array<{
+      address: string
+      network: BlockchainNetwork
+      name: string
+      isPrimary?: boolean
+    }>
+  }): Promise<{ success: boolean; message?: string }> {
+    try {
+      console.log('Updating user profile with wallet data:', updates)
 
-    return { success: true }
-  },
+      const headers = await this.getAuthHeaders()
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updates)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('✅ User profile updated successfully:', data)
+      
+      return { success: true, message: data.message }
+    } catch (error) {
+      console.error('❌ Error updating user profile:', error)
+      
+      // In development mode, don't fail completely
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('🔧 Development mode: Simulating successful profile update')
+        return { success: true, message: 'Profile updated (development mode)' }
+      }
+      
+      return { 
+        success: false, 
+        message: (error as Error).message || 'Failed to update user profile' 
+      }
+    }
+  }
 
   /**
    * Get all connected wallets from the backend
-   * This only returns addresses and names, not balances or transactions
    */
-  async getConnectedWallets(): Promise<Array<{ address: string; name: string }>> {
-    console.log("Fetching connected wallets from backend")
+  async getConnectedWallets(): Promise<ConnectedWallet[]> {
+    try {
+      console.log('Fetching connected wallets from backend')
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+      const headers = await this.getAuthHeaders()
+      
+      const response = await fetch(`${API_BASE_URL}/api/wallets`, {
+        method: 'GET',
+        headers
+      })
 
-    return [...connectedWallets]
-  },
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('✅ Fetched connected wallets:', data)
+      
+      return data.wallets || []
+    } catch (error) {
+      console.error('❌ Error fetching connected wallets:', error)
+      
+      // In development mode, return empty array
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('🔧 Development mode: Returning empty wallet list')
+        return []
+      }
+      
+      throw error
+    }
+  }
 
   /**
    * Remove a wallet from the backend
    */
-  async removeWallet(address: string): Promise<{ success: boolean }> {
-    console.log("Removing wallet from backend:", address)
+  async removeWallet(address: string, network: BlockchainNetwork): Promise<{ success: boolean; message?: string }> {
+    try {
+      console.log('Removing wallet from backend:', { address, network })
 
-    connectedWallets = connectedWallets.filter((wallet) => wallet.address.toLowerCase() !== address.toLowerCase())
+      const headers = await this.getAuthHeaders()
+      
+      const response = await fetch(`${API_BASE_URL}/api/wallets/${address}`, {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({ network })
+      })
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300))
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
 
-    return { success: true }
-  },
+      const data = await response.json()
+      console.log('✅ Wallet removed successfully:', data)
+      
+      return { success: true, message: data.message }
+    } catch (error) {
+      console.error('❌ Error removing wallet:', error)
+      
+      // In development mode, don't fail completely
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('🔧 Development mode: Simulating successful wallet removal')
+        return { success: true, message: 'Wallet removed (development mode)' }
+      }
+      
+      return { 
+        success: false, 
+        message: (error as Error).message || 'Failed to remove wallet from backend' 
+      }
+    }
+  }
+
+  /**
+   * Set primary wallet on the backend
+   */
+  async setPrimaryWallet(address: string, network: BlockchainNetwork): Promise<{ success: boolean; message?: string }> {
+    try {
+      console.log('Setting primary wallet on backend:', { address, network })
+
+      const headers = await this.getAuthHeaders()
+      
+      const response = await fetch(`${API_BASE_URL}/api/wallets/primary`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ address, network })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('✅ Primary wallet set successfully:', data)
+      
+      return { success: true, message: data.message }
+    } catch (error) {
+      console.error('❌ Error setting primary wallet:', error)
+      
+      // In development mode, don't fail completely
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('🔧 Development mode: Simulating successful primary wallet update')
+        return { success: true, message: 'Primary wallet set (development mode)' }
+      }
+      
+      return { 
+        success: false, 
+        message: (error as Error).message || 'Failed to set primary wallet on backend' 
+      }
+    }
+  }
+
+  /**
+   * Sync wallet balance with backend
+   */
+  async syncWalletBalance(address: string, network: BlockchainNetwork, balance: string): Promise<{ success: boolean }> {
+    try {
+      const headers = await this.getAuthHeaders()
+      
+      const response = await fetch(`${API_BASE_URL}/api/wallets/balance`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ address, network, balance })
+      })
+
+      if (!response.ok) {
+        console.warn('Failed to sync wallet balance:', response.statusText)
+        return { success: false }
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.warn('Error syncing wallet balance:', error)
+      return { success: false }
+    }
+  }
+
+  /**
+   * Get user's wallet preferences from backend
+   */
+  async getWalletPreferences(): Promise<{
+    primaryWallet?: { address: string; network: BlockchainNetwork }
+    preferredNetworks?: BlockchainNetwork[]
+  }> {
+    try {
+      const headers = await this.getAuthHeaders()
+      
+      const response = await fetch(`${API_BASE_URL}/api/wallets/preferences`, {
+        method: 'GET',
+        headers
+      })
+
+      if (!response.ok) {
+        return {}
+      }
+
+      const data = await response.json()
+      return data.preferences || {}
+    } catch (error) {
+      console.warn('Error fetching wallet preferences:', error)
+      return {}
+    }
+  }
+}
+
+// Create singleton instance
+export const walletApi = new WalletApiService()
+
+// Legacy export for backward compatibility
+export default {
+  registerWallet: (address: string, name: string) => 
+    walletApi.registerWallet({
+      address,
+      name,
+      network: 'ethereum',
+      provider: null,
+      isPrimary: false
+    }),
+  getConnectedWallets: () => walletApi.getConnectedWallets(),
+  removeWallet: (address: string) => walletApi.removeWallet(address, 'ethereum')
 }

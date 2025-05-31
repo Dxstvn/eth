@@ -12,11 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import WalletConnectModal from "./wallet-connect-modal"
 import { MetamaskFox } from "@/components/icons/metamask-fox"
 import { CoinbaseIcon } from "@/components/icons/coinbase-icon"
+import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
+import type { BlockchainNetwork } from "@/types/wallet"
 
 interface ConnectWalletButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "primary"
@@ -29,28 +31,38 @@ export default function ConnectWalletButton({
   size = "default",
   className = "",
 }: ConnectWalletButtonProps) {
-  const { currentAddress, isConnected, connectedWallets, disconnectWallet, setPrimaryWallet, getBalance } = useWallet()
+  const { 
+    currentAddress, 
+    currentNetwork,
+    isConnected, 
+    connectedWallets, 
+    disconnectWallet, 
+    setPrimaryWallet, 
+    getBalance 
+  } = useWallet()
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
   const [balance, setBalance] = useState("0")
   const [showConnectModal, setShowConnectModal] = useState(false)
 
   // Find the current wallet
-  const currentWallet = connectedWallets.find((wallet) => wallet.address === currentAddress)
+  const currentWallet = connectedWallets.find(
+    (wallet) => wallet.address === currentAddress && wallet.network === currentNetwork
+  )
 
-  // Fetch balance when address changes
+  // Fetch balance when address or network changes
   useEffect(() => {
-    if (currentAddress) {
+    if (currentAddress && currentNetwork) {
       fetchBalance()
     }
-  }, [currentAddress])
+  }, [currentAddress, currentNetwork])
 
   // Fetch balance from wallet provider
   const fetchBalance = async () => {
-    if (!currentAddress) return
+    if (!currentAddress || !currentNetwork) return
 
     try {
-      const walletBalance = await getBalance(currentAddress)
+      const walletBalance = await getBalance(currentAddress, currentNetwork)
       setBalance(walletBalance)
     } catch (error) {
       console.error("Error fetching balance:", error)
@@ -58,10 +70,10 @@ export default function ConnectWalletButton({
   }
 
   const handleDisconnect = async () => {
-    if (!currentAddress) return
+    if (!currentAddress || !currentNetwork) return
 
     try {
-      await disconnectWallet(currentAddress)
+      await disconnectWallet(currentAddress, currentNetwork)
       toast({
         title: "Wallet Disconnected",
         description: "Your wallet has been disconnected.",
@@ -75,12 +87,20 @@ export default function ConnectWalletButton({
     }
   }
 
-  const handleSetPrimary = (address: string) => {
-    setPrimaryWallet(address)
-    toast({
-      title: "Primary Wallet Updated",
-      description: "Your primary wallet has been updated.",
-    })
+  const handleSetPrimary = async (address: string, network: BlockchainNetwork) => {
+    try {
+      await setPrimaryWallet(address, network)
+      toast({
+        title: "Primary Wallet Updated",
+        description: "Your primary wallet has been updated.",
+      })
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: (error as Error).message || "Failed to update primary wallet.",
+        variant: "destructive",
+      })
+    }
   }
 
   const copyAddress = () => {
@@ -96,14 +116,49 @@ export default function ConnectWalletButton({
   }
 
   const openExplorer = () => {
-    if (currentAddress) {
-      window.open(`https://etherscan.io/address/${currentAddress}`, "_blank")
+    if (currentAddress && currentNetwork) {
+      const explorerUrls = {
+        ethereum: `https://etherscan.io/address/${currentAddress}`,
+        polygon: `https://polygonscan.com/address/${currentAddress}`,
+        bsc: `https://bscscan.com/address/${currentAddress}`,
+        arbitrum: `https://arbiscan.io/address/${currentAddress}`,
+        optimism: `https://optimistic.etherscan.io/address/${currentAddress}`,
+        solana: `https://explorer.solana.com/address/${currentAddress}`,
+        bitcoin: `https://blockstream.info/address/${currentAddress}`
+      }
+      window.open(explorerUrls[currentNetwork], "_blank")
     }
   }
 
   const formatAddress = (addr: string | null) => {
     if (!addr) return ""
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
+
+  const getNetworkSymbol = (network: BlockchainNetwork) => {
+    const symbols = {
+      ethereum: 'ETH',
+      polygon: 'MATIC',
+      bsc: 'BNB',
+      arbitrum: 'ETH',
+      optimism: 'ETH',
+      solana: 'SOL',
+      bitcoin: 'BTC'
+    }
+    return symbols[network]
+  }
+
+  const getNetworkColor = (network: BlockchainNetwork) => {
+    const colors = {
+      ethereum: 'bg-blue-100 text-blue-800',
+      polygon: 'bg-purple-100 text-purple-800',
+      bsc: 'bg-yellow-100 text-yellow-800',
+      arbitrum: 'bg-blue-100 text-blue-800',
+      optimism: 'bg-red-100 text-red-800',
+      solana: 'bg-purple-100 text-purple-800',
+      bitcoin: 'bg-orange-100 text-orange-800'
+    }
+    return colors[network]
   }
 
   if (!isConnected) {
@@ -172,19 +227,30 @@ export default function ConnectWalletButton({
             </div>
             {variant !== "ghost" && (
               <>
-                <span className="hidden sm:inline ml-2 mr-1">{balance} ETH</span>
+                <span className="hidden sm:inline ml-2 mr-1">
+                  {balance} {currentNetwork ? getNetworkSymbol(currentNetwork) : 'ETH'}
+                </span>
                 <span>{formatAddress(currentAddress)}</span>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </>
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuLabel>
             <div className="flex flex-col">
-              <span className="font-bold">{currentWallet?.name || "Connected Wallet"}</span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold">{currentWallet?.name || "Connected Wallet"}</span>
+                {currentNetwork && (
+                  <Badge variant="secondary" className={`text-xs ${getNetworkColor(currentNetwork)}`}>
+                    {currentNetwork.toUpperCase()}
+                  </Badge>
+                )}
+              </div>
               <span className="text-xs text-muted-foreground">{formatAddress(currentAddress)}</span>
-              <span className="text-xs font-medium text-green-600 mt-1">{balance} ETH</span>
+              <span className="text-xs font-medium text-green-600 mt-1">
+                {balance} {currentNetwork ? getNetworkSymbol(currentNetwork) : 'ETH'}
+              </span>
             </div>
           </DropdownMenuLabel>
 
@@ -193,9 +259,12 @@ export default function ConnectWalletButton({
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Other Connected Wallets</DropdownMenuLabel>
               {connectedWallets
-                .filter((wallet) => wallet.address !== currentAddress)
+                .filter((wallet) => !(wallet.address === currentAddress && wallet.network === currentNetwork))
                 .map((wallet) => (
-                  <DropdownMenuItem key={wallet.address} onClick={() => handleSetPrimary(wallet.address)}>
+                  <DropdownMenuItem 
+                    key={`${wallet.address}-${wallet.network}`} 
+                    onClick={() => handleSetPrimary(wallet.address, wallet.network)}
+                  >
                     <div className="mr-2 h-4 w-4">
                       {wallet.name === "MetaMask" ? (
                         <MetamaskFox className="h-4 w-4" />
@@ -213,7 +282,17 @@ export default function ConnectWalletButton({
                         <Wallet className="h-4 w-4" />
                       )}
                     </div>
-                    <span>{formatAddress(wallet.address)}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm">{formatAddress(wallet.address)}</span>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className={`text-xs ${getNetworkColor(wallet.network)}`}>
+                          {wallet.network.toUpperCase()}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {wallet.balance || '0'} {getNetworkSymbol(wallet.network)}
+                        </span>
+                      </div>
+                    </div>
                   </DropdownMenuItem>
                 ))}
             </>

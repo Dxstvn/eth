@@ -1,51 +1,103 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { EIP6963ProviderDetail, ConnectedWallet } from "@/types/wallet"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import type { 
+  EIP6963ProviderDetail, 
+  ConnectedWallet, 
+  BlockchainNetwork,
+  WalletDetectionResult,
+  SolanaWallet,
+  BitcoinWallet,
+  WalletProvider
+} from "@/types/wallet"
+import { walletDetectionService } from "@/services/wallet-detection"
+import { walletApi } from "@/services/wallet-api"
+import { ethers } from "ethers"
 
 // Define the shape of our wallet context
 type WalletContextType = {
   currentAddress: string | null
+  currentNetwork: BlockchainNetwork | null
   isConnected: boolean
   isConnecting: boolean
   error: string | null
   connectedWallets: ConnectedWallet[]
-  discoveredProviders: EIP6963ProviderDetail[]
-  connectWallet: (provider: any) => Promise<void>
-  disconnectWallet: (address: string) => Promise<void>
-  setPrimaryWallet: (address: string) => void
-  getBalance: (address: string) => Promise<string>
-  getTransactions: (address: string) => Promise<any[]>
+  
+  // Multi-network wallet detection
+  detectedWallets: WalletDetectionResult
+  evmProviders: WalletProvider[]
+  solanaWallets: SolanaWallet[]
+  bitcoinWallets: BitcoinWallet[]
+  
+  // Wallet management functions
+  connectWallet: (provider: any, network: BlockchainNetwork, walletName?: string) => Promise<ConnectedWallet>
+  connectSolanaWallet: (wallet: SolanaWallet) => Promise<ConnectedWallet>
+  connectBitcoinWallet: (wallet: BitcoinWallet) => Promise<ConnectedWallet>
+  disconnectWallet: (address: string, network: BlockchainNetwork) => Promise<void>
+  setPrimaryWallet: (address: string, network: BlockchainNetwork) => Promise<void>
+  
+  // Wallet utilities
+  getBalance: (address: string, network: BlockchainNetwork) => Promise<string>
+  getTransactions: (address: string, network: BlockchainNetwork) => Promise<any[]>
+  switchNetwork: (network: BlockchainNetwork) => Promise<void>
+  
+  // Detection and refresh
+  refreshWalletDetection: () => Promise<void>
 }
 
 // Create the context with default values
 const WalletContext = createContext<WalletContextType>({
   currentAddress: null,
+  currentNetwork: null,
   isConnected: false,
   isConnecting: false,
   error: null,
   connectedWallets: [],
-  discoveredProviders: [],
-  connectWallet: async () => {},
+  detectedWallets: { evmWallets: [], solanaWallets: [], bitcoinWallets: [] },
+  evmProviders: [],
+  solanaWallets: [],
+  bitcoinWallets: [],
+  connectWallet: async () => ({} as ConnectedWallet),
+  connectSolanaWallet: async () => ({} as ConnectedWallet),
+  connectBitcoinWallet: async () => ({} as ConnectedWallet),
   disconnectWallet: async () => {},
-  setPrimaryWallet: () => {},
+  setPrimaryWallet: async () => {},
   getBalance: async () => "0",
   getTransactions: async () => [],
+  switchNetwork: async () => {},
+  refreshWalletDetection: async () => {},
 })
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [currentAddress, setCurrentAddress] = useState<string | null>(null)
+  const [currentNetwork, setCurrentNetwork] = useState<BlockchainNetwork | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [connectedWallets, setConnectedWallets] = useState<ConnectedWallet[]>([])
-  const [discoveredProviders, setDiscoveredProviders] = useState<EIP6963ProviderDetail[]>([])
+  
+  // Multi-network wallet detection state
+  const [detectedWallets, setDetectedWallets] = useState<WalletDetectionResult>({
+    evmWallets: [],
+    solanaWallets: [],
+    bitcoinWallets: []
+  })
 
-  // Initialize wallet state from localStorage
+  // Initialize wallet state from localStorage and backend
   useEffect(() => {
-    const savedWallets = localStorage.getItem("connectedWallets")
-    if (savedWallets) {
-      try {
+    initializeWallets()
+  }, [])
+
+  // Detect wallets on component mount
+  useEffect(() => {
+    refreshWalletDetection()
+  }, [])
+
+  const initializeWallets = async () => {
+    try {
+      // Try to load from localStorage first
+      const savedWallets = localStorage.getItem("connectedWallets")
+      if (savedWallets) {
         const parsedWallets = JSON.parse(savedWallets) as ConnectedWallet[]
         console.log("Loaded wallets from localStorage:", parsedWallets)
         setConnectedWallets(parsedWallets)
@@ -54,10 +106,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const primaryWallet = parsedWallets.find((wallet) => wallet.isPrimary)
         if (primaryWallet) {
           setCurrentAddress(primaryWallet.address)
+          setCurrentNetwork(primaryWallet.network)
           setIsConnected(true)
         } else if (parsedWallets.length > 0) {
           // If no primary wallet, set the first one as primary
-          setCurrentAddress(parsedWallets[0].address)
+          const firstWallet = parsedWallets[0]
+          setCurrentAddress(firstWallet.address)
+          setCurrentNetwork(firstWallet.network)
           setIsConnected(true)
 
           // Update the first wallet to be primary
@@ -68,61 +123,39 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setConnectedWallets(updatedWallets)
           localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
         }
-      } catch (err) {
-        console.error("Error parsing saved wallets:", err)
       }
+
+      // Try to sync with backend
+      try {
+        const backendWallets = await walletApi.getConnectedWallets()
+        if (backendWallets.length > 0) {
+          console.log("Synced wallets from backend:", backendWallets)
+          setConnectedWallets(backendWallets)
+          localStorage.setItem("connectedWallets", JSON.stringify(backendWallets))
+        }
+      } catch (error) {
+        console.warn("Could not sync wallets from backend:", error)
+      }
+    } catch (err) {
+      console.error("Error initializing wallets:", err)
+      setError("Failed to initialize wallets")
+    }
+  }
+
+  const refreshWalletDetection = useCallback(async () => {
+    try {
+      console.log("🔍 Detecting available wallets...")
+      const detected = await walletDetectionService.detectAllWallets()
+      setDetectedWallets(detected)
+      console.log("✅ Wallet detection complete:", detected)
+    } catch (err) {
+      console.error("Error detecting wallets:", err)
+      setError("Failed to detect wallets")
     }
   }, [])
 
-  // Listen for EIP-6963 wallet announcements
-  useEffect(() => {
-    const handleAnnouncement = (event: any) => {
-      const providerDetail = event.detail
-      console.log("EIP-6963 provider announced:", providerDetail)
-
-      setDiscoveredProviders((prev) => {
-        // Check if this provider is already in the list
-        const exists = prev.some((p) => p.info.uuid === providerDetail.info.uuid)
-        if (exists) return prev
-        return [...prev, providerDetail]
-      })
-    }
-
-    // Listen for wallet announcements
-    window.addEventListener("eip6963:announceProvider", handleAnnouncement as EventListener)
-
-    // Request providers to announce themselves
-    window.dispatchEvent(new Event("eip6963:requestProvider"))
-
-    // Legacy fallback for window.ethereum
-    if (window.ethereum && !discoveredProviders.length) {
-      const legacyProvider = {
-        info: {
-          uuid: "legacy-ethereum",
-          name: window.ethereum.isMetaMask
-            ? "MetaMask"
-            : window.ethereum.isCoinbaseWallet
-              ? "Coinbase Wallet"
-              : "Injected Wallet",
-          icon: "",
-          rdns: window.ethereum.isMetaMask
-            ? "io.metamask"
-            : window.ethereum.isCoinbaseWallet
-              ? "com.coinbase.wallet"
-              : "unknown",
-        },
-        provider: window.ethereum,
-      }
-      setDiscoveredProviders((prev) => [...prev, legacyProvider])
-    }
-
-    return () => {
-      window.removeEventListener("eip6963:announceProvider", handleAnnouncement as EventListener)
-    }
-  }, [])
-
-  // Connect wallet function
-  const connectWallet = async (provider: any) => {
+  // Connect EVM wallet function
+  const connectWallet = async (provider: any, network: BlockchainNetwork = 'ethereum', walletName?: string): Promise<ConnectedWallet> => {
     try {
       setIsConnecting(true)
       setError(null)
@@ -138,63 +171,52 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
 
       const newAddress = accounts[0]
-      console.log("Connected to address:", newAddress)
+      console.log("Connected to address:", newAddress, "on network:", network)
 
-      // Determine wallet name and icon
-      let walletName = "Unknown Wallet"
-      let walletIcon = ""
-
-      // Find the provider in discovered providers
-      const discoveredProvider = discoveredProviders.find((p) => p.provider === provider)
-      if (discoveredProvider) {
-        walletName = discoveredProvider.info.name
-        walletIcon = discoveredProvider.info.icon
-      } else if (provider.isMetaMask) {
-        walletName = "MetaMask"
-      } else if (provider.isCoinbaseWallet) {
-        walletName = "Coinbase Wallet"
+      // Determine wallet name
+      let finalWalletName = walletName
+      if (!finalWalletName) {
+        const detectedProvider = detectedWallets.evmWallets.find(p => p.provider === provider)
+        finalWalletName = detectedProvider?.name || getEthereumWalletName(provider)
       }
 
-      // Check if this wallet is already connected
-      const existingWalletIndex = connectedWallets.findIndex(
-        (wallet) => wallet.address.toLowerCase() === newAddress.toLowerCase(),
-      )
+      // Create wallet object
+      const newWallet: ConnectedWallet = {
+        address: newAddress,
+        name: finalWalletName,
+        network,
+        provider: provider,
+        isPrimary: connectedWallets.length === 0, // First wallet is primary
+        icon: detectedWallets.evmWallets.find(p => p.provider === provider)?.icon
+      }
 
-      let updatedWallets: ConnectedWallet[]
-
-      if (existingWalletIndex >= 0) {
-        // Update existing wallet
-        updatedWallets = [...connectedWallets]
-        updatedWallets[existingWalletIndex] = {
-          ...updatedWallets[existingWalletIndex],
-          name: walletName,
-          icon: walletIcon,
-          provider: provider,
-        }
-      } else {
-        // Add new wallet
-        const newWallet: ConnectedWallet = {
-          address: newAddress,
-          name: walletName,
-          icon: walletIcon,
-          provider: provider,
-          isPrimary: connectedWallets.length === 0, // First wallet is primary
-        }
-
-        updatedWallets = [...connectedWallets, newWallet]
+      // Get balance
+      try {
+        const balance = await getBalance(newAddress, network)
+        newWallet.balance = balance
+      } catch (balanceError) {
+        console.warn("Could not fetch balance:", balanceError)
       }
 
       // Update state
+      const updatedWallets = updateConnectedWallets(newWallet)
       setConnectedWallets(updatedWallets)
       setCurrentAddress(newAddress)
+      setCurrentNetwork(network)
       setIsConnected(true)
 
       // Save to localStorage
       localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
 
-      console.log("Updated connected wallets:", updatedWallets)
+      // Register with backend
+      try {
+        await walletApi.registerWallet(newWallet)
+      } catch (backendError) {
+        console.warn("Could not register wallet with backend:", backendError)
+      }
 
-      return { address: newAddress, name: walletName }
+      console.log("✅ Wallet connected successfully:", newWallet)
+      return newWallet
     } catch (err) {
       console.error("Error connecting wallet:", err)
       setError((err as Error).message || "Failed to connect wallet. Please try again.")
@@ -204,22 +226,182 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Disconnect wallet function
-  const disconnectWallet = async (address: string) => {
+  // Connect Solana wallet function
+  const connectSolanaWallet = async (wallet: SolanaWallet): Promise<ConnectedWallet> => {
     try {
+      setIsConnecting(true)
+      setError(null)
+
+      // Connect to Solana wallet
+      await wallet.adapter.connect()
+
+      if (!wallet.adapter.publicKey) {
+        throw new Error("Failed to get public key from Solana wallet")
+      }
+
+      const address = wallet.adapter.publicKey.toString()
+      console.log("Connected to Solana address:", address)
+
+      // Create wallet object
+      const newWallet: ConnectedWallet = {
+        address,
+        name: wallet.adapter.name,
+        network: 'solana',
+        provider: wallet.adapter,
+        publicKey: address,
+        isPrimary: connectedWallets.length === 0,
+        icon: wallet.adapter.icon
+      }
+
+      // Get balance
+      try {
+        const balance = await getBalance(address, 'solana')
+        newWallet.balance = balance
+      } catch (balanceError) {
+        console.warn("Could not fetch Solana balance:", balanceError)
+      }
+
+      // Update state
+      const updatedWallets = updateConnectedWallets(newWallet)
+      setConnectedWallets(updatedWallets)
+      setCurrentAddress(address)
+      setCurrentNetwork('solana')
+      setIsConnected(true)
+
+      // Save to localStorage
+      localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
+
+      // Register with backend
+      try {
+        await walletApi.registerWallet(newWallet)
+      } catch (backendError) {
+        console.warn("Could not register Solana wallet with backend:", backendError)
+      }
+
+      console.log("✅ Solana wallet connected successfully:", newWallet)
+      return newWallet
+    } catch (err) {
+      console.error("Error connecting Solana wallet:", err)
+      setError((err as Error).message || "Failed to connect Solana wallet. Please try again.")
+      throw err
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  // Connect Bitcoin wallet function
+  const connectBitcoinWallet = async (wallet: BitcoinWallet): Promise<ConnectedWallet> => {
+    try {
+      setIsConnecting(true)
+      setError(null)
+
+      // Get addresses from Bitcoin wallet
+      const addresses = await wallet.getAddresses()
+
+      if (!addresses || addresses.length === 0) {
+        throw new Error("No addresses found in Bitcoin wallet")
+      }
+
+      const address = addresses[0] // Use first address
+      console.log("Connected to Bitcoin address:", address)
+
+      // Create wallet object
+      const newWallet: ConnectedWallet = {
+        address,
+        name: wallet.name,
+        network: 'bitcoin',
+        provider: wallet.provider,
+        isPrimary: connectedWallets.length === 0,
+        icon: wallet.icon
+      }
+
+      // Bitcoin balance fetching would require external API
+      // For now, we'll skip it or use a mock value
+      newWallet.balance = "0.00000000"
+
+      // Update state
+      const updatedWallets = updateConnectedWallets(newWallet)
+      setConnectedWallets(updatedWallets)
+      setCurrentAddress(address)
+      setCurrentNetwork('bitcoin')
+      setIsConnected(true)
+
+      // Save to localStorage
+      localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
+
+      // Register with backend
+      try {
+        await walletApi.registerWallet(newWallet)
+      } catch (backendError) {
+        console.warn("Could not register Bitcoin wallet with backend:", backendError)
+      }
+
+      console.log("✅ Bitcoin wallet connected successfully:", newWallet)
+      return newWallet
+    } catch (err) {
+      console.error("Error connecting Bitcoin wallet:", err)
+      setError((err as Error).message || "Failed to connect Bitcoin wallet. Please try again.")
+      throw err
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  // Helper function to update connected wallets array
+  const updateConnectedWallets = (newWallet: ConnectedWallet): ConnectedWallet[] => {
+    const existingWalletIndex = connectedWallets.findIndex(
+      (wallet) => 
+        wallet.address.toLowerCase() === newWallet.address.toLowerCase() &&
+        wallet.network === newWallet.network
+    )
+
+    if (existingWalletIndex >= 0) {
+      // Update existing wallet
+      const updated = [...connectedWallets]
+      updated[existingWalletIndex] = { ...updated[existingWalletIndex], ...newWallet }
+      return updated
+    } else {
+      // Add new wallet
+      return [...connectedWallets, newWallet]
+    }
+  }
+
+  // Disconnect wallet function
+  const disconnectWallet = async (address: string, network: BlockchainNetwork) => {
+    try {
+      // Find the wallet to disconnect
+      const walletToDisconnect = connectedWallets.find(
+        w => w.address.toLowerCase() === address.toLowerCase() && w.network === network
+      )
+
+      if (walletToDisconnect) {
+        // Call wallet-specific disconnect method
+        if (network === 'solana' && walletToDisconnect.provider?.disconnect) {
+          try {
+            await walletToDisconnect.provider.disconnect()
+          } catch (err) {
+            console.warn("Error disconnecting from Solana wallet:", err)
+          }
+        }
+      }
+
       // Remove wallet from state
-      const updatedWallets = connectedWallets.filter((wallet) => wallet.address.toLowerCase() !== address.toLowerCase())
+      const updatedWallets = connectedWallets.filter(
+        (wallet) => 
+          !(wallet.address.toLowerCase() === address.toLowerCase() && wallet.network === network)
+      )
 
       // Update state
       setConnectedWallets(updatedWallets)
 
       // If we disconnected the current address, reset it
-      if (currentAddress?.toLowerCase() === address.toLowerCase()) {
+      if (currentAddress?.toLowerCase() === address.toLowerCase() && currentNetwork === network) {
         if (updatedWallets.length > 0) {
           // Set another wallet as current if available
           const primaryWallet = updatedWallets.find((wallet) => wallet.isPrimary)
           if (primaryWallet) {
             setCurrentAddress(primaryWallet.address)
+            setCurrentNetwork(primaryWallet.network)
           } else {
             // Make the first wallet primary
             const firstWallet = updatedWallets[0]
@@ -229,10 +411,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             }))
             setConnectedWallets(walletsWithPrimary)
             setCurrentAddress(firstWallet.address)
+            setCurrentNetwork(firstWallet.network)
             localStorage.setItem("connectedWallets", JSON.stringify(walletsWithPrimary))
           }
         } else {
           setCurrentAddress(null)
+          setCurrentNetwork(null)
           setIsConnected(false)
         }
       }
@@ -240,10 +424,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Save to localStorage
       localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
 
-      console.log("Disconnected wallet:", address)
-      console.log("Remaining wallets:", updatedWallets)
+      // Remove from backend
+      try {
+        await walletApi.removeWallet(address, network)
+      } catch (backendError) {
+        console.warn("Could not remove wallet from backend:", backendError)
+      }
 
-      return { success: true }
+      console.log("Disconnected wallet:", address, "on", network)
     } catch (err) {
       console.error("Error disconnecting wallet:", err)
       throw err
@@ -251,45 +439,71 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }
 
   // Set primary wallet
-  const setPrimaryWallet = (address: string) => {
-    const updatedWallets = connectedWallets.map((wallet) => ({
-      ...wallet,
-      isPrimary: wallet.address.toLowerCase() === address.toLowerCase(),
-    }))
-
-    setConnectedWallets(updatedWallets)
-    setCurrentAddress(address)
-
-    // Save to localStorage
-    localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
-
-    console.log("Set primary wallet:", address)
-    console.log("Updated wallets:", updatedWallets)
-  }
-
-  // Get balance using the wallet provider
-  const getBalance = async (address: string): Promise<string> => {
+  const setPrimaryWallet = async (address: string, network: BlockchainNetwork) => {
     try {
-      // Find the wallet with this address
-      const wallet = connectedWallets.find((w) => w.address.toLowerCase() === address.toLowerCase())
+      const updatedWallets = connectedWallets.map((wallet) => ({
+        ...wallet,
+        isPrimary: wallet.address.toLowerCase() === address.toLowerCase() && wallet.network === network,
+      }))
 
-      if (!wallet || !wallet.provider) {
-        throw new Error("Wallet provider not found")
+      setConnectedWallets(updatedWallets)
+      setCurrentAddress(address)
+      setCurrentNetwork(network)
+
+      // Save to localStorage
+      localStorage.setItem("connectedWallets", JSON.stringify(updatedWallets))
+
+      // Update backend
+      try {
+        await walletApi.setPrimaryWallet(address, network)
+      } catch (backendError) {
+        console.warn("Could not set primary wallet on backend:", backendError)
       }
 
-      // Use the wallet's provider to get balance
-      const balanceHex = await wallet.provider.request({
-        method: "eth_getBalance",
-        params: [address, "latest"],
-      })
+      console.log("Set primary wallet:", address, "on", network)
+    } catch (err) {
+      console.error("Error setting primary wallet:", err)
+      throw err
+    }
+  }
 
-      // Convert from wei to ether
-      const balanceInWei = Number.parseInt(balanceHex, 16)
-      const balanceInEth = balanceInWei / 1e18
-      return balanceInEth.toFixed(4)
+  // Get balance using the appropriate method for each network
+  const getBalance = async (address: string, network: BlockchainNetwork): Promise<string> => {
+    try {
+      // Find the wallet with this address and network
+      const wallet = connectedWallets.find(
+        (w) => w.address.toLowerCase() === address.toLowerCase() && w.network === network
+      )
+
+      if (network === 'ethereum' || network === 'polygon' || network === 'bsc' || network === 'arbitrum' || network === 'optimism') {
+        // EVM networks
+        if (wallet?.provider) {
+          const balanceHex = await wallet.provider.request({
+            method: "eth_getBalance",
+            params: [address, "latest"],
+          })
+          const balanceInWei = BigInt(balanceHex)
+          const balanceInEth = ethers.formatEther(balanceInWei)
+          return parseFloat(balanceInEth).toFixed(4)
+        }
+      } else if (network === 'solana') {
+        // Solana network - would need Solana connection
+        // For now, return mock data in development
+        if (process.env.NODE_ENV === 'development') {
+          return (Math.random() * 10).toFixed(4)
+        }
+      } else if (network === 'bitcoin') {
+        // Bitcoin network - would need Bitcoin API
+        // For now, return mock data in development
+        if (process.env.NODE_ENV === 'development') {
+          return (Math.random() * 1).toFixed(8)
+        }
+      }
+
+      return "0"
     } catch (err) {
       console.error("Error getting balance:", err)
-
+      
       // For development/demo, return a mock balance
       if (process.env.NODE_ENV === "development") {
         return (Math.random() * 10).toFixed(4)
@@ -299,12 +513,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Get transactions using the wallet provider
-  const getTransactions = async (address: string): Promise<any[]> => {
+  // Get transactions (mock implementation for now)
+  const getTransactions = async (address: string, network: BlockchainNetwork): Promise<any[]> => {
     try {
-      // In a real implementation, you would use the wallet provider or an API
-      // to fetch transactions for the given address
-
+      // In a real implementation, you would use network-specific APIs
       // For now, return mock data
       return [
         {
@@ -314,6 +526,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           value: (Math.random() * 1).toFixed(4),
           timestamp: Date.now() - Math.floor(Math.random() * 86400000),
           type: "sent",
+          network
         },
         {
           hash: "0x" + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10),
@@ -322,6 +535,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           value: (Math.random() * 2).toFixed(4),
           timestamp: Date.now() - Math.floor(Math.random() * 86400000 * 2),
           type: "received",
+          network
         },
       ]
     } catch (err) {
@@ -330,20 +544,65 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Switch network (for EVM wallets)
+  const switchNetwork = async (network: BlockchainNetwork) => {
+    try {
+      const currentWallet = connectedWallets.find(w => w.address === currentAddress)
+      if (!currentWallet || !currentWallet.provider) {
+        throw new Error("No wallet connected")
+      }
+
+      // This would involve switching the network in the wallet
+      // Implementation depends on the specific network and wallet
+      console.log("Switching to network:", network)
+      setCurrentNetwork(network)
+    } catch (err) {
+      console.error("Error switching network:", err)
+      throw err
+    }
+  }
+
+  // Helper function to determine EVM wallet name
+  const getEthereumWalletName = (provider: any): string => {
+    if (provider.isMetaMask) return 'MetaMask'
+    if (provider.isCoinbaseWallet) return 'Coinbase Wallet'
+    if (provider.isBraveWallet) return 'Brave Wallet'
+    if (provider.isFrame) return 'Frame'
+    if (provider.isOpera) return 'Opera Wallet'
+    if (provider.isTrust) return 'Trust Wallet'
+    if (provider.isStatus) return 'Status'
+    if (provider.isToshi) return 'Coinbase Wallet'
+    if (provider.isImToken) return 'imToken'
+    if (provider.isTokenary) return 'Tokenary'
+    if (provider.isMathWallet) return 'MathWallet'
+    if (provider.isAlphaWallet) return 'AlphaWallet'
+    if (provider.is1inch) return '1inch Wallet'
+    if (provider.isExodus) return 'Exodus'
+    return 'Unknown Wallet'
+  }
+
   return (
     <WalletContext.Provider
       value={{
         currentAddress,
+        currentNetwork,
         isConnected,
         isConnecting,
         error,
         connectedWallets,
-        discoveredProviders,
+        detectedWallets,
+        evmProviders: detectedWallets.evmWallets,
+        solanaWallets: detectedWallets.solanaWallets,
+        bitcoinWallets: detectedWallets.bitcoinWallets,
         connectWallet,
+        connectSolanaWallet,
+        connectBitcoinWallet,
         disconnectWallet,
         setPrimaryWallet,
         getBalance,
         getTransactions,
+        switchNetwork,
+        refreshWalletDetection,
       }}
     >
       {children}
