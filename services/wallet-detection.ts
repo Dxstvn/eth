@@ -379,4 +379,4 @@ export class WalletDetectionService {
 }
 
 // Create singleton instance
-export const walletDetectionService = new WalletDetectionService() 
+export const walletDetectionService = new WalletDetectionService()

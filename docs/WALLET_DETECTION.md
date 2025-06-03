@@ -27,7 +27,7 @@ This document describes the comprehensive wallet detection functionality impleme
 ### Core Components
 
 #### 1. Types (`/types/wallet.ts`)
-```typescript
+\`\`\`typescript
 // Enhanced type definitions supporting multiple networks
 export type BlockchainNetwork = 'ethereum' | 'solana' | 'bitcoin' | 'polygon' | 'bsc' | 'arbitrum' | 'optimism'
 
@@ -40,7 +40,7 @@ export interface ConnectedWallet {
   isPrimary?: boolean
   publicKey?: string // For Solana
 }
-```
+\`\`\`
 
 #### 2. Wallet Detection Service (`/services/wallet-detection.ts`)
 - **Comprehensive Detection**: Detects all available wallets across supported networks
@@ -90,7 +90,7 @@ export interface ConnectedWallet {
 ## Usage Examples
 
 ### Basic Wallet Connection
-```typescript
+\`\`\`typescript
 import { useWallet } from '@/context/wallet-context'
 
 function WalletComponent() {
@@ -103,10 +103,10 @@ function WalletComponent() {
   
   return <button onClick={handleConnect}>Connect Wallet</button>
 }
-```
+\`\`\`
 
 ### Solana Wallet Connection
-```typescript
+\`\`\`typescript
 const { connectSolanaWallet, solanaWallets } = useWallet()
 
 const connectPhantom = async () => {
@@ -115,10 +115,10 @@ const connectPhantom = async () => {
     await connectSolanaWallet(phantom)
   }
 }
-```
+\`\`\`
 
 ### Backend Integration
-```typescript
+\`\`\`typescript
 import { useWalletAuthIntegration } from '@/hooks/use-wallet-auth-integration'
 
 function App() {
@@ -127,14 +127,14 @@ function App() {
   
   return <div>Wallet sync is automatic!</div>
 }
-```
+\`\`\`
 
 ## API Endpoints
 
 The backend integration supports these wallet-related endpoints:
 
 ### Wallet Registration
-```
+\`\`\`
 POST /api/wallets/register
 {
   "address": "0x...",
@@ -142,10 +142,10 @@ POST /api/wallets/register
   "network": "ethereum",
   "isPrimary": true
 }
-```
+\`\`\`
 
 ### Profile Update
-```
+\`\`\`
 PUT /api/auth/profile
 {
   "walletAddress": "0x...",
@@ -158,14 +158,14 @@ PUT /api/auth/profile
     }
   ]
 }
-```
+\`\`\`
 
 ### Wallet Management
-```
+\`\`\`
 GET /api/wallets - Get user's wallets
 DELETE /api/wallets/:address - Remove wallet
 PUT /api/wallets/primary - Set primary wallet
-```
+\`\`\`
 
 ## Testing
 
@@ -187,15 +187,15 @@ A comprehensive test page is available at `/wallet/test` that demonstrates:
 ## Configuration
 
 ### Environment Variables
-```env
+\`\`\`env
 NEXT_PUBLIC_API_URL=http://your-backend-url
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_key
 # ... other Firebase config
-```
+\`\`\`
 
 ### Network Configuration
 Networks are configured in `/types/wallet.ts`:
-```typescript
+\`\`\`typescript
 export const SUPPORTED_NETWORKS: Record<BlockchainNetwork, NetworkConfig> = {
   ethereum: {
     name: 'Ethereum',
@@ -206,7 +206,7 @@ export const SUPPORTED_NETWORKS: Record<BlockchainNetwork, NetworkConfig> = {
   },
   // ... other networks
 }
-```
+\`\`\`
 
 ## Security Considerations
 
@@ -249,9 +249,9 @@ The wallet detection system is compatible with:
 
 ### Debug Mode
 Enable debug logging by setting:
-```javascript
+\`\`\`javascript
 localStorage.setItem('debug-wallets', 'true')
-```
+\`\`\`
 
 ## Future Enhancements
 
@@ -272,4 +272,4 @@ localStorage.setItem('debug-wallets', 'true')
 
 This implementation provides comprehensive wallet detection across multiple blockchain networks, ensuring users can easily connect their preferred wallets regardless of the network they use. The system is designed for scalability, security, and ease of use while maintaining compatibility with both existing and future wallet standards.
 
-For technical support or feature requests, please refer to the project's issue tracker or contact the development team. 
+For technical support or feature requests, please refer to the project's issue tracker or contact the development team.

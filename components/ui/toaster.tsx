@@ -1,31 +1,35 @@
 "use client"
 
-import { useToast } from "@/components/ui/toast-provider"
+import { useToast } from "@/hooks/use-toast"
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast"
 
 export function Toaster() {
-  const { toasts, dismissToast } = useToast()
+  const { toasts } = useToast()
 
   return (
-    <div className="fixed top-0 right-0 z-50 flex flex-col gap-2 p-4 max-h-screen overflow-hidden">
-      {toasts.map(({ id, title, description, action, variant }) => (
-        <div
-          key={id}
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 min-w-[300px] animate-in slide-in-from-right ${
-            variant === "destructive" ? "border-l-4 border-red-500" : ""
-          }`}
-        >
-          {title && <div className="font-semibold">{title}</div>}
-          {description && <div className="text-sm text-gray-500 dark:text-gray-400">{description}</div>}
-          {action && <div className="mt-2">{action}</div>}
-          <button
-            onClick={() => dismissToast(id)}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-            aria-label="Close toast"
-          >
-            ×
-          </button>
-        </div>
-      ))}
-    </div>
+    <ToastProvider>
+      {toasts.map(function ({ id, title, description, action, ...props }) {
+        return (
+          <Toast key={id} {...props}>
+            <div className="grid gap-1">
+              {title && <ToastTitle>{title}</ToastTitle>}
+              {description && (
+                <ToastDescription>{description}</ToastDescription>
+              )}
+            </div>
+            {action}
+            <ToastClose />
+          </Toast>
+        )
+      })}
+      <ToastViewport />
+    </ToastProvider>
   )
 }

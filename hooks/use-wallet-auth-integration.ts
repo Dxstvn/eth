@@ -76,4 +76,4 @@ export function useWalletAuthIntegration() {
     hasWallets: connectedWallets.length > 0,
     isAuthenticated: !!user
   }
-} 
+}

@@ -96,15 +96,15 @@ These endpoints are used to register and sign in users. Note that while the back
 -   **Endpoint**: `POST /auth/signUpEmailPass`
 -   **Description**: Registers a new user with the system using their email and password. The backend creates the user in Firebase Authentication and creates a user profile in Firestore.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "email": "newuser@example.com",
       "password": "SecurePassword123!",
       "walletAddress": "0x1234567890123456789012345678901234567890" // Optional: User's wallet address
     }
-    ```
+    \`\`\`
 -   **Success Response (201 Created)**:
-    ```json
+    \`\`\`json
     {
       "message": "User created successfully",
       "user": {
@@ -112,7 +112,7 @@ These endpoints are used to register and sign in users. Note that while the back
         "email": "newuser@example.com"
       }
     }
-    ```
+    \`\`\`
 -   **Error Responses**:
     -   `400 Bad Request`: Missing `email` or `password`, or other validation errors.
     -   `409 Conflict`: Email already in use (`auth/email-already-in-use`).
@@ -127,14 +127,14 @@ These endpoints are used to register and sign in users. Note that while the back
 -   **Endpoint**: `POST /auth/signInEmailPass`
 -   **Description**: Signs in an existing user with their email and password and returns an ID token.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "email": "existinguser@example.com",
       "password": "TheirPassword123"
     }
-    ```
+    \`\`\`
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     {
       "message": "User signed in successfully",
       "token": "firebaseIdTokenString", // ID token for subsequent API calls
@@ -143,7 +143,7 @@ These endpoints are used to register and sign in users. Note that while the back
         "email": "existinguser@example.com"
       }
     }
-    ```
+    \`\`\`
 -   **Error Responses**:
     -   `400 Bad Request`: Missing `email` or `password`.
     -   `401 Unauthorized`: Invalid credentials (`auth/wrong-password`, `auth/user-not-found`, `auth/invalid-credential`).
@@ -157,19 +157,19 @@ These endpoints are used to register and sign in users. Note that while the back
 -   **Endpoint**: `POST /auth/signInGoogle`
 -   **Description**: Authenticates a user using a Google ID token obtained from a Google Sign-In flow on the frontend. If the user is new, an account is created. **Note**: This endpoint has email whitelisting for production mode.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "idToken": "googleIdTokenStringObtainedFromFrontendGoogleSignIn"
     }
-    ```
+    \`\`\`
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     {
       "message": "User authenticated",
       "uid": "firebaseUserId",
       "isAdmin": true // Boolean indicating admin status
     }
-    ```
+    \`\`\`
 -   **Error Responses**:
     -   `400 Bad Request`: Missing `idToken`.
     -   `401 Unauthorized`: Invalid or expired Google ID token, or unauthorized user in test mode.
@@ -191,11 +191,11 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Endpoint**: `POST /contact/invite`
 -   **Description**: Sends a contact invitation from the authenticated user to another person via their email.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "contactEmail": "friend@example.com"
     }
-    ```
+    \`\`\`
 -   **Success Response (201 Created)**: `{ "message": "Invitation sent successfully", "invitationId": "generatedInvitationId" }`.
 -   **Frontend Actions**: Allow user to input an email address. Handle success/error messages. Update UI if displaying pending sent invitations.
 
@@ -203,7 +203,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Endpoint**: `GET /contact/pending`
 -   **Description**: Retrieves a list of contact invitations that are pending for the authenticated user (i.e., invitations they have received).
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     {
       "invitations": [
         {
@@ -215,19 +215,19 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
         // ... more invitations
       ]
     }
-    ```
+    \`\`\`
 -   **Frontend Actions**: Display these invitations, providing options to accept or deny each one.
 
 #### 3. Respond to Invitation
 -   **Endpoint**: `POST /contact/response`
 -   **Description**: Allows the authenticated user to accept or deny a received contact invitation.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "invitationId": "invitationDocId1",
       "action": "accept" // or "deny"
     }
-    ```
+    \`\`\`
 -   **Success Response (200 OK)**: `{ "message": "Invitation <accepted/declined>" }`.
 -   **Frontend Actions**: Remove the invitation from the pending list. If accepted, add the sender to the user's contact list (or refresh the contact list).
 
@@ -235,7 +235,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Endpoint**: `GET /contact/contacts`
 -   **Description**: Retrieves the list of established contacts for the authenticated user.
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     {
       "contacts": [
         {
@@ -249,7 +249,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
         // ... more contacts
       ]
     }
-    ```
+    \`\`\`
 -   **Frontend Actions**: Display the contacts. This list can be used to populate "other party" fields when creating a new deal.
 
 #### 5. Remove a Contact
@@ -268,7 +268,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Endpoint**: `POST /deals/create`
 -   **Description**: Initiates a new escrow deal, creating a record in Firestore and potentially deploying a dedicated smart contract.
 -   **Request Body Example**:
-    ```json
+    \`\`\`json
     {
       "initiatedBy": "BUYER", // "BUYER" or "SELLER" - who is filling out this form
       "propertyAddress": "123 Main St, Anytown, USA", // Or other asset identifier
@@ -282,9 +282,9 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
         { "id": "cond-inspection", "type": "INSPECTION", "description": "Property inspection passed and approved by buyer" }
       ]
     }
-    ```
+    \`\`\`
 -   **Success Response (201 Created)**:
-    ```json
+    \`\`\`json
     {
       "message": "Transaction initiated successfully.",
       "transactionId": "firestoreDealIdGeneratedByBackend", // Crucial ID for Firestore listeners
@@ -292,7 +292,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
       "status": "PENDING_BUYER_REVIEW", // Or "PENDING_SELLER_REVIEW" depending on who initiated
       "deploymentWarning": "Smart contract deployment was attempted but failed..." // Only if deployment failed
     }
-    ```
+    \`\`\`
 -   **Frontend Actions**:
     -   Provide a comprehensive form to capture all deal parameters. Use contact list for easy "other party" selection.
     -   Validate inputs client-side (e.g., wallet address format, amount).
@@ -304,7 +304,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Description**: Fetches the complete current details of a specific escrow deal from Firestore.
 -   **URL Parameter**: `:transactionId` is the Firestore document ID of the deal.
 -   **Success Response (200 OK)**: A full deal object.
-    ```json
+    \`\`\`json
     {
       "id": "firestoreDealId",
       "initiatedBy": "BUYER",
@@ -335,7 +335,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
       "createdAt": "2023-10-25T10:00:00.000Z",
       "updatedAt": "2023-10-26T10:00:00.000Z"
     }
-    ```
+    \`\`\`
 -   **Frontend Actions**: Primarily, the frontend should rely on its Firestore real-time listener for the deal document rather than calling this endpoint repeatedly. This endpoint can be useful for an initial load if a listener isn't immediately available or as a fallback.
 
 #### 3. List User's Deals
@@ -347,7 +347,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
     -   `?orderBy=<field_name>` (default: 'createdAt')
     -   `?orderDirection=<asc|desc>` (default: 'desc')
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     [
       {
         "id": "firestoreDealId1",
@@ -361,7 +361,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
       }
       // ... more deals
     ]
-    ```
+    \`\`\`
 -   **Frontend Actions**: Display deals in a list or dashboard. Implement pagination using query parameters. Firestore real-time listeners can also be used on queries for live updates to the list.
 
 #### 4. Buyer Updates Off-Chain Condition Status
@@ -369,12 +369,12 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Description**: Allows the buyer in a deal to update the status of one of their off-chain conditions.
 -   **URL Parameters**: `:transactionId`, `:conditionId` (ID of the condition within the deal's `conditions` array).
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "newBackendStatus": "FULFILLED_BY_BUYER", // "FULFILLED_BY_BUYER", "PENDING_BUYER_ACTION", or "ACTION_WITHDRAWN_BY_BUYER"
       "reviewComment": "Optional comment about the condition" // Optional
     }
-    ```
+    \`\`\`
 -   **Success Response (200 OK)**: `{ "message": "Backend condition status updated to: FULFILLED_BY_BUYER." }` (The deal document in Firestore will be updated, triggering real-time listeners).
 -   **Frontend Actions**: Provide checkboxes or buttons for the buyer to update condition statuses. The UI should react to the Firestore update. If all buyer conditions are met and funds are deposited, the backend/contract logic might automatically transition the deal state.
 
@@ -383,14 +383,14 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Description**: Updates the backend deal status to match smart contract state, with optional deadline updates.
 -   **URL Parameter**: `:transactionId`.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "newSCStatus": "IN_FINAL_APPROVAL", // Required: new status from smart contract
       "eventMessage": "Custom message for timeline", // Optional
       "finalApprovalDeadlineISO": "2023-10-27T10:00:00.000Z", // Optional: for IN_FINAL_APPROVAL status
       "disputeResolutionDeadlineISO": "2023-10-29T10:00:00.000Z" // Optional: for IN_DISPUTE status
     }
-    ```
+    \`\`\`
 -   **Success Response (200 OK)**: `{ "message": "Transaction backend status synced/updated to IN_FINAL_APPROVAL." }`.
 -   **Frontend Actions**: Use this endpoint when the frontend detects that on-chain state has changed and needs to update the backend.
 
@@ -399,11 +399,11 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Description**: Syncs the backend when the final approval period has been started on-chain.
 -   **URL Parameter**: `:transactionId`.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "finalApprovalDeadlineISO": "2023-10-27T10:00:00.000Z" // Required: deadline in ISO format
     }
-    ```
+    \`\`\`
 -   **Success Response (200 OK)**: `{ "message": "Backend synced: Final approval period started." }`.
 -   **Frontend Actions**: Call this endpoint after the user successfully triggers the final approval period on-chain.
 
@@ -412,12 +412,12 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Description**: Syncs the backend when a dispute has been raised on-chain.
 -   **URL Parameter**: `:transactionId`.
 -   **Request Body**:
-    ```json
+    \`\`\`json
     {
       "disputeResolutionDeadlineISO": "2023-10-29T10:00:00.000Z", // Required: deadline in ISO format
       "conditionId": "cond-title" // Optional: ID of condition related to dispute
     }
-    ```
+    \`\`\`
 -   **Success Response (200 OK)**: `{ "message": "Backend synced: Dispute raised." }`.
 -   **Frontend Actions**: Call this endpoint after the buyer successfully raises a dispute on-chain.
 
@@ -434,20 +434,20 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
     -   `dealId` (string): The Firestore ID of the deal.
     -   `file` (file object): The actual file data.
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     {
       "message": "File uploaded successfully",
       "fileId": "generatedFileIdInFirestore", // ID of the file metadata document
       "url": "https://firebasestorage.googleapis.com/..." // Public download URL
     }
-    ```
+    \`\`\`
 -   **Frontend Actions**: Use a file input element. Construct `FormData` object. Handle upload progress if possible. On success, update the deal's file list in the UI.
 
 #### 2. List Files for User's Deals
 -   **Endpoint**: `GET /files/my-deals`
 -   **Description**: Retrieves metadata for all files associated with deals the current user is part of.
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     [
       {
         "dealId": "dealIdAssociatedWithFile",
@@ -461,7 +461,7 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
       }
       // ... more file metadata objects
     ]
-    ```
+    \`\`\`
 -   **Frontend Actions**: Display a list of files, often grouped by deal, with links to download.
 
 #### 3. Download a Specific File
@@ -478,17 +478,17 @@ _All endpoints require `Authorization: Bearer <ID_TOKEN>` header._
 -   **Endpoint**: `GET /health`
 -   **Description**: A public endpoint to check the operational status of the backend.
 -   **Success Response (200 OK)**:
-    ```json
+    \`\`\`json
     {
       "status": "OK"
     }
-    ```
+    \`\`\`
 -   **Error Response (500 Internal Server Error)**:
-    ```json
+    \`\`\`json
     {
       "error": "Internal Server Error"
     }
-    ```
+    \`\`\`
 -   **Frontend Actions**: Generally not called by the main user-facing UI. Useful for DevOps, monitoring, or a status page.
 
 ## Smart Contract States & Frontend Implications
