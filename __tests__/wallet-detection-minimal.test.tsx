@@ -98,4 +98,4 @@ describe('Minimal Wallet Detection Mocking', () => {
 
     console.log('✅ Mocked wallet data is returned correctly');
   });
-}); 
+});

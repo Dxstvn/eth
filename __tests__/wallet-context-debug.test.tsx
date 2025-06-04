@@ -109,4 +109,4 @@ describe('Wallet Context Debug', () => {
     expect(result.evmWallets).toHaveLength(1);
     expect(walletDetectionService.detectAllWallets).toHaveBeenCalled();
   });
-}); 
+});

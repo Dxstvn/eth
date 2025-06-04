@@ -37,4 +37,4 @@ export default {
   registerWallet: mockRegisterWallet,
   getConnectedWallets: mockGetConnectedWallets,
   removeWallet: mockRemoveWallet
-}; 
+};

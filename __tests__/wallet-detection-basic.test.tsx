@@ -292,4 +292,4 @@ describe('Wallet Detection Basic Test', () => {
       })
     );
   });
-}); 
+});

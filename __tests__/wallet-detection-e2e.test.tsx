@@ -476,4 +476,4 @@ describe('Wallet Detection E2E Tests - Simplified', () => {
       console.log('✅ Complete wallet lifecycle E2E test passed');
     });
   });
-}); 
+});

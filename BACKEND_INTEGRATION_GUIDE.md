@@ -10,7 +10,7 @@ This guide outlines what the frontend needs to implement to fully utilize the Cr
 **Current Issue**: Frontend is calling `/deals/` endpoints but backend uses `/transaction/`
 
 **Required Changes**:
-```typescript
+\`\`\`typescript
 // frontend/services/transaction-api.ts
 // Change from:
 const API_URL = "http://44.202.141.56:3000"
@@ -19,7 +19,7 @@ fetch(`${API_URL}/deals/create`, ...)
 // To:
 const API_URL = "http://44.202.141.56:3000"
 fetch(`${API_URL}/transaction/create`, ...)
-```
+\`\`\`
 
 **Update all transaction endpoints**:
 - `/deals/create` → `/transaction/create`
@@ -31,13 +31,13 @@ fetch(`${API_URL}/transaction/create`, ...)
 **Issue**: Some API calls may not include proper authentication
 
 **Required Implementation**:
-```typescript
+\`\`\`typescript
 // Add to all API calls
 headers: {
   'Authorization': `Bearer ${idToken}`,
   'Content-Type': 'application/json'
 }
-```
+\`\`\`
 
 ## Missing Backend Integrations
 
@@ -51,7 +51,7 @@ headers: {
 
 **Frontend Implementation Needed**:
 
-```typescript
+\`\`\`typescript
 // frontend/services/cross-chain-api.ts
 export class CrossChainTransactionService {
   
@@ -93,10 +93,10 @@ export class CrossChainTransactionService {
     });
   }
 }
-```
+\`\`\`
 
 **UI Components Needed**:
-```typescript
+\`\`\`typescript
 // frontend/components/cross-chain-transaction-stepper.tsx
 export function CrossChainTransactionStepper({ dealId, crossChainInfo }) {
   // Show step-by-step progress
@@ -111,7 +111,7 @@ export function NetworkFeeEstimator({ sourceNetwork, targetNetwork, amount }) {
   // Display bridge information
   // Warn about time requirements
 }
-```
+\`\`\`
 
 ### 2. Complete Wallet Management
 
@@ -123,7 +123,7 @@ export function NetworkFeeEstimator({ sourceNetwork, targetNetwork, amount }) {
 
 **Frontend Implementation Needed**:
 
-```typescript
+\`\`\`typescript
 // Update frontend/services/wallet-api.ts to include:
 
 export class WalletApiService {
@@ -207,7 +207,7 @@ export class WalletApiService {
     });
   }
 }
-```
+\`\`\`
 
 ### 3. Real-Time Updates with Firestore
 
@@ -215,7 +215,7 @@ export class WalletApiService {
 
 **Frontend Implementation Needed**:
 
-```typescript
+\`\`\`typescript
 // frontend/hooks/use-real-time-deal.ts
 import { useEffect, useState } from 'react';
 import { onSnapshot, doc } from 'firebase/firestore';
@@ -278,7 +278,7 @@ export function useRealTimeDeals(userId: string) {
 
   return { deals, loading };
 }
-```
+\`\`\`
 
 ### 4. Complete Contact Management
 
@@ -291,13 +291,13 @@ export function useRealTimeDeals(userId: string) {
 **Frontend Integration Status**: ✅ **Already Implemented** in `frontend/services/contacts-api.ts`
 
 **Additional UI Needed**:
-```typescript
+\`\`\`typescript
 // frontend/components/contact-invitation-notification.tsx
 export function ContactInvitationNotification() {
   // Real-time notification for new invitations
   // Quick accept/decline actions
 }
-```
+\`\`\`
 
 ### 5. File Management with Encryption
 
@@ -308,7 +308,7 @@ export function ContactInvitationNotification() {
 
 **Frontend Implementation Needed**:
 
-```typescript
+\`\`\`typescript
 // frontend/services/file-api.ts
 export class FileApiService {
   
@@ -346,7 +346,7 @@ export class FileApiService {
     });
   }
 }
-```
+\`\`\`
 
 ### 6. Enhanced Transaction Lifecycle Management
 
@@ -358,7 +358,7 @@ export class FileApiService {
 
 **Frontend Implementation Needed**:
 
-```typescript
+\`\`\`typescript
 // frontend/components/transaction-lifecycle-manager.tsx
 export function TransactionLifecycleManager({ transaction }) {
   // Handle all transaction states properly
@@ -411,12 +411,12 @@ export function ConditionManager({ dealId, conditions, userRole }) {
     }
   };
 }
-```
+\`\`\`
 
 ## Required UI/UX Improvements
 
 ### 1. Cross-Chain Transaction Flow
-```typescript
+\`\`\`typescript
 // frontend/components/cross-chain-transaction-wizard.tsx
 export function CrossChainTransactionWizard() {
   // Step 1: Network Detection & Fee Estimation
@@ -424,10 +424,10 @@ export function CrossChainTransactionWizard() {
   // Step 3: Step-by-Step Execution
   // Step 4: Confirmation & Tracking
 }
-```
+\`\`\`
 
 ### 2. Real-Time Notifications
-```typescript
+\`\`\`typescript
 // frontend/components/real-time-notifications.tsx
 export function RealTimeNotificationSystem() {
   // Deal status changes
@@ -435,22 +435,22 @@ export function RealTimeNotificationSystem() {
   // Deadline warnings
   // Cross-chain step completions
 }
-```
+\`\`\`
 
 ### 3. Smart Contract State Display
-```typescript
+\`\`\`typescript
 // frontend/components/smart-contract-status.tsx
 export function SmartContractStatus({ transaction }) {
   // Show on-chain vs off-chain status
   // Display contract address and details
   // Handle automated processes
 }
-```
+\`\`\`
 
 ## Security & Error Handling
 
 ### 1. Token Management
-```typescript
+\`\`\`typescript
 // frontend/lib/api-client.ts
 export class ApiClient {
   private async getAuthHeaders() {
@@ -487,10 +487,10 @@ export class ApiClient {
     }
   }
 }
-```
+\`\`\`
 
 ### 2. Input Validation
-```typescript
+\`\`\`typescript
 // frontend/lib/validation.ts
 export class TransactionValidator {
   static validateCrossChainTransaction(data: any) {
@@ -513,30 +513,30 @@ export class TransactionValidator {
     }
   }
 }
-```
+\`\`\`
 
 ## Performance Optimizations
 
 ### 1. Caching Strategy
-```typescript
+\`\`\`typescript
 // frontend/hooks/use-cached-data.ts
 export function useCachedDeals() {
   // Cache deal data with TTL
   // Invalidate on real-time updates
   // Optimize network requests
 }
-```
+\`\`\`
 
 ### 2. Lazy Loading
-```typescript
+\`\`\`typescript
 // frontend/components/transaction-details-lazy.tsx
 export const TransactionDetailsLazy = lazy(() => import('./transaction-details'));
-```
+\`\`\`
 
 ## Testing Requirements
 
 ### 1. API Integration Tests
-```typescript
+\`\`\`typescript
 // frontend/__tests__/api-integration.test.ts
 describe('Backend API Integration', () => {
   test('should create cross-chain transaction', async () => {
@@ -551,10 +551,10 @@ describe('Backend API Integration', () => {
     // Test wallet API integration
   });
 });
-```
+\`\`\`
 
 ### 2. Cross-Chain Flow Tests
-```typescript
+\`\`\`typescript
 // frontend/__tests__/cross-chain-flow.test.ts
 describe('Cross-Chain Transaction Flow', () => {
   test('should estimate fees correctly', async () => {
@@ -565,20 +565,20 @@ describe('Cross-Chain Transaction Flow', () => {
     // Test step execution
   });
 });
-```
+\`\`\`
 
 ## Deployment Configuration
 
 ### 1. Environment Variables
-```env
+\`\`\`env
 # frontend/.env.production
 NEXT_PUBLIC_API_URL=https://api.cryptoescrow.com
 NEXT_PUBLIC_FIREBASE_CONFIG=...
 NEXT_PUBLIC_ENABLE_CROSS_CHAIN=true
-```
+\`\`\`
 
 ### 2. Build Configuration
-```typescript
+\`\`\`typescript
 // frontend/next.config.js
 module.exports = {
   // Optimize for backend integration
@@ -591,7 +591,7 @@ module.exports = {
     ];
   }
 };
-```
+\`\`\`
 
 ## Summary of Critical Actions
 
@@ -604,4 +604,4 @@ module.exports = {
 7. **Add notifications** - Implement real-time notifications for all events
 8. **Test thoroughly** - Add comprehensive testing for all new integrations
 
-The backend provides extensive functionality that the frontend should leverage to create a complete, production-ready application. 
+The backend provides extensive functionality that the frontend should leverage to create a complete, production-ready application.

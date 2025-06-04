@@ -20,4 +20,4 @@ export class WalletDetectionService {
   getDetectedProviders = mockGetDetectedProviders;
   isWalletAvailable = mockIsWalletAvailable;
   getWallet = mockGetWallet;
-} 
+}
