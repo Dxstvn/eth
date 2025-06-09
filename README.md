@@ -1,8 +1,8 @@
-# CryptoEscrow Platform
+# ClearHold Platform
 
 ## Overview
 
-CryptoEscrow is a secure, blockchain-powered escrow platform designed for real estate and high-value asset transactions. It provides a trustless environment where buyers and sellers can conduct transactions with confidence, leveraging smart contracts for secure fund management and condition verification.
+ClearHold is a secure, blockchain-powered escrow platform designed for real estate and high-value asset transactions. It provides a trustless environment where buyers and sellers can conduct transactions with confidence, leveraging smart contracts for secure fund management and condition verification.
 
 ## Current Status
 

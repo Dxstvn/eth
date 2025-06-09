@@ -123,9 +123,9 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
           <div className="h-16 flex items-center px-4 border-b border-gray-200">
             <Link href="/dashboard" className="flex items-center">
               <div className="w-10 h-10 rounded-md bg-teal-600 flex items-center justify-center text-white font-bold mr-3">
-                CE
+                CH
               </div>
-              <span className="text-xl font-bold">CryptoEscrow</span>
+              <span className="text-xl font-bold">ClearHold</span>
             </Link>
             <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="ml-auto">
               <X className="h-5 w-5" />
@@ -201,9 +201,9 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
       <div className="h-16 flex items-center px-4 border-b border-gray-200">
         <Link href="/dashboard" className="flex items-center">
           <div className="w-10 h-10 rounded-md bg-teal-600 flex items-center justify-center text-white font-bold">
-            CE
+            CH
           </div>
-          {expanded && <span className="text-xl font-bold ml-3">CryptoEscrow</span>}
+          {expanded && <span className="text-xl font-bold ml-3">ClearHold</span>}
         </Link>
       </div>
 

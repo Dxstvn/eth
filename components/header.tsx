@@ -49,7 +49,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <span className="text-xl font-bold">CryptoEscrow</span>
+          <span className="text-xl font-bold">ClearHold</span>
         </Link>
       </div>
 

@@ -1,10 +1,10 @@
-# CryptoEscrow Brand Design Principles
+# ClearHold Brand Design Principles
 
 ## 1. Design Philosophy
 
 ### Core Principles
 
-CryptoEscrow's design is built on three foundational principles:
+ClearHold's design is built on three foundational principles:
 
 1. **Trust & Security**: The visual language emphasizes stability, security, and professionalism to instill confidence in users handling high-value real estate transactions.
 
@@ -14,7 +14,7 @@ CryptoEscrow's design is built on three foundational principles:
 
 ### Brand Identity
 
-CryptoEscrow positions itself as a premium, trustworthy platform that combines the innovation of blockchain technology with the established practices of real estate transactions. The brand identity conveys:
+ClearHold positions itself as a premium, trustworthy platform that combines the innovation of blockchain technology with the established practices of real estate transactions. The brand identity conveys:
 
 - **Professionalism**: Clean, structured layouts and a refined color palette
 - **Innovation**: Modern UI components and subtle animations that feel contemporary without being flashy
@@ -42,7 +42,7 @@ The application is designed to guide users through complex escrow processes with
 
 #### Spacing System
 
-CryptoEscrow uses Tailwind's spacing scale with the following key spacings:
+ClearHold uses Tailwind's spacing scale with the following key spacings:
 
 - **4px (0.25rem)**: Minimum spacing between related elements
 - **8px (0.5rem)**: Standard spacing between related elements
@@ -228,7 +228,7 @@ Following Tailwind CSS defaults:
 ### Custom Icons
 
 - **Wallet Icons**: Custom SVG icons for specific cryptocurrency wallets (MetaMask, Coinbase, etc.)
-- **Logo**: CryptoEscrow logo uses the deep teal as primary color with gold accents
+- **Logo**: ClearHold logo uses the deep teal as primary color with gold accents
 - **Feature Icons**: Custom illustrations for key features use the brand color palette
 
 ### Photography and Illustrations
@@ -285,7 +285,7 @@ Following Tailwind CSS defaults:
 
 ### Component Architecture
 
-CryptoEscrow uses a component-based architecture with the following hierarchy:
+ClearHold uses a component-based architecture with the following hierarchy:
 
 1. **Primitive Components**: Basic UI elements from shadcn/ui (buttons, inputs, etc.)
 2. **Composite Components**: Combinations of primitives for specific use cases (forms, cards)
@@ -374,4 +374,4 @@ This design system is a living document that will evolve over time. Major update
 
 ---
 
-This document serves as the source of truth for CryptoEscrow's design principles. All UI development should adhere to these guidelines to maintain consistency and quality across the application.
+This document serves as the source of truth for ClearHold's design principles. All UI development should adhere to these guidelines to maintain consistency and quality across the application.

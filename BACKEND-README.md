@@ -1,8 +1,8 @@
-# CryptoEscrow Backend
+# ClearHold Backend
 
 ## Overview
 
-CryptoEscrow is a comprehensive backend system designed to power a secure, trustless escrow platform for cryptocurrency-based property or high-value asset transactions. Leveraging **Node.js**, **Express**, and **Firebase** (Firestore, Authentication, Storage), the backend is responsible for:
+ClearHold is a comprehensive backend system designed to power a secure, trustless escrow platform for cryptocurrency-based property or high-value asset transactions. Leveraging **Node.js**, **Express**, and **Firebase** (Firestore, Authentication, Storage), the backend is responsible for:
 
 *   User identity management (authentication and basic profile data).
 *   Secure API endpoints for all client-side operations.
@@ -13,7 +13,7 @@ CryptoEscrow is a comprehensive backend system designed to power a secure, trust
 
 The `PropertyEscrow.sol` smart contract, intended for deployment on Ethereum-compatible networks (e.g., Sepolia testnet, Ethereum Mainnet), is the ultimate arbiter of funds, managing deposits, condition-based state transitions, dispute periods, and final fund disbursal or cancellation.
 
-This document serves as a primary guide for frontend developers, outlining how to effectively integrate with the CryptoEscrow backend API and understand its core functionalities.
+This document serves as a primary guide for frontend developers, outlining how to effectively integrate with the ClearHold backend API and understand its core functionalities.
 
 ## Key Features & Frontend Interaction Points
 
@@ -71,7 +71,7 @@ This document serves as a primary guide for frontend developers, outlining how t
 
 ## Getting Started (Frontend Perspective)
 
-1.  **Backend Base URL**: All API endpoints are relative to a base URL, which will be provided (e.g., `https://your-cryptoescrow-backend.com/api` or `http://localhost:3000/api` for local development).
+1.  **Backend Base URL**: All API endpoints are relative to a base URL, which will be provided (e.g., `https://your-clearhold-backend.com/api` or `http://localhost:3000/api` for local development).
 2.  **Authentication Setup**:
     -   Integrate the Firebase Client SDK into your frontend application. Configure it with the Firebase project credentials matching the backend.
     -   Implement user sign-up and sign-in UI flows (e.g., forms for email/password, buttons for Google Sign-In).

@@ -90,7 +90,7 @@ export default function Home() {
         {/* Logo */}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-display font-semibold text-teal-900">
-            Crypto<span className="text-gold-500">Escrow</span>
+            Clear<span className="text-gold-500">Hold</span>
           </h1>
         </div>
 
@@ -115,10 +115,7 @@ export default function Home() {
                 className="w-full h-12 bg-white text-neutral-800 border-neutral-200"
               />
             </div>
-            <Button
-              onClick={handleNotifyMe}
-              className="h-12 bg-gradient-to-r from-gold-400 to-gold-500 text-teal-900 font-medium px-6"
-            >
+            <Button onClick={handleNotifyMe} className="h-12 bg-teal-900 hover:bg-teal-800 text-white font-medium px-6">
               Notify Me <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
@@ -217,10 +214,10 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="flex justify-center items-center mb-4">
             <span className="text-2xl font-display font-semibold text-teal-900">
-              Crypto<span className="text-gold-500">Escrow</span>
+              Clear<span className="text-gold-500">Hold</span>
             </span>
           </div>
-          <p>© {new Date().getFullYear()} CryptoEscrow. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ClearHold. All rights reserved.</p>
           <p className="mt-2 text-xs">Cryptocurrency transactions are subject to applicable laws and regulations.</p>
         </div>
       </footer>
