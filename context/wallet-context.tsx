@@ -12,6 +12,7 @@ import type {
 } from "@/types/wallet"
 import { walletDetectionService } from "@/services/wallet-detection"
 import { walletApi } from "@/services/wallet-api"
+import { networkDetectionService } from "@/services/network-detection"
 import { ethers } from "ethers"
 
 // Define the shape of our wallet context
@@ -83,6 +84,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     bitcoinWallets: []
   })
 
+  // Define refreshWalletDetection early using useCallback to avoid dependency issues
+  const refreshWalletDetection = useCallback(async () => {
+    try {
+      console.log("🔍 Detecting available wallets...")
+      const detected = await walletDetectionService.detectAllWallets()
+      setDetectedWallets(detected)
+      console.log("✅ Wallet detection complete:", detected)
+
+      // Send detection data to backend
+      try {
+        await walletApi.sendWalletDetection(detected)
+        console.log("✅ Wallet detection data sent to backend")
+      } catch (backendError) {
+        console.warn("Could not send wallet detection data to backend:", backendError)
+      }
+    } catch (err) {
+      console.error("Error detecting wallets:", err)
+      setError("Failed to detect wallets")
+    }
+  }, [])
+
   // Initialize wallet state from localStorage and backend
   useEffect(() => {
     initializeWallets()
@@ -91,7 +113,83 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // Detect wallets on component mount
   useEffect(() => {
     refreshWalletDetection()
-  }, [])
+  }, [refreshWalletDetection])
+
+  // Set up event listeners for dynamic wallet changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      console.log('Accounts changed:', accounts)
+      if (accounts.length === 0) {
+        // User disconnected
+        setIsConnected(false)
+        setCurrentAddress(null)
+        setConnectedWallets([])
+      } else if (accounts[0] !== currentAddress) {
+        // User switched accounts - update current address
+        setCurrentAddress(accounts[0])
+        // Update connected wallets if needed
+        setConnectedWallets(prev => 
+          prev.map(wallet => 
+            wallet.provider === window.ethereum 
+              ? { ...wallet, address: accounts[0] }
+              : wallet
+          )
+        )
+      }
+    }
+
+    const handleChainChanged = async (chainId: string) => {
+      console.log('Chain changed:', chainId)
+      const chainIdNumber = parseInt(chainId, 16)
+      const newNetwork = networkDetectionService.getNetworkByChainId(chainIdNumber)
+      
+      if (newNetwork) {
+        setCurrentNetwork(newNetwork)
+        // Update connected wallets with new network
+        setConnectedWallets(prev => 
+          prev.map(wallet => 
+            wallet.provider === window.ethereum 
+              ? { ...wallet, network: newNetwork }
+              : wallet
+          )
+        )
+      }
+    }
+
+    const handleConnect = (connectInfo: { chainId: string }) => {
+      console.log('Wallet connected:', connectInfo)
+      // Refresh detection when wallet connects
+      refreshWalletDetection()
+    }
+
+    const handleDisconnect = () => {
+      console.log('Wallet disconnected')
+      setIsConnected(false)
+      setCurrentAddress(null)
+      setCurrentNetwork(null)
+      setConnectedWallets([])
+    }
+
+    // Add event listeners for Ethereum provider
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged)
+      window.ethereum.on('chainChanged', handleChainChanged)
+      window.ethereum.on('connect', handleConnect)
+      window.ethereum.on('disconnect', handleDisconnect)
+    }
+
+    // Clean up event listeners
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
+        window.ethereum.removeListener('chainChanged', handleChainChanged)
+        window.ethereum.removeListener('connect', handleConnect)
+        window.ethereum.removeListener('disconnect', handleDisconnect)
+      }
+    }
+  }, [currentAddress, refreshWalletDetection])
 
   const initializeWallets = async () => {
     try {
@@ -142,26 +240,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const refreshWalletDetection = useCallback(async () => {
-    try {
-      console.log("🔍 Detecting available wallets...")
-      const detected = await walletDetectionService.detectAllWallets()
-      setDetectedWallets(detected)
-      console.log("✅ Wallet detection complete:", detected)
-
-      // Send detection data to backend
-      try {
-        await walletApi.sendWalletDetection(detected)
-        console.log("✅ Wallet detection data sent to backend")
-      } catch (backendError) {
-        console.warn("Could not send wallet detection data to backend:", backendError)
-      }
-    } catch (err) {
-      console.error("Error detecting wallets:", err)
-      setError("Failed to detect wallets")
-    }
-  }, [])
-
   // Connect EVM wallet function
   const connectWallet = async (provider: any, network: BlockchainNetwork = 'ethereum', walletName?: string): Promise<ConnectedWallet> => {
     try {
@@ -179,7 +257,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
 
       const newAddress = accounts[0]
-      console.log("Connected to address:", newAddress, "on network:", network)
+      // Auto-detect current network from provider
+      const detectedNetwork = await networkDetectionService.detectCurrentNetwork(provider)
+      const finalNetwork = detectedNetwork || network
+      
+      console.log("Connected to address:", newAddress, "on network:", finalNetwork)
 
       // Determine wallet name
       let finalWalletName = walletName
@@ -192,7 +274,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const newWallet: ConnectedWallet = {
         address: newAddress,
         name: finalWalletName,
-        network,
+        network: finalNetwork,
         provider: provider,
         isPrimary: connectedWallets.length === 0, // First wallet is primary
         icon: detectedWallets.evmWallets.find(p => p.provider === provider)?.icon
@@ -200,7 +282,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       // Get balance
       try {
-        const balance = await getBalance(newAddress, network)
+        const balance = await getBalance(newAddress, finalNetwork)
         newWallet.balance = balance
       } catch (balanceError) {
         console.warn("Could not fetch balance:", balanceError)
@@ -210,7 +292,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const updatedWallets = updateConnectedWallets(newWallet)
       setConnectedWallets(updatedWallets)
       setCurrentAddress(newAddress)
-      setCurrentNetwork(network)
+      setCurrentNetwork(finalNetwork)
       setIsConnected(true)
 
       // Save to localStorage
@@ -552,18 +634,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Switch network (for EVM wallets)
+  // Enhanced network switching function
   const switchNetwork = async (network: BlockchainNetwork) => {
     try {
-      const currentWallet = connectedWallets.find(w => w.address === currentAddress)
-      if (!currentWallet || !currentWallet.provider) {
-        throw new Error("No wallet connected")
+      // Find connected EVM wallet
+      const evmWallet = connectedWallets.find(w => 
+        ['ethereum', 'polygon', 'bsc', 'arbitrum', 'optimism'].includes(w.network) &&
+        w.provider
+      )
+      
+      if (!evmWallet?.provider) {
+        throw new Error('No compatible EVM wallet connected for network switching')
       }
 
-      // This would involve switching the network in the wallet
-      // Implementation depends on the specific network and wallet
-      console.log("Switching to network:", network)
-      setCurrentNetwork(network)
+      console.log(`Switching to network: ${network}`)
+      
+      // Use network detection service to switch
+      const success = await networkDetectionService.switchNetwork(evmWallet.provider, network)
+      
+      if (success) {
+        setCurrentNetwork(network)
+        // Update the connected wallet's network
+        setConnectedWallets(prev => 
+          prev.map(wallet => 
+            wallet.provider === evmWallet.provider 
+              ? { ...wallet, network }
+              : wallet
+          )
+        )
+        console.log(`✅ Successfully switched to ${network}`)
+      } else {
+        throw new Error(`Failed to switch to ${network}`)
+      }
     } catch (err) {
       console.error("Error switching network:", err)
       throw err

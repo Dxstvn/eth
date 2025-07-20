@@ -63,3 +63,58 @@ global.console = {
   warn: jest.fn(),
   error: jest.fn(),
 }
+
+// Mock Firebase
+jest.mock('firebase/auth', () => ({
+  getAuth: jest.fn(() => ({
+    currentUser: null,
+    onAuthStateChanged: jest.fn(),
+  })),
+  signInWithPopup: jest.fn(),
+  signOut: jest.fn(),
+  GoogleAuthProvider: jest.fn(),
+}))
+
+// Mock Firebase app
+jest.mock('@/lib/firebase-client', () => ({
+  auth: {
+    currentUser: null,
+    onAuthStateChanged: jest.fn(),
+  },
+  googleProvider: {},
+}))
+
+// Mock Next.js router
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    pathname: '/',
+  }),
+}))
+
+// Mock local storage
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+}
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+})
+
+// Mock fetch
+global.fetch = jest.fn()
+
+// Mock AbortSignal.timeout
+global.AbortSignal = {
+  timeout: jest.fn(() => ({
+    aborted: false,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+}

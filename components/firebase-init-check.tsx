@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { auth } from "@/lib/firebase-client"
+import { auth, isFirebaseConfigured } from "@/lib/firebase-client"
 
 export default function FirebaseInitCheck() {
   const [isInitialized, setIsInitialized] = useState(false)
@@ -11,8 +11,11 @@ export default function FirebaseInitCheck() {
     if (auth) {
       console.log("Firebase Auth is initialized")
       setIsInitialized(true)
+    } else if (!isFirebaseConfigured) {
+      console.warn("Firebase is not configured. Environment variables are missing.")
+      // Don't log as error since this is expected when env vars aren't set
     } else {
-      console.error("Firebase Auth is not initialized")
+      console.warn("Firebase Auth initialization pending")
     }
   }, [])
 
