@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 
 export default function UserEmailTracker() {
   const { user, isDemoAccount } = useAuth()

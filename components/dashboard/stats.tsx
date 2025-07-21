@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, CheckCircle, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 
 export default function DashboardStats() {
   const [loading, setLoading] = useState(true)

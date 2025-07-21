@@ -9,7 +9,7 @@ import { ArrowLeft, FileText, Calendar, DollarSign, Clock, CheckCircle, X, Shiel
 import TransactionTimeline from "@/components/transaction-timeline"
 import TransactionParties from "@/components/transaction-parties"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import TransactionReview from "@/components/transaction-review"
 import SellerConfirmation from "@/components/seller-confirmation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

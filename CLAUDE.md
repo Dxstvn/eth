@@ -143,30 +143,160 @@ NEXT_PUBLIC_GOOGLE_CLOUD_*          # GCS configuration
 
 ## Backend Integration Guidelines
 
+### CRITICAL: Backend Verification Process
+When integrating ANY backend functionality, you MUST:
+
+#### 1. **Pre-Integration Verification** (ALWAYS DO FIRST)
+```bash
+# Check the exact backend implementation
+cat /backend/src/api/routes/[endpoint].js
+cat /backend/src/services/[service].js
+```
+- ✓ Read the actual backend code for the endpoint
+- ✓ Understand request/response structure
+- ✓ Check authentication requirements
+- ✓ Note any validation rules or constraints
+- ✓ Identify error response formats
+
+#### 2. **Cross-Reference Backend Documentation**
+- Check `/backend/README.md` for API documentation
+- Review `/backend/CLAUDE.md` for implementation details
+- Look for test files: `/backend/src/__tests__/` for expected behavior
+- Verify database schema in `/backend/src/services/databaseService.js`
+
+#### 3. **Implementation Verification Checklist**
+Before implementing frontend integration:
+- [ ] Have I read the actual backend endpoint code?
+- [ ] Do I understand all required parameters?
+- [ ] Have I checked the response structure?
+- [ ] Did I verify authentication requirements?
+- [ ] Have I noted all possible error cases?
+- [ ] Did I check for any rate limiting or constraints?
+
+#### 4. **During Implementation**
+```typescript
+// ALWAYS match backend exactly
+// Example: If backend expects
+// POST /auth/signInGoogle with { idToken: string }
+// Then frontend MUST send exactly:
+await apiClient.post('/auth/signInGoogle', { idToken })
+```
+
+#### 5. **Post-Implementation Testing**
+- Test against actual backend (not mocks)
+- Verify all error scenarios
+- Check network tab for correct request/response
+- Ensure proper error handling for all backend error codes
+
 ### API Client Usage
 When integrating with backend, always:
-1. Check `/backend/src/api/` for exact endpoint structure
-2. Verify request/response formats in backend code
-3. Use proper error handling for all API calls
-4. Implement loading states and user feedback
+1. **FIRST** check `/backend/src/api/` for exact endpoint structure
+2. **VERIFY** request/response formats match backend code exactly
+3. **MATCH** backend error codes and messages
+4. Use proper error handling for all API calls
+5. Implement loading states and user feedback
+
+### Backend File Structure Reference
+```
+/backend/src/
+├── api/routes/          # All API endpoints
+│   ├── auth/           # Authentication endpoints
+│   ├── transaction/    # Deal/escrow endpoints
+│   ├── wallet/         # Wallet management
+│   ├── contact/        # Contact system
+│   └── files/          # File upload/download
+├── services/           # Business logic
+│   ├── databaseService.js      # Firestore operations
+│   ├── escrowServiceV3.js      # Blockchain integration
+│   └── contractConditionSync.js # Real-time sync
+└── contract/           # Smart contracts
+```
 
 ### Testing Integration
-1. Test with Firebase emulators first
-2. Verify against staging backend
-3. Write integration tests for each endpoint
-4. Ensure backwards compatibility during migration
+1. **ALWAYS** read backend tests first: `/backend/src/__tests__/`
+2. Test with Firebase emulators first
+3. Verify against actual backend API
+4. Write integration tests matching backend tests
+5. Ensure backwards compatibility during migration
+
+### Common Integration Mistakes to AVOID
+- ❌ Assuming endpoint behavior without checking backend
+- ❌ Hardcoding response structures without verification
+- ❌ Missing error cases that backend handles
+- ❌ Using different parameter names than backend expects
+- ❌ Ignoring backend validation rules
 
 ### Safety Checks
 Before making changes:
-1. ✓ Is this the safest approach?
+1. ✓ Have I read the backend implementation?
 2. ✓ Have I verified the backend endpoint exists?
-3. ✓ Will this break existing functionality?
-4. ✓ Are proper error boundaries in place?
-5. ✓ Does the UI follow brand guidelines?
+3. ✓ Do my types match backend exactly?
+4. ✓ Will this break existing functionality?
+5. ✓ Are proper error boundaries in place?
+6. ✓ Does the UI follow brand guidelines?
 
 ### Incremental Migration Strategy
-1. Keep mock implementations alongside real ones
-2. Use feature flags to toggle between mock/real
-3. Migrate one service at a time
-4. Verify each service works before moving on
-5. Remove mocks only after full verification
+1. **VERIFY** backend endpoint works first
+2. Keep mock implementations alongside real ones
+3. Use feature flags to toggle between mock/real
+4. Migrate one service at a time
+5. Test thoroughly before removing mocks
+6. Remove mocks only after full verification
+
+## Backend Verification Example
+
+### EXAMPLE: Integrating a Wallet Endpoint
+```bash
+# STEP 1: Check backend implementation FIRST
+cat /backend/src/api/routes/wallet/walletRoutes.js
+
+# STEP 2: Check the service layer
+cat /backend/src/services/databaseService.js | grep -A 20 "registerWallet"
+
+# STEP 3: Check tests for expected behavior
+cat /backend/src/__tests__/integration/wallet.test.js
+
+# STEP 4: Only THEN implement frontend
+```
+
+### What You Learn from Backend:
+```javascript
+// From backend walletRoutes.js:
+router.post('/register', authenticate, async (req, res) => {
+  const { address, name, network, publicKey, isPrimary } = req.body;
+  // Validation: address is required, network must be valid
+  // Returns: { walletId, address, network, isPrimary }
+})
+```
+
+### Correct Frontend Implementation:
+```typescript
+// MATCHES backend EXACTLY
+await apiClient.post('/wallet/register', {
+  address,      // Required
+  name,         // Optional
+  network,      // Required, must match backend enum
+  publicKey,    // Optional
+  isPrimary     // Optional
+})
+```
+
+## Summary: Backend-First Development
+
+**GOLDEN RULE**: Never implement frontend integration without first reading and understanding the backend code. The backend is the source of truth for:
+- Endpoint paths and methods
+- Request parameters and validation
+- Response structures
+- Error codes and messages
+- Authentication requirements
+- Business logic constraints
+
+## Debugging & Troubleshooting Memories
+
+- When debugging frontend issues, determine if it's related to hosting server problems or not first. For context, the production frontend is hosted by Vercel so some errors might occur when trying to run frontend events locally.
+
+- **For any UI updates provide links to pages showing them**
+
+### Memories for UI and Integration Updates
+
+- For UI updates, describe in summary how they look so person reading can understand what they'll see when they check out site. We plan to do batch checks so that we consolidate how many times we check for UI

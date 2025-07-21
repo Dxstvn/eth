@@ -2,433 +2,547 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
 import { useWallet } from "@/context/wallet-context"
 import { useToast } from "@/components/ui/use-toast"
-import { Wallet, RefreshCw, Copy, ExternalLink } from "lucide-react"
+import { Wallet, RefreshCw, Copy, ExternalLink, Star, Settings, Plus, Network, TrendingUp, Eye, EyeOff, ChevronRight, Info, CreditCard, Activity, DollarSign } from "lucide-react"
+import { NetworkSelector } from "@/components/wallet/network-selector"
+import { WalletBalanceCard } from "@/components/wallet/wallet-balance-card"
+import { TransactionHistory } from "@/components/wallet/transaction-history"
 import WalletConnectModal from "@/components/wallet-connect-modal"
 import Image from "next/image"
+import type { ConnectedWallet } from "@/types/wallet"
 
 export default function WalletPage() {
-  const { currentAddress, isConnected, connectedWallets, getBalance, getTransactions } = useWallet()
+  const { 
+    currentAddress, 
+    isConnected, 
+    connectedWallets, 
+    getBalance, 
+    getTransactions,
+    setPrimaryWallet,
+    switchNetwork,
+    currentNetwork,
+    refreshWalletDetection
+  } = useWallet()
   const { toast } = useToast()
-  const [balance, setBalance] = useState("0")
-  const [assets, setAssets] = useState<any[]>([])
-  const [activities, setActivities] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [copiedAddress, setCopiedAddress] = useState(false)
-  const [activeTab, setActiveTab] = useState("assets")
+
+  const [activeTab, setActiveTab] = useState("overview")
   const [showConnectModal, setShowConnectModal] = useState(false)
+  const [balancePrivacy, setBalancePrivacy] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [walletBalances, setWalletBalances] = useState<Record<string, string>>({})
+  const [totalPortfolioValue, setTotalPortfolioValue] = useState("0")
 
-  // Find the current wallet
-  const currentWallet = connectedWallets.find((wallet) => wallet.address === currentAddress)
+  // Get primary wallet
+  const primaryWallet = connectedWallets.find(w => w.isPrimary) || connectedWallets[0]
 
-  // Fetch wallet data when address changes or on refresh
+  // Fetch balances for all wallets
   useEffect(() => {
-    if (currentAddress) {
-      fetchWalletData()
+    const fetchAllBalances = async () => {
+      if (connectedWallets.length === 0) return
+
+      const balances: Record<string, string> = {}
+      let totalValue = 0
+
+      for (const wallet of connectedWallets) {
+        try {
+          const balance = await getBalance(wallet.address)
+          balances[`${wallet.address}-${wallet.network}`] = balance
+          
+          // Mock price calculation (in real app, fetch from price API)
+          const ethPrice = 2000 // Mock ETH price
+          const balanceValue = parseFloat(balance) * ethPrice
+          totalValue += balanceValue
+        } catch (error) {
+          console.error(`Error fetching balance for ${wallet.address}:`, error)
+          balances[`${wallet.address}-${wallet.network}`] = "0"
+        }
+      }
+
+      setWalletBalances(balances)
+      setTotalPortfolioValue(totalValue.toFixed(2))
     }
-  }, [currentAddress])
 
-  // Fetch wallet data from the wallet provider
-  const fetchWalletData = async () => {
-    if (!currentAddress) return
-
-    setLoading(true)
-
-    try {
-      // Get balance from wallet provider
-      const walletBalance = await getBalance(currentAddress)
-      setBalance(walletBalance)
-
-      // Get transactions from wallet provider
-      const transactions = await getTransactions(currentAddress)
-
-      // Format transactions as activities
-      const formattedActivities = transactions.map((tx, index) => ({
-        id: index + 1,
-        type: tx.type === "sent" ? "payment_sent" : "payment_received",
-        title: tx.type === "sent" ? "Payment Sent" : "Payment Received",
-        description:
-          tx.type === "sent"
-            ? `To ${tx.to.slice(0, 6)}...${tx.to.slice(-4)}`
-            : `From ${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`,
-        date: new Date(tx.timestamp).toISOString(),
-        time: new Date(tx.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        value: tx.value,
-        hash: tx.hash,
-      }))
-
-      setActivities(formattedActivities)
-
-      // For demo purposes, create some mock assets based on the balance
-      const ethBalance = Number.parseFloat(walletBalance)
-      const mockAssets = [
-        {
-          id: 1,
-          name: "Ethereum",
-          symbol: "ETH",
-          amount: ethBalance,
-          price: "2000",
-          value: ethBalance * 2000,
-          change: "+1.2%",
-          trend: "up",
-        },
-        {
-          id: 2,
-          name: "USD Coin",
-          symbol: "USDC",
-          amount: ethBalance * 500,
-          price: "1",
-          value: ethBalance * 500,
-          change: "0.0%",
-          trend: "neutral",
-        },
-      ]
-
-      setAssets(mockAssets)
-    } catch (error) {
-      console.error("Error fetching wallet data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch wallet data. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
+    if (isConnected) {
+      fetchAllBalances()
     }
-  }
+  }, [connectedWallets, isConnected, getBalance])
 
-  // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true)
-    await fetchWalletData()
-    setRefreshing(false)
-  }
-
-  // Handle copy address
-  const handleCopyAddress = () => {
-    if (currentAddress) {
-      navigator.clipboard.writeText(currentAddress)
-      setCopiedAddress(true)
+    try {
+      await refreshWalletDetection()
+      // Refetch balances
+      const balances: Record<string, string> = {}
+      for (const wallet of connectedWallets) {
+        try {
+          const balance = await getBalance(wallet.address)
+          balances[`${wallet.address}-${wallet.network}`] = balance
+        } catch (error) {
+          balances[`${wallet.address}-${wallet.network}`] = "0"
+        }
+      }
+      setWalletBalances(balances)
       toast({
-        title: "Address Copied",
-        description: "Wallet address copied to clipboard",
+        title: "Refreshed Successfully",
+        description: "Wallet data has been updated",
       })
-      setTimeout(() => setCopiedAddress(false), 2000)
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh wallet data",
+        variant: "destructive"
+      })
+    } finally {
+      setRefreshing(false)
     }
   }
 
-  // Handle view on explorer
-  const handleViewOnExplorer = () => {
-    if (currentAddress) {
-      window.open(`https://etherscan.io/address/${currentAddress}`, "_blank")
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address)
+    toast({
+      title: "Address Copied",
+      description: "Wallet address copied to clipboard",
+    })
+  }
+
+  const handleSetPrimaryWallet = async (wallet: ConnectedWallet) => {
+    try {
+      await setPrimaryWallet(wallet.address, wallet.network)
+      toast({
+        title: "Primary Wallet Updated",
+        description: `${wallet.name} is now your primary wallet`,
+      })
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to set primary wallet",
+        variant: "destructive"
+      })
     }
   }
 
-  // Calculate total balance
-  const totalBalance = assets.reduce((sum, asset) => sum + asset.value, 0)
-
-  // Format address
-  const formatAddress = (addr: string | null) => {
-    if (!addr) return ""
-    return `${addr.slice(0, 8)}...${addr.slice(-6)}`
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
 
-  // If not connected, show wallet connection UI
+  const getNetworkColor = (network: string) => {
+    switch (network) {
+      case 'ethereum': return 'bg-blue-100 text-blue-700 border-blue-200'
+      case 'polygon': return 'bg-purple-100 text-purple-700 border-purple-200'
+      case 'arbitrum': return 'bg-cyan-100 text-cyan-700 border-cyan-200'
+      case 'optimism': return 'bg-red-100 text-red-700 border-red-200'
+      case 'base': return 'bg-indigo-100 text-indigo-700 border-indigo-200'
+      default: return 'bg-gray-100 text-gray-700 border-gray-200'
+    }
+  }
+
   if (!isConnected) {
     return (
       <div className="p-6 space-y-8">
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-teal-900 font-display">Connect Your Wallet</h1>
-              <p className="text-neutral-600">Connect your wallet to manage your cryptocurrency</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-teal-900 font-display">Wallet Dashboard</h1>
+            <p className="text-neutral-600 mt-2">Connect your wallet to manage your cryptocurrency portfolio</p>
           </div>
         </div>
 
-        <Card className="shadow-md border-0 max-w-2xl mx-auto">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">Connect a Wallet</CardTitle>
-            <CardDescription>Connect your wallet to view your balance and transaction history</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            <div className="text-center">
-              <Button
-                onClick={() => setShowConnectModal(true)}
-                className="bg-teal-900 hover:bg-teal-800 text-white px-8 py-6 text-lg"
-              >
-                <div className="mr-3 h-6 w-6 relative">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
+        <div className="max-w-2xl mx-auto">
+          <Card className="shadow-lg border-0">
+            <CardHeader className="text-center pb-2">
+              <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-4">
+                <Wallet className="h-10 w-10 text-teal-700" />
+              </div>
+              <CardTitle className="text-2xl text-teal-900">Connect Your First Wallet</CardTitle>
+              <CardDescription className="text-lg">
+                Get started by connecting your cryptocurrency wallet to ClearHold
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+                    <Network className="h-6 w-6 text-blue-700" />
+                  </div>
+                  <h4 className="font-medium text-teal-900">Multi-Chain Support</h4>
+                  <p className="text-sm text-neutral-500">Ethereum, Polygon, Arbitrum & more</p>
                 </div>
-                Connect Wallet
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                    <TrendingUp className="h-6 w-6 text-green-700" />
+                  </div>
+                  <h4 className="font-medium text-teal-900">Portfolio Tracking</h4>
+                  <p className="text-sm text-neutral-500">Real-time balance updates</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto">
+                    <Activity className="h-6 w-6 text-purple-700" />
+                  </div>
+                  <h4 className="font-medium text-teal-900">Transaction History</h4>
+                  <p className="text-sm text-neutral-500">Complete activity tracking</p>
+                </div>
+              </div>
+
+              <Separator />
+              
+              <div className="text-center">
+                <Button
+                  onClick={() => setShowConnectModal(true)}
+                  size="lg"
+                  className="bg-teal-900 hover:bg-teal-800 text-white px-8 py-3"
+                >
+                  <Plus className="mr-2 h-5 w-5" />
+                  Connect Wallet
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <WalletConnectModal open={showConnectModal} onOpenChange={setShowConnectModal} />
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-8">
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-teal-900 font-display">Wallet</h1>
-            <p className="text-neutral-600">Manage your cryptocurrency assets and transactions</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="text-teal-700 border-teal-200 hover:bg-teal-50"
-            >
-              {refreshing ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Refreshing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyAddress}
-              className="text-teal-700 border-teal-200 hover:bg-teal-50"
-            >
-              {copiedAddress ? (
-                <>
-                  <Copy className="mr-2 h-4 w-4" /> Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 h-4 w-4" /> Copy Address
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewOnExplorer}
-              className="text-teal-700 border-teal-200 hover:bg-teal-50"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" /> View on Explorer
-            </Button>
-          </div>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-teal-900 font-display">Wallet Dashboard</h1>
+          <p className="text-neutral-600 mt-1">
+            Manage your {connectedWallets.length} connected wallet{connectedWallets.length > 1 ? 's' : ''} across multiple networks
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-teal-700 border-teal-200 hover:bg-teal-50"
+          >
+            {refreshing ? (
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowConnectModal(true)}
+            className="text-teal-700 border-teal-200 hover:bg-teal-50"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Wallet
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setBalancePrivacy(!balancePrivacy)}
+            className="text-teal-700 border-teal-200 hover:bg-teal-50"
+          >
+            {balancePrivacy ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
-      <Card className="shadow-md border-0">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center text-teal-800">
-                {currentWallet?.icon ? (
-                  <div className="relative w-12 h-12">
-                    <Image
-                      src={currentWallet.icon || "/placeholder.svg"}
-                      alt={currentWallet.name}
-                      width={48}
-                      height={48}
-                    />
-                  </div>
-                ) : (
-                  <Wallet className="h-10 w-10" />
-                )}
-              </div>
+      {/* Portfolio Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="shadow-md border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-teal-900 font-display">
-                  {currentWallet?.name || "Connected Wallet"}
-                </h2>
-                <p className="text-sm text-neutral-500 font-mono">
-                  {currentAddress ? formatAddress(currentAddress) : ""}
+                <p className="text-sm text-neutral-500 mb-1">Total Portfolio Value</p>
+                <p className="text-2xl font-bold text-teal-900">
+                  {balancePrivacy ? '••••••' : `$${totalPortfolioValue}`}
                 </p>
               </div>
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-green-700" />
+              </div>
             </div>
-            <div className="text-center md:text-right">
-              <p className="text-sm text-neutral-500">ETH Balance</p>
-              <p className="text-3xl font-bold text-teal-900 font-display">{balance} ETH</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <div className="border-b border-neutral-200">
-        <nav className="flex space-x-8" aria-label="Wallet tabs">
-          <button
-            className={`border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
-              activeTab === "assets"
-                ? "border-teal-900 text-teal-900"
-                : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
-            }`}
-            onClick={() => setActiveTab("assets")}
-          >
-            Assets
-          </button>
-          <button
-            className={`border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
-              activeTab === "activity"
-                ? "border-teal-900 text-teal-900"
-                : "border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
-            }`}
-            onClick={() => setActiveTab("activity")}
-          >
-            Activity
-          </button>
-        </nav>
+        <Card className="shadow-md border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-500 mb-1">Connected Wallets</p>
+                <p className="text-2xl font-bold text-teal-900">{connectedWallets.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Wallet className="h-6 w-6 text-blue-700" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-500 mb-1">Active Networks</p>
+                <p className="text-2xl font-bold text-teal-900">
+                  {new Set(connectedWallets.map(w => w.network)).size}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <Network className="h-6 w-6 text-purple-700" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {activeTab === "assets" && (
-        <div className="space-y-4">
-          {loading
-            ? // Loading skeleton for assets
-              Array(4)
-                .fill(0)
-                .map((_, i) => (
-                  <div key={i} className="bg-white border border-neutral-100 rounded-lg p-5 animate-pulse">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-neutral-200 rounded-full"></div>
-                        <div>
-                          <div className="h-5 bg-neutral-200 rounded w-24 mb-1"></div>
-                          <div className="h-4 bg-neutral-200 rounded w-16"></div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="h-5 bg-neutral-200 rounded w-20 mb-1"></div>
-                        <div className="h-4 bg-neutral-200 rounded w-16"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-            : assets.map((asset) => (
-                <div
-                  key={asset.id}
-                  className="bg-white border border-neutral-100 rounded-lg p-5 hover:shadow-md transition-all duration-300"
-                >
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="wallets">Wallets</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Network Selector */}
+            <Card className="shadow-md border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Network className="h-5 w-5" />
+                  Network Selection
+                </CardTitle>
+                <CardDescription>
+                  Switch between different blockchain networks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NetworkSelector variant="detailed" />
+              </CardContent>
+            </Card>
+
+            {/* Primary Wallet Balance */}
+            {primaryWallet && (
+              <div className="xl:col-span-2 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-teal-900 flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                    Primary Wallet
+                  </h3>
+                  <Badge variant="outline" className={getNetworkColor(primaryWallet.network)}>
+                    {primaryWallet.network.charAt(0).toUpperCase() + primaryWallet.network.slice(1)}
+                  </Badge>
+                </div>
+                <WalletBalanceCard wallet={primaryWallet} showActions={true} />
+              </div>
+            )}
+          </div>
+
+          {/* All Wallets Quick View */}
+          {connectedWallets.length > 1 && (
+            <Card className="shadow-md border-0">
+              <CardHeader>
+                <CardTitle>All Connected Wallets</CardTitle>
+                <CardDescription>Quick overview of all your wallets</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {connectedWallets.map((wallet, index) => (
+                    <WalletBalanceCard 
+                      key={index} 
+                      wallet={wallet} 
+                      compact={true}
+                      showActions={false}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="wallets" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-teal-900">Manage Wallets</h2>
+              <p className="text-neutral-600">Set primary wallet and manage connections</p>
+            </div>
+            <Button onClick={() => setShowConnectModal(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Wallet
+            </Button>
+          </div>
+
+          <div className="grid gap-4">
+            {connectedWallets.map((wallet, index) => (
+              <Card key={index} className="shadow-md border-0">
+                <CardContent className="p-6">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          asset.symbol === "BTC"
-                            ? "bg-amber-100 text-amber-700"
-                            : asset.symbol === "ETH"
-                              ? "bg-blue-100 text-blue-700"
-                              : asset.symbol === "USDC"
-                                ? "bg-teal-100 text-teal-700"
-                                : "bg-purple-100 text-purple-700"
-                        }`}
-                      >
-                        {asset.symbol.charAt(0)}
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
+                        {wallet.icon ? (
+                          <Image
+                            src={wallet.icon}
+                            alt={wallet.name}
+                            width={32}
+                            height={32}
+                            className="rounded-full"
+                          />
+                        ) : (
+                          <Wallet className="h-6 w-6 text-teal-700" />
+                        )}
                       </div>
                       <div>
-                        <p className="font-medium text-teal-900">{asset.name}</p>
-                        <p className="text-sm text-neutral-500">
-                          {asset.amount} {asset.symbol}
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="font-semibold text-teal-900">{wallet.name}</h3>
+                          {wallet.isPrimary && (
+                            <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+                              <Star className="h-3 w-3 mr-1 fill-current" />
+                              Primary
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className={getNetworkColor(wallet.network)}>
+                            {wallet.network.charAt(0).toUpperCase() + wallet.network.slice(1)}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-neutral-500 font-mono">
+                          {formatAddress(wallet.address)}
+                        </p>
+                        <p className="text-sm font-medium text-teal-900">
+                          Balance: {balancePrivacy ? '••••••' : `${walletBalances[`${wallet.address}-${wallet.network}`] || '0'} ETH`}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-teal-900">
-                        ${asset.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <p
-                        className={`text-sm ${
-                          asset.trend === "up"
-                            ? "text-green-600"
-                            : asset.trend === "down"
-                              ? "text-red-600"
-                              : "text-neutral-500"
-                        }`}
+                    <div className="flex items-center gap-2">
+                      {!wallet.isPrimary && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSetPrimaryWallet(wallet)}
+                          className="text-teal-700 border-teal-200 hover:bg-teal-50"
+                        >
+                          <Star className="mr-2 h-4 w-4" />
+                          Set Primary
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyAddress(wallet.address)}
+                        className="text-teal-700 border-teal-200 hover:bg-teal-50"
                       >
-                        {asset.change}
-                      </p>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`https://etherscan.io/address/${wallet.address}`, '_blank')}
+                        className="text-teal-700 border-teal-200 hover:bg-teal-50"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
-      {activeTab === "activity" && (
-        <div className="space-y-4">
-          {loading ? (
-            // Loading skeleton for activity
-            Array(4)
-              .fill(0)
-              .map((_, i) => (
-                <div key={i} className="bg-white border border-neutral-100 rounded-lg p-5 animate-pulse">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-neutral-200 rounded-full"></div>
-                      <div>
-                        <div className="h-5 bg-neutral-200 rounded w-32 mb-1"></div>
-                        <div className="h-4 bg-neutral-200 rounded w-48"></div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="h-5 bg-neutral-200 rounded w-20 mb-1"></div>
-                      <div className="h-4 bg-neutral-200 rounded w-16"></div>
-                    </div>
+        <TabsContent value="activity" className="space-y-6">
+          {primaryWallet ? (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-teal-900 mb-2">Transaction History</h2>
+                <p className="text-neutral-600">Recent transactions from your primary wallet</p>
+              </div>
+              <TransactionHistory wallet={primaryWallet} limit={20} />
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Activity className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-neutral-900 mb-2">No Primary Wallet</h3>
+              <p className="text-neutral-500">Set a primary wallet to view transaction history</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <Card className="shadow-md border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Wallet Settings
+              </CardTitle>
+              <CardDescription>
+                Configure your wallet preferences and security settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-teal-900">Balance Privacy</h4>
+                    <p className="text-sm text-neutral-500">Hide wallet balances from view</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBalancePrivacy(!balancePrivacy)}
+                    className={balancePrivacy ? "text-green-700 border-green-200" : "text-neutral-700 border-neutral-200"}
+                  >
+                    {balancePrivacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium text-teal-900">Network Preferences</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {['ethereum', 'polygon', 'arbitrum', 'optimism', 'base'].map((network) => (
+                      <Badge key={network} variant="outline" className={getNetworkColor(network)}>
+                        {network.charAt(0).toUpperCase() + network.slice(1)}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-              ))
-          ) : activities.length > 0 ? (
-            activities.map((activity) => (
-              <div
-                key={activity.id}
-                className="bg-white border border-neutral-100 rounded-lg p-5 hover:shadow-md transition-all duration-300"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        activity.type === "payment_sent" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
-                      }`}
-                    >
-                      {activity.type === "payment_sent" ? "↑" : "↓"}
+
+                <Separator />
+
+                <div>
+                  <h4 className="font-medium text-teal-900 mb-3">Connected Wallets Summary</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-500">Total Wallets:</span>
+                      <span className="font-medium">{connectedWallets.length}</span>
                     </div>
-                    <div>
-                      <p className="font-medium text-teal-900">{activity.title}</p>
-                      <p className="text-sm text-neutral-500">{activity.description}</p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-500">Networks:</span>
+                      <span className="font-medium">{new Set(connectedWallets.map(w => w.network)).size}</span>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-teal-900">{new Date(activity.date).toLocaleDateString()}</p>
-                    <p className="text-sm text-neutral-500">{activity.time}</p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-500">Primary Wallet:</span>
+                      <span className="font-medium">{primaryWallet?.name || 'None set'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No transaction activity found.</p>
-            </div>
-          )}
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
       <WalletConnectModal open={showConnectModal} onOpenChange={setShowConnectModal} />
     </div>
   )

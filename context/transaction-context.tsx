@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState } from "react"
 import { useToast } from "@/components/ui/toast-provider"
-import { useAuth } from "./auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import * as transactionApi from "@/services/transaction-api"
 
 type TransactionContextType = {

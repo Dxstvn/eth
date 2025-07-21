@@ -12,7 +12,7 @@ import { useDatabaseStore } from "@/lib/mock-database"
 import { useState, useEffect } from "react"
 import { Building, BarChart, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 
 export default function DashboardPage() {
   const { getTransactions } = useDatabaseStore()

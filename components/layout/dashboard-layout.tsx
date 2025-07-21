@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import LoadingScreen from "@/components/loading-screen"

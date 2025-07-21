@@ -9,7 +9,14 @@ export const API_CONFIG = {
       signUp: '/auth/signUpEmailPass',
       signIn: '/auth/signInEmailPass',
       signInGoogle: '/auth/signInGoogle',
-      refreshToken: '/auth/refreshToken'
+      refreshToken: '/auth/refreshToken',
+      signOut: '/auth/signOut',
+      profile: '/auth/profile',
+      changePassword: '/auth/changePassword',
+      resetPassword: '/auth/resetPassword',
+      confirmResetPassword: '/auth/confirmResetPassword',
+      sendVerificationEmail: '/auth/sendVerificationEmail',
+      verifyEmail: '/auth/verifyEmail'
     },
     
     // File management endpoints
@@ -102,6 +109,50 @@ export interface AuthResponse {
     uid: string;
     email: string;
   };
+}
+
+export interface UserProfileResponse {
+  uid: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  wallets?: Array<{
+    address: string;
+    name: string;
+    network: string;
+    isPrimary: boolean;
+    addedAt: Date;
+  }>;
+  createdAt: Date;
+  isAdmin?: boolean;
+  hasCompletedOnboarding?: boolean;
+}
+
+export interface UpdateProfileRequest {
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  displayName?: string;
+  photoURL?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+}
+
+export interface ConfirmResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
 }
 
 export interface CreateDealRequest {

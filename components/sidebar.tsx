@@ -17,7 +17,7 @@ import {
   ChevronRight,
   LogOut,
 } from "lucide-react"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import { useMobile } from "@/hooks/use-mobile"
 import { useState, useEffect } from "react"
 

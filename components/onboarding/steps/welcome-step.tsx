@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import { Home, Shield, Clock, Coins } from "lucide-react"
 
 export default function WelcomeStep() {

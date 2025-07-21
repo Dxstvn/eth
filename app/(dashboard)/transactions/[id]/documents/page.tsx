@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, FileText, CheckCircle, Clock, Download, Eye, Trash2 } from "lucide-react"
 import FileUpload from "@/components/file-upload"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import { useToast } from "@/components/ui/use-toast"
 
 // Document type interface based on Firestore structure

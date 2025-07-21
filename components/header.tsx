@@ -2,7 +2,7 @@
 
 import { Menu, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import {
   DropdownMenu,
   DropdownMenuTrigger,

@@ -3,7 +3,7 @@
 import type React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Sidebar from "@/components/sidebar"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import LoadingScreen from "@/components/loading-screen"
 import { useEffect } from "react"
 import UserEmailTracker from "@/components/user-email-tracker"

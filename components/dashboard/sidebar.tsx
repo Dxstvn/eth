@@ -17,7 +17,7 @@ import {
   ChevronRight,
   FileText,
 } from "lucide-react"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import { useSidebar } from "@/context/sidebar-context"
 import { useMobile } from "@/hooks/use-mobile"
 

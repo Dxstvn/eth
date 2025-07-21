@@ -18,7 +18,7 @@ import TransactionSuccess from "@/components/transaction-success"
 import RoleBasedRequirements, { type ContractRequirements } from "@/components/role-based-requirements"
 import { CompactInfo } from "@/components/compact-info"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/auth-context"
+import { useAuth } from "@/context/auth-context-v2"
 import { useTransaction } from "@/context/transaction-context"
 
 // Mock contacts data
