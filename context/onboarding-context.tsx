@@ -25,10 +25,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   // Check if user has completed onboarding
   useEffect(() => {
     if (user) {
-      // For jasmindustin@gmail.com, always show onboarding
-      if (user.email === "jasmindustin@gmail.com") {
+      // For demo accounts, always show onboarding
+      if (user.email === "jasmindustin@gmail.com" || user.email === "dev@clearhold.local") {
         setShowOnboarding(true)
-        setHasCompletedOnboarding(false) // Always set to false for demo account
+        setHasCompletedOnboarding(false) // Always set to false for demo accounts
         return
       }
 
@@ -47,7 +47,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const handleCompletedOnboarding = (completed: boolean) => {
     setHasCompletedOnboarding(completed)
 
-    if (user && user.email !== "jasmindustin@gmail.com" && completed) {
+    if (user && user.email !== "jasmindustin@gmail.com" && user.email !== "dev@clearhold.local" && completed) {
       localStorage.setItem(`onboarding-completed-${user.uid}`, "true")
     }
   }

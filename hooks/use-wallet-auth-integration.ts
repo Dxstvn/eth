@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useAuth } from '@/context/auth-context'
+import { useAuth } from '@/context/auth-context-v2'
 import { useWallet } from '@/context/wallet-context'
 import { walletApi } from '@/services/wallet-api'
 
@@ -17,6 +17,12 @@ export function useWalletAuthIntegration() {
 
     const syncWalletsWithProfile = async () => {
       try {
+        // Skip wallet sync in development mode to avoid backend calls
+        if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+          console.log('🔧 Skipping wallet sync in development mode')
+          return
+        }
+
         // Prepare wallet data for backend
         const walletAddresses = connectedWallets.map(wallet => ({
           address: wallet.address,

@@ -247,6 +247,13 @@ export class WalletService {
    * Disconnect a wallet
    */
   async disconnectWallet(address: string, network: BlockchainNetwork): Promise<void> {
+    if (!this.connectedWallets) {
+      throw new WalletError(
+        'Wallet service not initialized',
+        WalletErrorCode.PROVIDER_NOT_FOUND
+      )
+    }
+
     const walletKey = `${address}-${network}`
     const wallet = this.connectedWallets.get(walletKey)
 
@@ -278,6 +285,13 @@ export class WalletService {
    * Set primary wallet
    */
   async setPrimaryWallet(address: string, network: BlockchainNetwork): Promise<void> {
+    if (!this.connectedWallets) {
+      throw new WalletError(
+        'Wallet service not initialized',
+        WalletErrorCode.PROVIDER_NOT_FOUND
+      )
+    }
+
     // Update all wallets to non-primary
     this.connectedWallets.forEach(wallet => {
       wallet.isPrimary = false
@@ -364,6 +378,11 @@ export class WalletService {
    */
   async getConnectedWallets(): Promise<ConnectedWallet[]> {
     try {
+      // Ensure connectedWallets Map is initialized
+      if (!this.connectedWallets) {
+        this.connectedWallets = new Map<string, ConnectedWallet>()
+      }
+
       // Fetch from backend
       const response = await apiClient.get<{ wallets: ConnectedWallet[] }>(
         API_CONFIG.endpoints.wallet.list
@@ -383,7 +402,8 @@ export class WalletService {
       return []
     } catch (error) {
       console.error('Error fetching connected wallets:', error)
-      return Array.from(this.connectedWallets.values())
+      // Return cached wallets if available, otherwise empty array
+      return this.connectedWallets ? Array.from(this.connectedWallets.values()) : []
     }
   }
 

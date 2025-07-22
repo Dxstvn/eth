@@ -8,22 +8,36 @@ import FirebaseInitCheck from "@/components/firebase-init-check"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { OnboardingProvider } from "@/context/onboarding-context"
-import OnboardingFlow from "@/components/onboarding/onboarding-flow"
 import { SidebarProvider } from "@/context/sidebar-context"
 import { TransactionProvider } from "@/context/transaction-context"
+import ErrorBoundary from "@/components/ui/error-boundary"
+import { createDynamicComponent } from "@/utils/dynamic-imports"
+import { Suspense } from "react"
 
-// Load Montserrat font
+// Dynamically import OnboardingFlow for better performance
+const OnboardingFlow = createDynamicComponent(
+  () => import("@/components/onboarding/onboarding-flow"),
+  { ssr: false }
+)
+
+// Load Montserrat font with performance optimizations
 const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
   display: "swap",
+  preload: true,
+  fallback: ["system-ui", "sans-serif"],
+  adjustFontFallback: true,
 })
 
-// Load Open Sans font
+// Load Open Sans font with performance optimizations
 const openSans = Open_Sans({
   subsets: ["latin"],
   variable: "--font-open-sans",
   display: "swap",
+  preload: true,
+  fallback: ["system-ui", "sans-serif"],
+  adjustFontFallback: true,
 })
 
 export const metadata: Metadata = {
@@ -41,22 +55,29 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} ${openSans.variable}`}>
       <body className={openSans.className}>
-        <FirebaseInitCheck />
-        <AuthProvider>
-          <WalletProvider>
-            <ToastProvider>
-              <SidebarProvider>
-                <TransactionProvider>
-                  <OnboardingProvider>
-                    {children}
-                    <Toaster />
-                    <OnboardingFlow />
-                  </OnboardingProvider>
-                </TransactionProvider>
-              </SidebarProvider>
-            </ToastProvider>
-          </WalletProvider>
-        </AuthProvider>
+        <ErrorBoundary level="page" onError={(error, errorInfo) => {
+          // Log to monitoring service in production
+          console.error('Global error caught:', error, errorInfo)
+        }}>
+          <FirebaseInitCheck />
+          <AuthProvider>
+            <WalletProvider>
+              <ToastProvider>
+                <SidebarProvider>
+                  <TransactionProvider>
+                    <OnboardingProvider>
+                      {children}
+                      <Toaster />
+                      <Suspense fallback={null}>
+                        <OnboardingFlow />
+                      </Suspense>
+                    </OnboardingProvider>
+                  </TransactionProvider>
+                </SidebarProvider>
+              </ToastProvider>
+            </WalletProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

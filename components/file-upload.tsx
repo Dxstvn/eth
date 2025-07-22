@@ -8,6 +8,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Upload, AlertCircle, CheckCircle, File, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/context/auth-context-v2"
+import { useToast } from "@/components/ui/use-toast"
+import firebaseStorageService, { UploadProgress, FileMetadata } from "@/services/firebase-storage-service"
 
 // Document types based on the Firestore structure
 const DOCUMENT_TYPES = [
@@ -25,6 +28,8 @@ interface FileUploadProps {
     size: number
     documentType: string
     status: string
+    fullPath?: string
+    timeCreated?: string
   }) => void
   dealId: string
   userId?: string
@@ -35,9 +40,11 @@ interface FileUploadProps {
 export function FileUpload({
   onUploadComplete,
   dealId,
-  userId = "current-user",
+  userId,
   documentType: initialDocumentType = "",
 }: FileUploadProps) {
+  const { user } = useAuth()
+  const { toast } = useToast()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -45,6 +52,7 @@ export function FileUpload({
   const [success, setSuccess] = useState(false)
   const [documentType, setDocumentType] = useState<string>(initialDocumentType)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadTaskId, setUploadTaskId] = useState<string | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -65,61 +73,109 @@ export function FileUpload({
       return
     }
 
+    if (!user) {
+      setError("User not authenticated")
+      return
+    }
+
     try {
       setUploading(true)
-      setUploadProgress(10)
+      setUploadProgress(0)
       setError(null)
 
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          const newProgress = prev + Math.random() * 15
-          return newProgress > 90 ? 90 : newProgress
-        })
-      }, 500)
+      // Validate file
+      const validation = firebaseStorageService.validateFile(selectedFile, {
+        maxSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: [
+          'application/pdf',
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'text/plain',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+      })
 
-      // Mock API call - this would be replaced with your actual backend endpoint
-      // Using a timeout to simulate network latency
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Create mock data that matches your Firestore structure
-      const mockFileData = {
-        filename: selectedFile.name,
-        url: `https://mock-storage.example.com/${dealId}/${Date.now()}-${selectedFile.name}`,
-        contentType: selectedFile.type,
-        size: selectedFile.size,
-        uploadedAt: new Date().toISOString(),
-        uploadedBy: userId,
-        documentType: documentType,
-        status: "PENDING",
+      if (!validation.isValid) {
+        setError(validation.error || "Invalid file")
+        return
       }
 
-      // In a real implementation, you would send this data to your backend
-      // For now, we'll just log it and simulate a successful response
-      console.log("Mock upload data:", mockFileData)
-      console.log(`Would upload to: /api/deals/${dealId}/files`)
+      // Generate file path for transaction documents
+      const filePath = firebaseStorageService.generateTransactionFilePath(
+        dealId,
+        selectedFile.name,
+        user.uid
+      )
 
-      // Clear the progress interval
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-      setSuccess(true)
+      // Upload with progress tracking
+      const result = await firebaseStorageService.uploadFile(selectedFile, filePath, {
+        onProgress: (progress: UploadProgress) => {
+          setUploadProgress(progress.progress)
+        },
+        onComplete: (downloadURL: string, metadata: FileMetadata) => {
+          setSuccess(true)
+          setUploadProgress(100)
 
-      // Call the callback with the upload result
-      onUploadComplete(mockFileData)
+          toast({
+            title: "Upload Complete",
+            description: `${selectedFile.name} uploaded successfully`,
+          })
 
-      // Reset after a delay
-      setTimeout(() => {
-        setSelectedFile(null)
-        setDocumentType("")
-        setUploadProgress(0)
-        setSuccess(false)
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ""
+          // Create file data that matches the expected interface
+          const fileData = {
+            filename: metadata.name,
+            url: downloadURL,
+            contentType: metadata.contentType || selectedFile.type,
+            size: metadata.size,
+            documentType: documentType,
+            status: "PENDING",
+            fullPath: metadata.fullPath,
+            timeCreated: metadata.timeCreated,
+          }
+
+          // Call the callback with the upload result
+          onUploadComplete(fileData)
+
+          // Reset after a delay
+          setTimeout(() => {
+            setSelectedFile(null)
+            setDocumentType("")
+            setUploadProgress(0)
+            setSuccess(false)
+            setUploadTaskId(null)
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ""
+            }
+          }, 2000)
+        },
+        onError: (error: Error) => {
+          setError(`Upload failed: ${error.message}`)
+          toast({
+            title: "Upload Failed",
+            description: error.message,
+            variant: "destructive",
+          })
+        },
+        customMetadata: {
+          documentType,
+          dealId,
+          userId: user.uid,
+          uploadedBy: user.email || user.uid
         }
-      }, 2000)
+      })
+
+      setUploadTaskId(result.taskId)
+
     } catch (err) {
       console.error("Upload error:", err)
       setError(`Upload failed: ${err instanceof Error ? err.message : String(err)}`)
+      toast({
+        title: "Upload Failed",
+        description: err instanceof Error ? err.message : "Unknown error occurred",
+        variant: "destructive",
+      })
     } finally {
       setUploading(false)
     }
@@ -132,10 +188,17 @@ export function FileUpload({
   }
 
   const clearFile = () => {
+    // Cancel upload if in progress
+    if (uploadTaskId) {
+      firebaseStorageService.cancelUpload(uploadTaskId)
+      setUploadTaskId(null)
+    }
+    
     setSelectedFile(null)
     setError(null)
     setSuccess(false)
     setUploadProgress(0)
+    setUploading(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }

@@ -44,10 +44,14 @@ export class ApiLogger {
       const resetColor = '\x1b[0m';
 
       if (error) {
-        console.error(
-          `[API] ${method} ${endpoint} - ${statusColor}ERROR${resetColor}`,
-          error
-        );
+        // Only log network errors once to avoid spam in development
+        const isNetworkError = error.message?.includes('Network error') || error.message?.includes('Failed to fetch');
+        if (!isNetworkError || process.env.NEXT_PUBLIC_API_VERBOSE === 'true') {
+          console.error(
+            `[API] ${method} ${endpoint} - ${statusColor}ERROR${resetColor}`,
+            error
+          );
+        }
       } else {
         console.log(
           `[API] ${method} ${endpoint} - ${statusColor}${status}${resetColor} (${duration}ms)`

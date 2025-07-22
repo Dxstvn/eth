@@ -116,11 +116,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Initialize wallet state from localStorage and backend
-  useEffect(() => {
-    initializeWallets()
-  }, [])
-
   // Detect wallets on component mount
   useEffect(() => {
     refreshWalletDetection()
@@ -202,8 +197,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [currentAddress, refreshWalletDetection])
 
-  const initializeWallets = async () => {
+  // Initialize wallet state from localStorage and backend
+  const initializeWallets = useCallback(async () => {
     try {
+      // In development mode, skip backend wallet initialization to prevent errors
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
+        console.log('🔧 Development mode: Skipping wallet initialization')
+        return
+      }
+      
       // Fetch wallets from backend
       const backendWallets = await walletService.getConnectedWallets()
       
@@ -227,9 +229,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error("Error initializing wallets:", err)
-      setError("Failed to initialize wallets")
+      // Don't set error state to prevent infinite loops in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        setError("Failed to initialize wallets")
+      }
     }
-  }
+  }, [])
+
+  // Initialize wallet state from localStorage and backend on component mount
+  useEffect(() => {
+    initializeWallets()
+  }, [initializeWallets])
 
   // Connect EVM wallet function
   const connectWallet = async (provider: WalletProvider, network: BlockchainNetwork = 'ethereum', walletName?: string): Promise<ConnectedWallet> => {

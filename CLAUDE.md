@@ -295,8 +295,8 @@ await apiClient.post('/wallet/register', {
 
 - When debugging frontend issues, determine if it's related to hosting server problems or not first. For context, the production frontend is hosted by Vercel so some errors might occur when trying to run frontend events locally.
 
-- **For any UI updates provide links to pages showing them**
+- When debugging, make sure the problem isn't related to being in dev-mode because a majority of the time the frontend will be checked in dev-mode on a local server. Prioritize fixing for production mode.
 
-### Memories for UI and Integration Updates
+## Development Design Principles
 
-- For UI updates, describe in summary how they look so person reading can understand what they'll see when they check out site. We plan to do batch checks so that we consolidate how many times we check for UI
+- Aim for mobile and web functionality/responsiveness design.

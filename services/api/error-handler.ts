@@ -34,7 +34,11 @@ export class ErrorHandler {
   handleError(error: unknown, context?: string): ApiError {
     const apiError = this.normalizeError(error);
     
-    if (this.config.logErrors) {
+    // In development mode, be less aggressive with network error logging
+    const isNetworkError = apiError.code === 'NETWORK_ERROR' || apiError.message?.includes('Network error');
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    if (this.config.logErrors && (!isNetworkError || !isDevelopment)) {
       apiLogger.logError(
         context || 'UNKNOWN',
         '',
@@ -42,7 +46,8 @@ export class ErrorHandler {
       );
     }
 
-    if (this.config.showToasts) {
+    // Don't show toasts for network errors in development mode
+    if (this.config.showToasts && (!isNetworkError || !isDevelopment)) {
       this.showErrorToast(apiError);
     }
 

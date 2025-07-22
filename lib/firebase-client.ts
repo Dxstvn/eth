@@ -1,5 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app"
 import { getAuth, GoogleAuthProvider, Auth } from "firebase/auth"
+import { getFirestore, Firestore, connectFirestoreEmulator } from "firebase/firestore"
+import { getStorage, FirebaseStorage, connectStorageEmulator } from "firebase/storage"
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -20,13 +22,41 @@ const isFirebaseConfigured = firebaseConfig.apiKey &&
 // Initialize Firebase only if properly configured
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
 if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
     googleProvider = new GoogleAuthProvider();
+
+    // Connect to Firestore emulator in development if env variables are set
+    if (process.env.NODE_ENV === 'development' && 
+        process.env.FIRESTORE_EMULATOR_HOST) {
+      try {
+        const [host, port] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
+        connectFirestoreEmulator(db, host, parseInt(port));
+        console.log('🔥 Connected to Firestore emulator');
+      } catch (emulatorError) {
+        console.warn('Firestore emulator connection failed:', emulatorError);
+      }
+    }
+
+    // Connect to Storage emulator in development if env variables are set
+    if (process.env.NODE_ENV === 'development' && 
+        process.env.FIREBASE_STORAGE_EMULATOR_HOST) {
+      try {
+        const [host, port] = process.env.FIREBASE_STORAGE_EMULATOR_HOST.split(':');
+        connectStorageEmulator(storage, host, parseInt(port));
+        console.log('🔥 Connected to Storage emulator');
+      } catch (emulatorError) {
+        console.warn('Storage emulator connection failed:', emulatorError);
+      }
+    }
   } catch (error) {
     console.error("Firebase initialization error:", error);
   }
@@ -49,4 +79,4 @@ export async function getIdToken() {
 }
 
 // Export with null checks
-export { app, auth, googleProvider, isFirebaseConfigured }
+export { app, auth, db, storage, googleProvider, isFirebaseConfigured }

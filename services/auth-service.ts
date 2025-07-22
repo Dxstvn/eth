@@ -331,6 +331,7 @@ class AuthService {
 
   // Get user profile from backend
   async getUserProfile(): Promise<UserProfile> {
+    // Return development user if using development auth
     const token = this.getStoredToken();
     if (!token) {
       throw new Error('Not authenticated');

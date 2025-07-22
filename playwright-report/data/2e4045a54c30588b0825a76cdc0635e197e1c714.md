@@ -1,0 +1,82 @@
+# Page snapshot
+
+```yaml
+- button "Open Next.js Dev Tools":
+  - img
+- alert: CryptoEscrow - Secure Real Estate Transactions with Cryptocurrency
+- button "Collapse sidebar":
+  - img
+- link "CryptoEscrow":
+  - /url: /dashboard
+  - img
+  - text: CryptoEscrow
+- link "New Transaction":
+  - /url: /transactions/new
+  - img
+  - text: New Transaction
+- navigation:
+  - link "Dashboard":
+    - /url: /dashboard
+    - img
+    - text: Dashboard
+  - link "Transactions":
+    - /url: /transactions
+    - img
+    - text: Transactions
+  - link "Wallet":
+    - /url: /wallet
+    - img
+    - text: Wallet
+  - link "Contacts":
+    - /url: /contacts
+    - img
+    - text: Contacts
+  - link "Settings":
+    - /url: /settings
+    - img
+    - text: Settings
+  - link "Help & Support":
+    - /url: /support
+    - img
+    - text: Help & Support
+- text: D
+- paragraph: Dev
+- paragraph: dev@clearhold.local
+- button "Sign Out":
+  - img
+  - text: Sign Out
+- main:
+  - heading "Transactions" [level=1]
+  - paragraph: Manage your escrow transactions
+  - link "New Transaction":
+    - /url: /transactions/new
+    - img
+    - text: New Transaction
+  - img
+  - searchbox "Search transactions..."
+  - combobox: All Statuses
+  - combobox: Newest First
+  - button:
+    - img
+- region "Notifications (F8)":
+  - list
+- img
+- heading "Welcome to CryptoEscrow, Dev!" [level=2]
+- paragraph: We're excited to have you on board. Let's take a quick tour to help you get started with secure real estate transactions using cryptocurrency.
+- img
+- heading "Secure Transactions" [level=3]
+- paragraph: Our smart contract-based escrow ensures your funds are secure and only released when all conditions are met.
+- img
+- heading "Real Estate Focus" [level=3]
+- paragraph: Specifically designed for real estate transactions with all the tools you need for property deals.
+- img
+- heading "Time Efficient" [level=3]
+- paragraph: Reduce closing time from weeks to days with our streamlined process and automated verification.
+- img
+- heading "Cryptocurrency Powered" [level=3]
+- paragraph: Use digital currencies for faster, more secure transactions with lower fees and global accessibility.
+- button "Skip Tour"
+- button "Next":
+  - text: Next
+  - img
+```

@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, FileText, CheckCircle, Clock, Download, Eye, Trash2 } from "lucide-react"
-import FileUpload from "@/components/file-upload"
+import { AlertCircle, FileText, CheckCircle, Clock, Upload, FolderOpen } from "lucide-react"
+import FileUploadEnhanced from "@/components/file-upload-enhanced"
+import DocumentPreviewModal from "@/components/document-preview-modal"
+import DocumentBulkOperations from "@/components/document-bulk-operations"
 import { useAuth } from "@/context/auth-context-v2"
 import { useToast } from "@/components/ui/use-toast"
+import firebaseStorageService, { FileMetadata } from "@/services/firebase-storage-service"
 
-// Document type interface based on Firestore structure
+// Document type interface
 interface DocumentFile {
   id: string
   filename: string
@@ -21,7 +24,10 @@ interface DocumentFile {
   uploadedAt: string
   uploadedBy: string
   documentType: string
-  status: string
+  status: 'pending' | 'approved' | 'rejected'
+  fullPath?: string
+  timeCreated?: string
+  pages?: number
 }
 
 export default function TransactionDocumentsPage() {
@@ -30,17 +36,18 @@ export default function TransactionDocumentsPage() {
   const { toast } = useToast()
   const [documents, setDocuments] = useState<DocumentFile[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("all")
+  const [activeTab, setActiveTab] = useState("upload")
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([])
+  const [previewDocument, setPreviewDocument] = useState<DocumentFile | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
 
-  // Mock function to fetch documents
+  // Fetch documents from Firebase Storage or API
   const fetchDocuments = async () => {
     setLoading(true)
     try {
-      // This would be replaced with your actual API call
-      // For now, we'll use mock data
+      // For now using mock data, but this would connect to your backend API
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Mock data
       const mockDocuments: DocumentFile[] = [
         {
           id: "doc1",
@@ -51,19 +58,44 @@ export default function TransactionDocumentsPage() {
           uploadedAt: new Date().toISOString(),
           uploadedBy: user?.uid || "unknown",
           documentType: "CONTRACT",
-          status: "APPROVED",
+          status: "approved",
+          pages: 12,
         },
         {
           id: "doc2",
-          filename: "Property Inspection.pdf",
+          filename: "Property Inspection Report.pdf",
           url: "https://example.com/files/inspection.pdf",
           contentType: "application/pdf",
           size: 5100000,
-          uploadedAt: new Date().toISOString(),
+          uploadedAt: new Date(Date.now() - 86400000).toISOString(),
           uploadedBy: user?.uid || "unknown",
           documentType: "INSPECTION",
-          status: "PENDING",
+          status: "pending",
+          pages: 8,
         },
+        {
+          id: "doc3",
+          filename: "Property Photos.zip",
+          url: "https://example.com/files/photos.zip",
+          contentType: "application/zip",
+          size: 15000000,
+          uploadedAt: new Date(Date.now() - 172800000).toISOString(),
+          uploadedBy: user?.uid || "unknown",
+          documentType: "PHOTOS",
+          status: "approved",
+        },
+        {
+          id: "doc4",
+          filename: "Title Certificate.pdf",
+          url: "https://example.com/files/title.pdf",
+          contentType: "application/pdf",
+          size: 800000,
+          uploadedAt: new Date(Date.now() - 259200000).toISOString(),
+          uploadedBy: user?.uid || "unknown",
+          documentType: "TITLE",
+          status: "rejected",
+          pages: 3,
+        }
       ]
 
       setDocuments(mockDocuments)
@@ -79,181 +111,344 @@ export default function TransactionDocumentsPage() {
     }
   }
 
-  // Handle document upload completion
-  const handleUploadComplete = (fileData: any) => {
-    // In a real implementation, this would come from the API response
-    const newDocument: DocumentFile = {
-      id: `doc${Date.now()}`,
-      ...fileData,
-    }
+  // Handle file upload completion
+  const handleFilesUploaded = (uploadedFiles: FileMetadata[]) => {
+    const newDocuments: DocumentFile[] = uploadedFiles.map(file => ({
+      id: `doc${Date.now()}-${Math.random()}`,
+      filename: file.name,
+      url: file.downloadURL || '',
+      contentType: file.contentType || '',
+      size: file.size,
+      uploadedAt: file.timeCreated,
+      uploadedBy: user?.uid || "unknown",
+      documentType: file.customMetadata?.category || 'OTHER',
+      status: 'pending',
+      fullPath: file.fullPath,
+      timeCreated: file.timeCreated
+    }))
 
-    setDocuments((prev) => [newDocument, ...prev])
+    setDocuments(prev => [...newDocuments, ...prev])
 
     toast({
-      title: "Document Uploaded",
-      description: `${fileData.filename} has been uploaded successfully and is pending review.`,
+      title: "Upload Complete",
+      description: `${newDocuments.length} document(s) uploaded successfully`,
     })
   }
 
-  // Handle document deletion
-  const handleDeleteDocument = async (docId: string) => {
+  // Handle document status change
+  const handleDocumentStatusChange = (docId: string, newStatus: 'approved' | 'rejected') => {
+    setDocuments(prev => 
+      prev.map(doc => 
+        doc.id === docId ? { ...doc, status: newStatus } : doc
+      )
+    )
+  }
+
+  // Handle bulk operations
+  const handleBulkAction = async (action: string, documentIds: string[]) => {
     try {
-      // This would be replaced with your actual API call
-      // For now, we'll just update the state
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      setDocuments((prev) => prev.filter((doc) => doc.id !== docId))
-
-      toast({
-        title: "Document Deleted",
-        description: "The document has been deleted successfully.",
-      })
+      switch (action) {
+        case 'approve':
+          setDocuments(prev => 
+            prev.map(doc => 
+              documentIds.includes(doc.id) ? { ...doc, status: 'approved' } : doc
+            )
+          )
+          break
+        case 'reject':
+          setDocuments(prev => 
+            prev.map(doc => 
+              documentIds.includes(doc.id) ? { ...doc, status: 'rejected' } : doc
+            )
+          )
+          break
+        case 'delete':
+          // Delete from Firebase Storage if fullPath exists
+          for (const docId of documentIds) {
+            const doc = documents.find(d => d.id === docId)
+            if (doc?.fullPath) {
+              await firebaseStorageService.deleteFile(doc.fullPath)
+            }
+          }
+          setDocuments(prev => prev.filter(doc => !documentIds.includes(doc.id)))
+          break
+        case 'download':
+          // Create a ZIP download for multiple files
+          const selectedDocs = documents.filter(doc => documentIds.includes(doc.id))
+          for (const doc of selectedDocs) {
+            window.open(doc.url, '_blank')
+          }
+          break
+        case 'archive':
+          // Implement archive functionality
+          console.log('Archive documents:', documentIds)
+          break
+      }
     } catch (error) {
-      console.error("Error deleting document:", error)
-      toast({
-        title: "Error",
-        description: "Failed to delete document. Please try again later.",
-        variant: "destructive",
-      })
+      throw error // Re-throw to be handled by the bulk operations component
     }
   }
 
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + " B"
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB"
-  }
-
-  // Get status badge color
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-            <CheckCircle className="h-3 w-3 mr-1" /> Approved
-          </Badge>
-        )
-      case "REJECTED":
-        return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
-            <AlertCircle className="h-3 w-3 mr-1" /> Rejected
-          </Badge>
-        )
-      case "PENDING":
-      default:
-        return (
-          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
-            <Clock className="h-3 w-3 mr-1" /> Pending
-          </Badge>
-        )
-    }
+  // Handle document preview
+  const handlePreviewDocument = (document: DocumentFile) => {
+    setPreviewDocument(document)
+    setShowPreview(true)
   }
 
   // Filter documents based on active tab
-  const filteredDocuments = documents.filter((doc) => {
-    if (activeTab === "all") return true
-    return doc.status === activeTab.toUpperCase()
-  })
+  const getFilteredDocuments = () => {
+    switch (activeTab) {
+      case 'pending':
+        return documents.filter(doc => doc.status === 'pending')
+      case 'approved':
+        return documents.filter(doc => doc.status === 'approved')
+      case 'rejected':
+        return documents.filter(doc => doc.status === 'rejected')
+      case 'manage':
+        return documents
+      default:
+        return documents
+    }
+  }
 
-  // Fetch documents on component mount
+  const getDocumentCounts = () => {
+    return {
+      total: documents.length,
+      pending: documents.filter(doc => doc.status === 'pending').length,
+      approved: documents.filter(doc => doc.status === 'approved').length,
+      rejected: documents.filter(doc => doc.status === 'rejected').length,
+    }
+  }
+
   useEffect(() => {
     fetchDocuments()
   }, [])
 
+  const counts = getDocumentCounts()
+  const filteredDocuments = getFilteredDocuments()
+
   return (
-    <div className="container px-4 md:px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Transaction Documents</h1>
-        <p className="text-muted-foreground">Upload and manage documents for transaction {dealId}</p>
+    <div className="container px-4 md:px-6 py-6 sm:py-10 max-w-7xl">
+      {/* Header - Mobile Responsive */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Transaction Documents</h1>
+            <p className="text-muted-foreground mt-1">
+              Upload and manage documents for transaction{" "}
+              <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                {dealId}
+              </span>
+            </p>
+          </div>
+          
+          {/* Quick Stats - Mobile Responsive */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="bg-white">
+              <FileText className="h-3 w-3 mr-1" />
+              {counts.total} Total
+            </Badge>
+            {counts.pending > 0 && (
+              <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                <Clock className="h-3 w-3 mr-1" />
+                {counts.pending} Pending
+              </Badge>
+            )}
+            {counts.approved > 0 && (
+              <Badge className="bg-green-100 text-green-800 border-green-200">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                {counts.approved} Approved
+              </Badge>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Document</CardTitle>
-              <CardDescription>Add required documents for this transaction</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FileUpload onUploadComplete={handleUploadComplete} dealId={dealId as string} userId={user?.uid} />
-            </CardContent>
-          </Card>
-        </div>
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-4">
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Upload</span>
+          </TabsTrigger>
+          <TabsTrigger value="manage" className="flex items-center gap-2">
+            <FolderOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">Manage</span>
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <span className="hidden sm:inline">Pending</span>
+            {counts.pending > 0 && (
+              <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                {counts.pending}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Approved</span>
+            {counts.approved > 0 && (
+              <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                {counts.approved}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Transaction Documents</CardTitle>
-              <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="approved">Approved</TabsTrigger>
-                  <TabsTrigger value="rejected">Rejected</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-700"></div>
-                </div>
-              ) : filteredDocuments.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No documents</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {activeTab === "all" ? "No documents have been uploaded yet." : `No ${activeTab} documents found.`}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredDocuments.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex items-center">
-                        <div className="bg-teal-100 p-2 rounded">
-                          <FileText className="h-6 w-6 text-teal-700" />
-                        </div>
-                        <div className="ml-4">
-                          <p className="font-medium">{doc.filename}</p>
-                          <div className="flex items-center text-sm text-gray-500 space-x-4">
-                            <span>{formatFileSize(doc.size)}</span>
-                            <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
-                            <span>{doc.documentType.replace("_", " ")}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusBadge(doc.status)}
-                        <div className="flex space-x-1">
-                          <Button variant="ghost" size="icon" title="View">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" title="Download">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Delete"
-                            onClick={() => handleDeleteDocument(doc.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
+        {/* Upload Tab */}
+        <TabsContent value="upload" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <FileUploadEnhanced
+                transactionId={dealId as string}
+                category="documents"
+                maxFiles={10}
+                maxFileSize={25}
+                onFilesUploaded={handleFilesUploaded}
+                title="Upload Transaction Documents"
+                description="Upload contracts, inspection reports, photos, and other transaction documents"
+                allowedTypes={[
+                  'application/pdf',
+                  'image/jpeg',
+                  'image/png',
+                  'image/gif',
+                  'application/msword',
+                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                  'application/zip',
+                  'text/plain'
+                ]}
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <Card className="bg-white shadow-soft border-0">
+                <CardHeader>
+                  <CardTitle className="text-lg">Document Requirements</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <span>Purchase Agreement</span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      <span>Property Inspection</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span>Title Certificate</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                      <span>Property Photos</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white shadow-soft border-0">
+                <CardHeader>
+                  <CardTitle className="text-lg">Quick Tips</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-gray-600 space-y-2">
+                  <p>• Upload high-quality scans or photos</p>
+                  <p>• Ensure all text is readable</p>
+                  <p>• PDF format recommended for documents</p>
+                  <p>• Maximum file size: 25MB</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Manage Tab */}
+        <TabsContent value="manage" className="space-y-6">
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-700"></div>
+            </div>
+          ) : (
+            <DocumentBulkOperations
+              documents={filteredDocuments}
+              selectedDocuments={selectedDocuments}
+              onSelectionChange={setSelectedDocuments}
+              onBulkAction={handleBulkAction}
+              onPreview={handlePreviewDocument}
+            />
+          )}
+        </TabsContent>
+
+        {/* Pending Tab */}
+        <TabsContent value="pending" className="space-y-6">
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-700"></div>
+            </div>
+          ) : filteredDocuments.length === 0 ? (
+            <Card className="bg-white shadow-soft border-0">
+              <CardContent className="text-center py-12">
+                <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Documents</h3>
+                <p className="text-gray-500">All documents have been reviewed.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <DocumentBulkOperations
+              documents={filteredDocuments}
+              selectedDocuments={selectedDocuments}
+              onSelectionChange={setSelectedDocuments}
+              onBulkAction={handleBulkAction}
+              onPreview={handlePreviewDocument}
+            />
+          )}
+        </TabsContent>
+
+        {/* Approved Tab */}
+        <TabsContent value="approved" className="space-y-6">
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-700"></div>
+            </div>
+          ) : filteredDocuments.length === 0 ? (
+            <Card className="bg-white shadow-soft border-0">
+              <CardContent className="text-center py-12">
+                <CheckCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Approved Documents</h3>
+                <p className="text-gray-500">Documents will appear here once approved.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <DocumentBulkOperations
+              documents={filteredDocuments}
+              selectedDocuments={selectedDocuments}
+              onSelectionChange={setSelectedDocuments}
+              onBulkAction={handleBulkAction}
+              onPreview={handlePreviewDocument}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Document Preview Modal */}
+      {previewDocument && (
+        <DocumentPreviewModal
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          document={{
+            id: previewDocument.id,
+            name: previewDocument.filename,
+            url: previewDocument.url,
+            type: previewDocument.contentType,
+            size: previewDocument.size,
+            uploadDate: previewDocument.uploadedAt,
+            status: previewDocument.status,
+            documentType: previewDocument.documentType,
+            pages: previewDocument.pages
+          }}
+          onStatusChange={handleDocumentStatusChange}
+        />
+      )}
     </div>
   )
 }

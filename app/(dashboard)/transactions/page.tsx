@@ -1,16 +1,42 @@
 "use client"
 
-import { useState } from "react"
-
+import { useState, useEffect, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, SlidersHorizontal, PlusCircle } from "lucide-react"
+import { Skeleton } from "@/components/ui/design-system"
+import ErrorBoundary from "@/components/ui/error-boundary"
 import Link from "next/link"
-import TransactionCard from "@/components/transaction-card"
 import { useTransaction } from "@/context/transaction-context"
-import { useEffect } from "react"
+import { createDynamicComponent } from "@/utils/dynamic-imports"
+
+// Dynamically imported components for better code splitting
+const TransactionCard = createDynamicComponent(
+  () => import("@/components/transaction-card"),
+  { 
+    loading: () => <Skeleton.Card />,
+    ssr: true 
+  }
+)
+
+const TransactionFilters = createDynamicComponent(
+  () => import("@/components/transactions/transaction-filters"),
+  { 
+    loading: () => <Skeleton.Form />,
+    ssr: false 
+  }
+)
+
+// Transaction list loading component
+const TransactionListSkeleton = () => (
+  <div className="grid gap-4">
+    {[1, 2, 3, 4, 5].map((i) => (
+      <Skeleton.Card key={i} />
+    ))}
+  </div>
+)
 
 export default function TransactionsPage() {
   const { transactions, fetchTransactions, loading } = useTransaction()
@@ -26,15 +52,23 @@ export default function TransactionsPage() {
   // Filter and sort transactions
   const filteredTransactions = transactions
     .filter((transaction) => {
-      const matchesSearch =
-        transaction.propertyAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        transaction.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        transaction.counterparty.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "all" || transaction.status === statusFilter
-      return matchesSearch && matchesStatus
+      if (!transaction) return false;
+      
+      const matchesSearch = searchQuery ? 
+        (transaction.propertyAddress?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+         transaction.id?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+         transaction.counterparty?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+         false) : true;
+      
+      const matchesStatus = statusFilter === "all" || transaction.status === statusFilter;
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      const getTime = (date: string) => new Date(date).getTime()
+      const getTime = (date: string | undefined) => {
+        if (!date) return 0;
+        const time = new Date(date).getTime();
+        return isNaN(time) ? 0 : time;
+      }
 
       switch (sortOrder) {
         case "newest":
@@ -43,12 +77,12 @@ export default function TransactionsPage() {
           return getTime(a.date) - getTime(b.date)
         case "amount_high":
           // Extract numeric value from amount string (e.g., "2.5 ETH" -> 2.5)
-          const aAmount = Number.parseFloat(a.amount.split(" ")[0]) || 0
-          const bAmount = Number.parseFloat(b.amount.split(" ")[0]) || 0
+          const aAmount = Number.parseFloat(a.amount?.split(" ")[0]) || 0
+          const bAmount = Number.parseFloat(b.amount?.split(" ")[0]) || 0
           return bAmount - aAmount
         case "amount_low":
-          const aAmt = Number.parseFloat(a.amount.split(" ")[0]) || 0
-          const bAmt = Number.parseFloat(b.amount.split(" ")[0]) || 0
+          const aAmt = Number.parseFloat(a.amount?.split(" ")[0]) || 0
+          const bAmt = Number.parseFloat(b.amount?.split(" ")[0]) || 0
           return aAmt - bAmt
         default:
           return 0

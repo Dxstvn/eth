@@ -11,6 +11,7 @@ export class WalletApiService {
    * Get authorization headers with Firebase ID token
    */
   private async getAuthHeaders(): Promise<HeadersInit> {
+
     try {
       // Try to get Firebase user and token
       const { getAuth } = await import('firebase/auth')

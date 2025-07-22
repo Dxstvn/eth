@@ -21,8 +21,8 @@ export default function TransactionDetailPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { user } = useAuth()
-  const { fetchTransactionById, updateCondition, loading } = useTransaction()
-  const [transaction, setTransaction] = useState<any>(null)
+  const { fetchTransaction, currentTransaction, updateConditionStatus, loading } = useTransaction()
+  const transaction = currentTransaction
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [currentDocument, setCurrentDocument] = useState<any>(null)
@@ -36,19 +36,9 @@ export default function TransactionDetailPage() {
     const loadTransaction = async () => {
       if (id && typeof id === "string") {
         try {
-          const data = await fetchTransactionById(id)
-          setTransaction(data)
+          await fetchTransaction(id)
 
-          // Update required documents based on transaction conditions
-          if (data.conditions && Array.isArray(data.conditions)) {
-            const docs = data.conditions.map((condition: any) => ({
-              id: condition.id,
-              name: condition.description || condition.type,
-              type: condition.type,
-              uploaded: condition.status === "FULFILLED_BY_BUYER",
-            }))
-            setRequiredDocuments(docs)
-          }
+          // Note: transaction will be updated via currentTransaction from context
         } catch (error) {
           console.error("Error loading transaction:", error)
         }
@@ -56,7 +46,20 @@ export default function TransactionDetailPage() {
     }
 
     loadTransaction()
-  }, [id, fetchTransactionById])
+  }, [id, fetchTransaction])
+
+  // Update required documents when transaction data changes
+  useEffect(() => {
+    if (transaction?.conditions && Array.isArray(transaction.conditions)) {
+      const docs = transaction.conditions.map((condition: any) => ({
+        id: condition.id,
+        name: condition.description || condition.type,
+        type: condition.type,
+        uploaded: condition.status === "FULFILLED_BY_BUYER",
+      }))
+      setRequiredDocuments(docs)
+    }
+  }, [transaction])
 
   // Determine if the current user is the buyer or seller
   const isBuyer = transaction?.initiatedBy === "SELLER" || transaction?.buyerId === user?.uid
@@ -70,15 +73,13 @@ export default function TransactionDetailPage() {
 
   const handleBuyerReviewComplete = async () => {
     if (id && typeof id === "string") {
-      const data = await fetchTransactionById(id)
-      setTransaction(data)
+      await fetchTransaction(id)
     }
   }
 
   const handleSellerConfirmationComplete = async () => {
     if (id && typeof id === "string") {
-      const data = await fetchTransactionById(id)
-      setTransaction(data)
+      await fetchTransaction(id)
     }
   }
 
@@ -87,7 +88,8 @@ export default function TransactionDetailPage() {
 
     try {
       const status = fulfilled ? "FULFILLED_BY_BUYER" : "PENDING_BUYER_ACTION"
-      await updateCondition(id.toString(), conditionId, status)
+      const comment = fulfilled ? "Condition fulfilled by buyer" : "Condition marked as pending"
+      await updateConditionStatus(id.toString(), conditionId, status, comment)
 
       // Update local state
       setRequiredDocuments((prev) =>
@@ -267,7 +269,9 @@ export default function TransactionDetailPage() {
           <CardContent>
             <div className="flex items-center">
               <Calendar className="h-5 w-5 text-teal-700 mr-2" />
-              <span className="text-lg font-medium">{new Date(transaction.createdAt).toLocaleDateString()}</span>
+              <span className="text-lg font-medium">
+                {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString() : 'N/A'}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -285,7 +289,7 @@ export default function TransactionDetailPage() {
                 <TransactionTimeline
                   events={transaction.timeline.map((event: any) => ({
                     id: event.id || `event-${event.timestamp}`,
-                    date: new Date(event.timestamp).toISOString().split("T")[0],
+                    date: event.timestamp ? new Date(event.timestamp).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
                     event: event.event,
                     status: event.status || "completed",
                   }))}

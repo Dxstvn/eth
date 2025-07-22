@@ -120,6 +120,9 @@ const config = {
         shimmer: "shimmer 2s infinite",
         "slide-in-right": "slideInRight 0.5s ease-out forwards",
       },
+      scale: {
+        '98': '0.98',
+      },
       fontFamily: {
         sans: ["var(--font-open-sans)", "system-ui", "sans-serif"],
         display: ["var(--font-montserrat)", "system-ui", "sans-serif"],

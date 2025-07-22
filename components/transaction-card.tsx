@@ -92,7 +92,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   const isBuyer = transaction.initiatedBy === "buyer" || !transaction.initiatedBy
 
   return (
-    <div className="glass-card p-5 rounded-xl hover:shadow-md transition-all duration-300">
+    <div className="bg-white p-5 rounded-xl shadow-soft border-0 hover:shadow-md transition-all duration-300">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">

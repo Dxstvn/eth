@@ -14,7 +14,11 @@
     "test:integration:firebase": "FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 FIRESTORE_EMULATOR_HOST=localhost:8080 jest --testMatch='**/__tests__/integration/auth-firebase-emulator.test.tsx'",
     "test:integration:context": "jest --testMatch='**/__tests__/integration/auth-backend-integration.test.tsx'",
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
-    "test:emulated": "FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 FIRESTORE_EMULATOR_HOST=localhost:8080 npm run test:integration:firebase"
+    "test:emulated": "FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 FIRESTORE_EMULATOR_HOST=localhost:8080 npm run test:integration:firebase",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "latest",
@@ -80,6 +84,7 @@
     "zustand": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22",

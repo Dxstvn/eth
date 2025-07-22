@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -238,7 +238,7 @@ export default function LoginPage() {
               Continue with Google
             </Button>
           </CardContent>
-          <CardFooter className="flex justify-center pb-6">
+          <CardFooter className="flex flex-col items-center pb-6 space-y-4">
             <p className="text-sm text-neutral-600">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <Button
@@ -249,6 +249,7 @@ export default function LoginPage() {
                 {isLogin ? "Sign up" : "Sign in"}
               </Button>
             </p>
+
           </CardFooter>
         </Card>
 

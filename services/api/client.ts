@@ -79,9 +79,29 @@ export class ApiClient {
 
     if (!token) return null;
 
+    // Validate token format (should be JWT with 3 parts)
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      console.warn('Invalid token format, removing from localStorage');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('clearhold_auth_token');
+      }
+      return null;
+    }
+
     // Check if token is expired
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const payload = JSON.parse(atob(tokenParts[1]));
+      
+      // Validate payload has exp field
+      if (!payload.exp || typeof payload.exp !== 'number') {
+        console.warn('Invalid token payload, removing from localStorage');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('clearhold_auth_token');
+        }
+        return null;
+      }
+
       const expirationTime = payload.exp * 1000;
 
       // If token expires in less than 5 minutes, try to refresh
@@ -95,6 +115,10 @@ export class ApiClient {
       return token;
     } catch (error) {
       console.error('Error parsing token:', error);
+      // Remove invalid token from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('clearhold_auth_token');
+      }
       return null;
     }
   }
@@ -155,7 +179,22 @@ export class ApiClient {
 
           // Make the request
           const url = `${this.config.baseUrl}${endpoint}`;
-          let response = await fetch(url, config);
+          let response: Response;
+          
+          try {
+            response = await fetch(url, config);
+          } catch (fetchError: any) {
+            // Handle network errors (CORS, connection refused, etc.)
+            if (fetchError.name === 'TypeError' && fetchError.message === 'Failed to fetch') {
+              throw new ApiException(
+                'NETWORK_ERROR',
+                0,
+                'Network error: Unable to connect to the server. Please check your internet connection.',
+                fetchError
+              );
+            }
+            throw fetchError;
+          }
 
           // Apply response interceptors
           response = await this.interceptors.applyResponseInterceptors(response);

@@ -449,7 +449,7 @@ export const useDatabaseStore = create<DatabaseState>()(
           if (typeof window !== "undefined") {
             // Try to get the current user email from localStorage
             const userEmail = localStorage.getItem("current-user-email")
-            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+            isDemoAccount = userEmail === "jasmindustin@gmail.com" || userEmail === "dev@clearhold.local"
           }
         } catch (e) {
           console.error("Error checking user type:", e)
@@ -501,7 +501,7 @@ export const useDatabaseStore = create<DatabaseState>()(
         try {
           if (typeof window !== "undefined") {
             const userEmail = localStorage.getItem("current-user-email")
-            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+            isDemoAccount = userEmail === "jasmindustin@gmail.com" || userEmail === "dev@clearhold.local"
           }
         } catch (e) {
           console.error("Error checking user type:", e)
@@ -551,7 +551,7 @@ export const useDatabaseStore = create<DatabaseState>()(
         try {
           if (typeof window !== "undefined") {
             const userEmail = localStorage.getItem("current-user-email")
-            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+            isDemoAccount = userEmail === "jasmindustin@gmail.com" || userEmail === "dev@clearhold.local"
           }
         } catch (e) {
           console.error("Error checking user type:", e)
@@ -600,7 +600,7 @@ export const useDatabaseStore = create<DatabaseState>()(
         try {
           if (typeof window !== "undefined") {
             const userEmail = localStorage.getItem("current-user-email")
-            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+            isDemoAccount = userEmail === "jasmindustin@gmail.com" || userEmail === "dev@clearhold.local"
           }
         } catch (e) {
           console.error("Error checking user type:", e)
@@ -624,7 +624,7 @@ export const useDatabaseStore = create<DatabaseState>()(
         try {
           if (typeof window !== "undefined") {
             const userEmail = localStorage.getItem("current-user-email")
-            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+            isDemoAccount = userEmail === "jasmindustin@gmail.com" || userEmail === "dev@clearhold.local"
           }
         } catch (e) {
           console.error("Error checking user type:", e)
@@ -648,7 +648,7 @@ export const useDatabaseStore = create<DatabaseState>()(
         try {
           if (typeof window !== "undefined") {
             const userEmail = localStorage.getItem("current-user-email")
-            isDemoAccount = userEmail === "jasmindustin@gmail.com"
+            isDemoAccount = userEmail === "jasmindustin@gmail.com" || userEmail === "dev@clearhold.local"
           }
         } catch (e) {
           console.error("Error checking user type:", e)

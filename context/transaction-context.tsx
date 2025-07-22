@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState } from "react"
-import { useToast } from "@/components/ui/toast-provider"
+import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/context/auth-context-v2"
 import * as transactionApi from "@/services/transaction-api"
 
@@ -29,21 +29,36 @@ type TransactionContextType = {
   ) => Promise<void>
   startFinalApproval: (transactionId: string, finalApprovalDeadline: string) => Promise<void>
   raiseDispute: (transactionId: string, disputeResolutionDeadline: string, conditionId?: string) => Promise<void>
+  getContractDeploymentStatus: (transactionId: string) => Promise<any>
+  deployContract: (transactionId: string, contractParams: any) => Promise<void>
+  getContractEvents: (transactionId: string) => Promise<any[]>
 }
 
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined)
 
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
-  const { addToast } = useToast() // Use addToast directly from the context
+  const { user, authToken } = useAuth()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [transactions, setTransactions] = useState<any[]>([])
   const [currentTransaction, setCurrentTransaction] = useState<any | null>(null)
+  const [lastFetchAttempt, setLastFetchAttempt] = useState<number>(0)
 
   const fetchTransactions = async () => {
-    if (!user) {
+    // Prevent rapid successive calls (debounce 2 seconds)
+    const now = Date.now()
+    if (now - lastFetchAttempt < 2000) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Skipping fetchTransactions - too recent')
+      }
+      return
+    }
+    setLastFetchAttempt(now)
+
+    if (!user || !authToken) {
       setError("User not authenticated")
+      setTransactions([])
       return
     }
 
@@ -51,12 +66,18 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     setError(null)
 
     try {
-      const token = await user.getIdToken()
-      const data = await transactionApi.getTransactions(token)
-      setTransactions(data)
+      const data = await transactionApi.getTransactions(authToken)
+      setTransactions(Array.isArray(data) ? data : [])
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Transactions fetched successfully:', data?.length || 0, 'transactions')
+      }
     } catch (err: any) {
+      console.error('Transaction fetch error:', err)
       setError(err.message || "Failed to fetch transactions")
-      addToast({
+      setTransactions([])
+      
+      toast({
         title: "Error",
         description: err.message || "Failed to fetch transactions",
         variant: "destructive",
@@ -67,7 +88,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   }
 
   const fetchTransaction = async (id: string) => {
-    if (!user) {
+    if (!user || !authToken) {
       setError("User not authenticated")
       return
     }
@@ -76,12 +97,11 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     setError(null)
 
     try {
-      const token = await user.getIdToken()
-      const data = await transactionApi.getTransaction(id, token)
+      const data = await transactionApi.getTransaction(id, authToken)
       setCurrentTransaction(data)
     } catch (err: any) {
       setError(err.message || "Failed to fetch transaction")
-      addToast({
+      toast({
         title: "Error",
         description: err.message || "Failed to fetch transaction",
         variant: "destructive",
@@ -92,7 +112,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   }
 
   const createTransaction = async (data: any) => {
-    if (!user) {
+    if (!user || !authToken) {
       setError("User not authenticated")
       throw new Error("User not authenticated")
     }
@@ -101,13 +121,12 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     setError(null)
 
     try {
-      const token = await user.getIdToken()
-      const result = await transactionApi.createTransaction(data, token)
+      const result = await transactionApi.createTransaction(data, authToken)
 
       // Update transactions list
       await fetchTransactions()
 
-      addToast({
+      toast({
         title: "Success",
         description: "Transaction created successfully",
       })
@@ -115,7 +134,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
       return result
     } catch (err: any) {
       setError(err.message || "Failed to create transaction")
-      addToast({
+      toast({
         title: "Error",
         description: err.message || "Failed to create transaction",
         variant: "destructive",
@@ -132,7 +151,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     newStatus: string,
     comment: string,
   ) => {
-    if (!user) {
+    if (!user || !authToken) {
       setError("User not authenticated")
       return
     }
@@ -141,19 +160,18 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     setError(null)
 
     try {
-      const token = await user.getIdToken()
-      await transactionApi.updateConditionStatus(transactionId, conditionId, newStatus, comment, token)
+      await transactionApi.updateConditionStatus(transactionId, conditionId, newStatus, comment, authToken)
 
       // Refresh the current transaction
       await fetchTransaction(transactionId)
 
-      addToast({
+      toast({
         title: "Success",
         description: "Condition status updated successfully",
       })
     } catch (err: any) {
       setError(err.message || "Failed to update condition status")
-      addToast({
+      toast({
         title: "Error",
         description: err.message || "Failed to update condition status",
         variant: "destructive",
@@ -192,13 +210,13 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
       // Refresh the current transaction
       await fetchTransaction(transactionId)
 
-      addToast({
+      toast({
         title: "Success",
         description: "Transaction status synced successfully",
       })
     } catch (err: any) {
       setError(err.message || "Failed to sync transaction status")
-      addToast({
+      toast({
         title: "Error",
         description: err.message || "Failed to sync transaction status",
         variant: "destructive",
@@ -209,7 +227,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   }
 
   const startFinalApproval = async (transactionId: string, finalApprovalDeadline: string) => {
-    if (!user) {
+    if (!user || !authToken) {
       setError("User not authenticated")
       return
     }
@@ -218,19 +236,18 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     setError(null)
 
     try {
-      const token = await user.getIdToken()
-      await transactionApi.startFinalApproval(transactionId, finalApprovalDeadline, token)
+      await transactionApi.startFinalApproval(transactionId, finalApprovalDeadline, authToken)
 
       // Refresh the current transaction
       await fetchTransaction(transactionId)
 
-      addToast({
+      toast({
         title: "Success",
         description: "Final approval period started successfully",
       })
     } catch (err: any) {
       setError(err.message || "Failed to start final approval period")
-      addToast({
+      toast({
         title: "Error",
         description: err.message || "Failed to start final approval period",
         variant: "destructive",
@@ -241,7 +258,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
   }
 
   const raiseDispute = async (transactionId: string, disputeResolutionDeadline: string, conditionId?: string) => {
-    if (!user) {
+    if (!user || !authToken) {
       setError("User not authenticated")
       return
     }
@@ -250,25 +267,72 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     setError(null)
 
     try {
-      const token = await user.getIdToken()
-      await transactionApi.raiseDispute(transactionId, disputeResolutionDeadline, token, conditionId)
+      await transactionApi.raiseDispute(transactionId, disputeResolutionDeadline, authToken, conditionId)
 
       // Refresh the current transaction
       await fetchTransaction(transactionId)
 
-      addToast({
+      toast({
         title: "Success",
         description: "Dispute raised successfully",
       })
     } catch (err: any) {
       setError(err.message || "Failed to raise dispute")
-      addToast({
+      toast({
         title: "Error",
         description: err.message || "Failed to raise dispute",
         variant: "destructive",
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const getContractDeploymentStatus = async (transactionId: string) => {
+    if (!user || !authToken) {
+      throw new Error("User not authenticated")
+    }
+
+    try {
+      return await transactionApi.getContractDeploymentStatus(transactionId, authToken)
+    } catch (err: any) {
+      console.error("Failed to get contract deployment status:", err)
+      throw err
+    }
+  }
+
+  const deployContract = async (transactionId: string, contractParams: any) => {
+    if (!user || !authToken) {
+      throw new Error("User not authenticated")
+    }
+
+    try {
+      await transactionApi.deployContract(transactionId, contractParams, authToken)
+      toast({
+        title: "Success",
+        description: "Contract deployment initiated",
+      })
+    } catch (err: any) {
+      console.error("Failed to deploy contract:", err)
+      toast({
+        title: "Error",
+        description: err.message || "Failed to deploy contract",
+        variant: "destructive",
+      })
+      throw err
+    }
+  }
+
+  const getContractEvents = async (transactionId: string) => {
+    if (!user || !authToken) {
+      throw new Error("User not authenticated")
+    }
+
+    try {
+      return await transactionApi.getContractEvents(transactionId, authToken)
+    } catch (err: any) {
+      console.error("Failed to get contract events:", err)
+      throw err
     }
   }
 
@@ -286,6 +350,9 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
         syncTransactionStatus,
         startFinalApproval,
         raiseDispute,
+        getContractDeploymentStatus,
+        deployContract,
+        getContractEvents,
       }}
     >
       {children}

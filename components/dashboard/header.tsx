@@ -13,6 +13,7 @@ import {
 import Link from "next/link"
 import { useSidebar } from "@/context/sidebar-context"
 import { useMobile } from "@/hooks/use-mobile"
+import ConnectionStatusIndicator from "@/components/connection-status-indicator"
 
 interface HeaderProps {
   sidebarOpen: boolean
@@ -61,7 +62,8 @@ export default function DashboardHeader({ sidebarOpen, setSidebarOpen }: HeaderP
 
       <div className="flex-1" />
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <ConnectionStatusIndicator />
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

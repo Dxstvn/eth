@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(authState.profile);
           setAuthToken(authState.token);
           setIsAdmin(authState.profile.isAdmin || false);
-          setIsDemoAccount(authState.profile.email === "jasmindustin@gmail.com");
+          setIsDemoAccount(authState.profile.email === "jasmindustin@gmail.com" || authState.profile.email === "dev@clearhold.local");
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(profile);
         setAuthToken(authService.getStoredToken());
         setIsAdmin(profile.isAdmin || false);
-        setIsDemoAccount(profile.email === "jasmindustin@gmail.com");
+        setIsDemoAccount(profile.email === "jasmindustin@gmail.com" || profile.email === "dev@clearhold.local");
       }
 
       toast.success("Successfully signed in!");
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(profile);
         setAuthToken(authService.getStoredToken());
         setIsAdmin(profile.isAdmin || false);
-        setIsDemoAccount(profile.email === "jasmindustin@gmail.com");
+        setIsDemoAccount(profile.email === "jasmindustin@gmail.com" || profile.email === "dev@clearhold.local");
       }
 
       toast.success("Successfully signed in!");
@@ -228,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Check for demo account status
       if (updatedProfile.email) {
-        setIsDemoAccount(updatedProfile.email === "jasmindustin@gmail.com");
+        setIsDemoAccount(updatedProfile.email === "jasmindustin@gmail.com" || updatedProfile.email === "dev@clearhold.local");
       }
       
       toast.success("Profile updated successfully");
@@ -281,7 +281,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await authService.getUserProfile();
       setUser(profile);
       setIsAdmin(profile.isAdmin || false);
-      setIsDemoAccount(profile.email === "jasmindustin@gmail.com");
+      setIsDemoAccount(profile.email === "jasmindustin@gmail.com" || profile.email === "dev@clearhold.local");
     } catch (error: any) {
       console.error("Profile refresh error:", error);
       // Don't throw here, just log the error
@@ -304,7 +304,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const profile = JSON.parse(e.newValue);
           setUser(profile);
           setIsAdmin(profile.isAdmin || false);
-          setIsDemoAccount(profile.email === "jasmindustin@gmail.com");
+          setIsDemoAccount(profile.email === "jasmindustin@gmail.com" || profile.email === "dev@clearhold.local");
         } catch {}
       }
     };

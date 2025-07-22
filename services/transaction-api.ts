@@ -1,65 +1,72 @@
-// API base URL for the deployed backend
-const API_URL = "http://44.202.141.56:3000"
+import { apiClient } from '@/services/api/client'
+
+// Use centralized API client instead of hardcoded URL
 
 /**
  * Creates a new transaction/escrow deal
  */
 export async function createTransaction(data: any, token: string) {
-  const response = await fetch(`${API_URL}/deals/create`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.error || "Failed to create transaction")
+  try {
+    const response = await apiClient.post('/deals/create', data, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to create transaction:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to create transaction')
   }
-
-  return response.json()
 }
 
 /**
  * Gets all transactions for the current user
  */
 export async function getTransactions(token: string) {
-  const response = await fetch(`${API_URL}/deals`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  })
+  try {
+    // Check if token exists
+    if (!token) {
+      throw new Error('No authentication token provided')
+    }
 
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.error || "Failed to fetch transactions")
+    const response = await apiClient.get('/deals', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    
+    // Return empty array if no data
+    return response.data || []
+  } catch (error: any) {
+    console.error('Failed to fetch transactions:', error)
+    
+    // Provide more specific error messages
+    if (error.status === 401 || error.message?.includes('401')) {
+      throw new Error('Authentication failed. Please sign in again.')
+    }
+    if (error.status === 403) {
+      throw new Error('Access denied. Insufficient permissions.')
+    }
+    if (error.status === 404) {
+      throw new Error('Transactions endpoint not found.')
+    }
+    if (error.status >= 500) {
+      throw new Error('Server error. Please try again later.')
+    }
+    
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch transactions')
   }
-
-  return response.json()
 }
 
 /**
  * Gets a specific transaction by ID
  */
 export async function getTransaction(id: string, token: string) {
-  const response = await fetch(`${API_URL}/deals/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.error || "Failed to fetch transaction")
+  try {
+    const response = await apiClient.get(`/deals/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to fetch transaction:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to fetch transaction')
   }
-
-  return response.json()
 }
 
 /**
@@ -72,24 +79,22 @@ export async function updateConditionStatus(
   comment: string,
   token: string,
 ) {
-  const response = await fetch(`${API_URL}/deals/${transactionId}/conditions/${conditionId}/buyer-review`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      newBackendStatus: newStatus,
-      reviewComment: comment,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.error || "Failed to update condition status")
+  try {
+    const response = await apiClient.put(
+      `/deals/${transactionId}/conditions/${conditionId}/buyer-review`,
+      {
+        newBackendStatus: newStatus,
+        reviewComment: comment,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.error('Failed to update condition status:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to update condition status')
   }
-
-  return response.json()
 }
 
 /**
@@ -103,57 +108,45 @@ export async function syncTransactionStatus(
   finalApprovalDeadline?: string,
   disputeResolutionDeadline?: string,
 ) {
-  const body: any = {
-    newSCStatus: newStatus,
-    eventMessage,
+  try {
+    const body: any = {
+      newSCStatus: newStatus,
+      eventMessage,
+    }
+
+    if (finalApprovalDeadline) {
+      body.finalApprovalDeadlineISO = finalApprovalDeadline
+    }
+
+    if (disputeResolutionDeadline) {
+      body.disputeResolutionDeadlineISO = disputeResolutionDeadline
+    }
+
+    const response = await apiClient.put(`/deals/${transactionId}/sync-status`, body, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to sync transaction status:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to sync transaction status')
   }
-
-  if (finalApprovalDeadline) {
-    body.finalApprovalDeadlineISO = finalApprovalDeadline
-  }
-
-  if (disputeResolutionDeadline) {
-    body.disputeResolutionDeadlineISO = disputeResolutionDeadline
-  }
-
-  const response = await fetch(`${API_URL}/deals/${transactionId}/sync-status`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.error || "Failed to sync transaction status")
-  }
-
-  return response.json()
 }
 
 /**
  * Starts the final approval period for a transaction
  */
 export async function startFinalApproval(transactionId: string, finalApprovalDeadline: string, token: string) {
-  const response = await fetch(`${API_URL}/deals/${transactionId}/sc/start-final-approval`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
+  try {
+    const response = await apiClient.post(`/deals/${transactionId}/sc/start-final-approval`, {
       finalApprovalDeadlineISO: finalApprovalDeadline,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.error || "Failed to start final approval period")
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to start final approval period:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to start final approval period')
   }
-
-  return response.json()
 }
 
 /**
@@ -165,27 +158,120 @@ export async function raiseDispute(
   token: string,
   conditionId?: string,
 ) {
-  const body: any = {
-    disputeResolutionDeadlineISO: disputeResolutionDeadline,
+  try {
+    const body: any = {
+      disputeResolutionDeadlineISO: disputeResolutionDeadline,
+    }
+
+    if (conditionId) {
+      body.conditionId = conditionId
+    }
+
+    const response = await apiClient.post(`/deals/${transactionId}/sc/raise-dispute`, body, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to raise dispute:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to raise dispute')
   }
+}
 
-  if (conditionId) {
-    body.conditionId = conditionId
+/**
+ * Resolves a dispute for a transaction
+ */
+export async function resolveDispute(
+  transactionId: string,
+  resolution: 'approve' | 'deny',
+  token: string,
+  comment?: string,
+) {
+  try {
+    const response = await apiClient.post(`/deals/${transactionId}/sc/resolve-dispute`, {
+      resolution,
+      comment,
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to resolve dispute:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to resolve dispute')
   }
+}
 
-  const response = await fetch(`${API_URL}/deals/${transactionId}/sc/raise-dispute`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    throw new Error(errorData.error || "Failed to raise dispute")
+/**
+ * Releases escrow funds for a transaction
+ */
+export async function releaseEscrow(
+  transactionId: string,
+  token: string,
+) {
+  try {
+    const response = await apiClient.post(`/deals/${transactionId}/sc/release-escrow`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to release escrow:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to release escrow')
   }
+}
 
-  return response.json()
+/**
+ * Gets contract deployment status for a transaction
+ */
+export async function getContractDeploymentStatus(
+  transactionId: string,
+  token: string,
+) {
+  try {
+    const response = await apiClient.get(`/deals/${transactionId}/contract/status`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to get contract deployment status:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to get contract deployment status')
+  }
+}
+
+/**
+ * Deploys smart contract for a transaction
+ */
+export async function deployContract(
+  transactionId: string,
+  contractParams: any,
+  token: string,
+) {
+  try {
+    const response = await apiClient.post(`/deals/${transactionId}/contract/deploy`, contractParams, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to deploy contract:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to deploy contract')
+  }
+}
+
+/**
+ * Gets contract events for a transaction
+ */
+export async function getContractEvents(
+  transactionId: string,
+  token: string,
+  eventType?: string,
+) {
+  try {
+    const params = eventType ? { eventType } : {}
+    const response = await apiClient.get(`/deals/${transactionId}/contract/events`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Failed to get contract events:', error)
+    throw new Error(error instanceof Error ? error.message : 'Failed to get contract events')
+  }
 }

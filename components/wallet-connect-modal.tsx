@@ -229,7 +229,7 @@ export default function WalletConnectModal({ open, onOpenChange }: WalletConnect
                     <h4 className="font-medium text-teal-900 mb-3">Available Wallets</h4>
                     <div className="grid gap-3">
                       {evmProviders.map((provider) => (
-                        <Card key={provider.name} className="hover:shadow-md transition-shadow cursor-pointer">
+                        <Card key={provider.uuid || provider.rdns || provider.name} className="hover:shadow-md transition-shadow cursor-pointer">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
@@ -292,8 +292,8 @@ export default function WalletConnectModal({ open, onOpenChange }: WalletConnect
           <TabsContent value="solana" className="space-y-4">
             {solanaWallets.length > 0 ? (
               <div className="grid gap-3">
-                {solanaWallets.map((wallet) => (
-                  <Card key={wallet.adapter.name} className="hover:shadow-md transition-shadow cursor-pointer">
+                {solanaWallets.map((wallet, index) => (
+                  <Card key={wallet.adapter.name || `solana-${index}`} className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -351,8 +351,8 @@ export default function WalletConnectModal({ open, onOpenChange }: WalletConnect
           <TabsContent value="bitcoin" className="space-y-4">
             {bitcoinWallets.length > 0 ? (
               <div className="grid gap-3">
-                {bitcoinWallets.map((wallet) => (
-                  <Card key={wallet.name} className="hover:shadow-md transition-shadow cursor-pointer">
+                {bitcoinWallets.map((wallet, index) => (
+                  <Card key={wallet.name || `bitcoin-${index}`} className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">

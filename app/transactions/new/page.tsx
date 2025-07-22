@@ -20,30 +20,11 @@ import { CompactInfo } from "@/components/compact-info"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context-v2"
 import { useTransaction } from "@/context/transaction-context"
+import { ContactProvider } from "@/context/contact-context"
+import ContactSelector from "@/components/contact-selector"
+import { Contact } from "@/services/contacts-api"
 
-// Mock contacts data
-const mockContacts = [
-  {
-    id: "C123456",
-    name: "John Smith",
-    email: "john.smith@example.com",
-    wallet: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-  },
-  {
-    id: "C789012",
-    name: "Sarah Johnson",
-    email: "sarah.johnson@example.com",
-    wallet: "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF",
-  },
-  {
-    id: "C345678",
-    name: "Michael Chen",
-    email: "michael.chen@example.com",
-    wallet: "0x6813Eb9362372EEF6200f3b1dbC3f819671cBA69",
-  },
-]
-
-export default function NewTransactionPage() {
+function NewTransactionPageContent() {
   const { isConnected, connectWallet, isConnecting, error: walletError } = useWallet()
   const { user } = useAuth()
   const { addToast } = useToast()
@@ -64,10 +45,7 @@ export default function NewTransactionPage() {
   const [transactionType, setTransactionType] = useState("purchase")
 
   // Counterparty information
-  const [selectedContact, setSelectedContact] = useState("")
-  const [counterpartyName, setCounterpartyName] = useState("")
-  const [counterpartyEmail, setCounterpartyEmail] = useState("")
-  const [counterpartyWallet, setCounterpartyWallet] = useState("")
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
 
   const [currency, setCurrency] = useState("eth")
   const [amount, setAmount] = useState("")
@@ -95,17 +73,8 @@ export default function NewTransactionPage() {
   const grandTotal = totalAmount + totalFees
 
   // Handle contact selection
-  const handleContactSelect = (contactId: string) => {
-    setSelectedContact(contactId)
-
-    if (contactId) {
-      const contact = mockContacts.find((c) => c.id === contactId)
-      if (contact) {
-        setCounterpartyName(contact.name)
-        setCounterpartyEmail(contact.email)
-        setCounterpartyWallet(contact.wallet)
-      }
-    }
+  const handleContactSelect = (contact: Contact | null) => {
+    setSelectedContact(contact)
   }
 
   const validateStep = (stepNumber: number): boolean => {
@@ -198,9 +167,9 @@ export default function NewTransactionPage() {
         propertyAddress,
         amount: Number.parseFloat(amount),
         currency: currency.toUpperCase(),
-        otherPartyEmail: counterpartyEmail,
-        buyerWalletAddress: transactionType === "purchase" ? user?.walletAddress : counterpartyWallet,
-        sellerWalletAddress: transactionType === "purchase" ? counterpartyWallet : user?.walletAddress,
+        otherPartyEmail: selectedContact?.email || "",
+        buyerWalletAddress: transactionType === "purchase" ? user?.walletAddress : selectedContact?.wallets?.[0]?.address || "",
+        sellerWalletAddress: transactionType === "purchase" ? selectedContact?.wallets?.[0]?.address || "" : user?.walletAddress,
         initialConditions,
         propertyType,
         propertyId,
@@ -245,7 +214,7 @@ export default function NewTransactionPage() {
       <TransactionSuccess
         transactionId={transactionId}
         propertyAddress={propertyAddress}
-        counterpartyName={counterpartyName}
+        counterpartyName={selectedContact ? `${selectedContact.first_name} ${selectedContact.last_name}` : ""}
         amount={amount}
         currency={currency}
         transactionType={transactionType}
@@ -449,62 +418,16 @@ export default function NewTransactionPage() {
                   {/* Counterparty Section */}
                   <div className="border-t pt-6">
                     <h3 className="text-lg font-medium mb-4">Select Counterparty</h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="contact-select" className="flex items-center">
-                          Select Contact <span className="text-red-500 ml-1">*</span>
-                        </Label>
-                        <Select value={selectedContact} onValueChange={handleContactSelect} required>
-                          <SelectTrigger
-                            id="contact-select"
-                            className={validationErrors.selectedContact ? "border-red-500" : ""}
-                          >
-                            <SelectValue placeholder="Select a contact to transact with" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {mockContacts.map((contact) => (
-                              <SelectItem key={contact.id} value={contact.id}>
-                                {contact.name} ({contact.email})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {validationErrors.selectedContact && (
-                          <p className="text-red-500 text-sm">{validationErrors.selectedContact}</p>
-                        )}
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Don't see your counterparty?{" "}
-                          <Link href="/contacts" className="text-teal-600 hover:underline">
-                            Add a new contact
-                          </Link>{" "}
-                          first.
-                        </p>
-                      </div>
-
-                      {selectedContact && (
-                        <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
-                          <h4 className="font-medium mb-3">Contact Information</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm text-neutral-500">Name</p>
-                              <p className="font-medium">{counterpartyName}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-neutral-500">Email</p>
-                              <p className="font-medium">{counterpartyEmail}</p>
-                            </div>
-                            <div className="col-span-1 md:col-span-2">
-                              <p className="text-sm text-neutral-500">Wallet Address</p>
-                              <p className="font-medium text-xs md:text-sm font-mono break-all">{counterpartyWallet}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-neutral-500">Role in Transaction</p>
-                              <p className="font-medium">{transactionType === "purchase" ? "Seller" : "Buyer"}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <ContactSelector
+                      selectedContactId={selectedContact?.id || null}
+                      onContactSelect={handleContactSelect}
+                      transactionType={transactionType}
+                      label="Select Contact"
+                      placeholder="Choose a contact to transact with"
+                      required={true}
+                      error={validationErrors.selectedContact}
+                      showWalletInfo={true}
+                    />
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
@@ -528,23 +451,22 @@ export default function NewTransactionPage() {
                     are met and verified.
                   </CompactInfo>
 
-                  <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200 mb-4">
-                    <h4 className="font-medium mb-2">Transaction With</h4>
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold mr-3">
-                        {counterpartyName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </div>
-                      <div>
-                        <p className="font-medium">{counterpartyName}</p>
-                        <p className="text-sm text-neutral-500">
-                          {transactionType === "purchase" ? "Seller" : "Buyer"}
-                        </p>
+                  {selectedContact && (
+                    <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200 mb-4">
+                      <h4 className="font-medium mb-2">Transaction With</h4>
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-800 font-semibold mr-3">
+                          {selectedContact.first_name.charAt(0)}{selectedContact.last_name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-medium">{selectedContact.first_name} {selectedContact.last_name}</p>
+                          <p className="text-sm text-neutral-500">
+                            {transactionType === "purchase" ? "Seller" : "Buyer"}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -581,16 +503,18 @@ export default function NewTransactionPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="wallet-address">Recipient Wallet Address</Label>
-                    <div className="p-3 bg-neutral-50 rounded border border-neutral-200 text-sm font-mono break-all">
-                      {counterpartyWallet}
+                  {selectedContact && selectedContact.wallets && selectedContact.wallets.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="wallet-address">Recipient Wallet Address</Label>
+                      <div className="p-3 bg-neutral-50 rounded border border-neutral-200 text-sm font-mono break-all">
+                        {selectedContact.wallets[0].address}
+                      </div>
+                      <p className="text-sm text-muted-foreground flex items-center mt-1">
+                        <Shield className="h-4 w-4 mr-1 text-teal-600" /> This wallet address has been verified for{" "}
+                        {selectedContact.first_name} {selectedContact.last_name}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground flex items-center mt-1">
-                      <Shield className="h-4 w-4 mr-1 text-teal-600" /> This wallet address has been verified for{" "}
-                      {counterpartyName}
-                    </p>
-                  </div>
+                  )}
 
                   <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
                     <h3 className="font-medium mb-2">Escrow Fee Breakdown</h3>
@@ -697,23 +621,29 @@ export default function NewTransactionPage() {
                       <p className="text-sm text-muted-foreground">{propertyType || "Residential"} Property</p>
                     </div>
 
-                    <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground">Counterparty</h3>
-                      <p className="font-medium">{counterpartyName}</p>
-                      <p className="text-sm text-muted-foreground">{counterpartyEmail}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Wallet: {counterpartyWallet.slice(0, 6)}...{counterpartyWallet.slice(-4)}
-                      </p>
-                    </div>
+                    {selectedContact && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-muted-foreground">Counterparty</h3>
+                        <p className="font-medium">{selectedContact.first_name} {selectedContact.last_name}</p>
+                        <p className="text-sm text-muted-foreground">{selectedContact.email}</p>
+                        {selectedContact.wallets && selectedContact.wallets.length > 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            Wallet: {selectedContact.wallets[0].address.slice(0, 6)}...{selectedContact.wallets[0].address.slice(-4)}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     <div>
                       <h3 className="text-sm font-semibold text-muted-foreground">Escrow Amount</h3>
                       <p className="font-medium">
                         {amount} {currency.toUpperCase()}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        To be released to: {counterpartyWallet.slice(0, 6)}...{counterpartyWallet.slice(-4)}
-                      </p>
+                      {selectedContact && selectedContact.wallets && selectedContact.wallets.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          To be released to: {selectedContact.wallets[0].address.slice(0, 6)}...{selectedContact.wallets[0].address.slice(-4)}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -795,11 +725,19 @@ export default function NewTransactionPage() {
             title="Create Escrow Contract"
             description="Please confirm to place your funds in escrow. Funds will be held securely until all contract conditions are met."
             amount={amount}
-            recipient={counterpartyWallet}
+            recipient={selectedContact?.wallets?.[0]?.address || ""}
             onSuccess={handleTransactionSuccess}
           />
         </>
       )}
     </div>
+  )
+}
+
+export default function NewTransactionPage() {
+  return (
+    <ContactProvider>
+      <NewTransactionPageContent />
+    </ContactProvider>
   )
 }
