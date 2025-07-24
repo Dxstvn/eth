@@ -108,6 +108,63 @@ const nextConfig = {
             key: 'Link',
             value: '</fonts/inter.woff2>; rel=preload; as=font; type=font/woff2; crossorigin',
           },
+          // Security Headers
+          // Content Security Policy
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://api.clearhold.app https://*.firebaseapp.com https://*.googleapis.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+              "frame-src 'self' https://accounts.google.com https://clearhold.firebaseapp.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          },
+          // Strict Transport Security
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload'
+          },
+          // X-Frame-Options
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          // X-Content-Type-Options
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          // X-XSS-Protection
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          // Referrer Policy
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          // Permissions Policy
+          {
+            key: 'Permissions-Policy',
+            value: [
+              'camera=()',
+              'microphone=()',
+              'geolocation=()',
+              'payment=(self)',
+              'usb=()',
+              'magnetometer=()',
+              'accelerometer=()'
+            ].join(', ')
+          },
         ],
       },
       // Specific caching for different asset types
@@ -179,6 +236,9 @@ const nextConfig = {
 
   // Output configuration for deployment
   output: 'standalone',
+
+  // Disable X-Powered-By header for security
+  poweredByHeader: false,
 
   // Environment variables
   env: {

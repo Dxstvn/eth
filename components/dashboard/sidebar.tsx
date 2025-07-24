@@ -77,7 +77,7 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
       name: "Transactions",
       href: "/transactions",
       icon: FileText,
-      current: pathname === "/transactions" || pathname.startsWith("/transactions/"),
+      current: pathname === "/transactions" || pathname?.startsWith("/transactions/"),
     },
     {
       name: "Wallet",
@@ -95,7 +95,7 @@ export default function DashboardSidebar({ open, setOpen }: SidebarProps) {
       name: "Settings",
       href: "/settings",
       icon: Settings,
-      current: pathname === "/settings" || pathname.startsWith("/settings/"),
+      current: pathname === "/settings" || pathname?.startsWith("/settings/"),
     },
     {
       name: "Help & Support",

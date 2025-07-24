@@ -300,3 +300,7 @@ await apiClient.post('/wallet/register', {
 ## Development Design Principles
 
 - Aim for mobile and web functionality/responsiveness design.
+
+## Task Completion Principle
+
+- Don't take any shortcuts when completing tasks. Instead report roadblocks and stop operations after multiple attempts at resolving issues.

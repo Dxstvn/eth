@@ -1,10 +1,11 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ApiClient } from '@/services/api/client';
 import { ApiException } from '@/services/api/types';
 import { apiLogger } from '@/services/api/logger';
 import { requestQueue } from '@/services/api/request-queue';
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock navigator.onLine
 Object.defineProperty(navigator, 'onLine', {
@@ -14,37 +15,45 @@ Object.defineProperty(navigator, 'onLine', {
 
 // Mock localStorage
 const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn()
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn()
 };
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
+// Helper function to create mock Response objects
+const createMockResponse = (data: any, options: { ok?: boolean; status?: number } = {}) => {
+  const response = {
+    ok: options.ok ?? true,
+    status: options.status ?? 200,
+    json: async () => data,
+    clone: () => response // Necessary for response cloning
+  };
+  return response;
+};
+
 describe('ApiClient', () => {
   let client: ApiClient;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     client = ApiClient.getInstance();
     (navigator as any).onLine = true;
   });
 
   describe('request method', () => {
     it('should make successful GET request', async () => {
-      const mockResponse = { data: { id: 1, name: 'Test' } };
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => mockResponse
-      });
+      const mockResponseData = { id: 1, name: 'Test' };
+      const mockResponse = { data: mockResponseData };
+      vi.mocked(global.fetch).mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.get('/test');
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponseData);
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/test'),
         expect.objectContaining({
@@ -56,18 +65,15 @@ describe('ApiClient', () => {
 
     it('should make successful POST request with data', async () => {
       const requestData = { name: 'Test User' };
-      const mockResponse = { data: { id: 1, ...requestData } };
+      const mockResponseData = { id: 1, ...requestData };
+      const mockResponse = { data: mockResponseData };
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 201,
-        json: async () => mockResponse
-      });
+      vi.mocked(global.fetch).mockResolvedValueOnce(createMockResponse(mockResponse, { status: 201 }));
 
       const result = await client.post('/users', requestData);
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponseData);
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/users'),
         expect.objectContaining({
@@ -83,50 +89,35 @@ describe('ApiClient', () => {
         message: 'Invalid input data'
       };
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        json: async () => errorResponse
-      });
+      vi.mocked(global.fetch).mockResolvedValueOnce(createMockResponse(errorResponse, { ok: false, status: 400 }));
 
       await expect(client.post('/test', {})).rejects.toThrow(ApiException);
     });
 
     it('should retry on retryable errors', async () => {
-      const mockResponse = { data: 'Success' };
+      const mockResponseData = 'Success';
+      const mockResponse = { data: mockResponseData };
       
-      (global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 503,
-          json: async () => ({ message: 'Service unavailable' })
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => mockResponse
-        });
+      vi.mocked(global.fetch)
+        .mockResolvedValueOnce(createMockResponse({ message: 'Service unavailable' }, { ok: false, status: 503 }))
+        .mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.get('/test');
 
       expect(global.fetch).toHaveBeenCalledTimes(2);
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponseData);
     });
 
     it('should not retry on non-retryable errors', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        json: async () => ({ message: 'Not found' })
-      });
+      vi.mocked(global.fetch).mockResolvedValueOnce(createMockResponse({ message: 'Not found' }, { ok: false, status: 404 }));
 
       await expect(client.get('/test')).rejects.toThrow(ApiException);
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
     it('should handle timeout errors', async () => {
-      (global.fetch as jest.Mock).mockImplementationOnce(() => 
+      vi.mocked(global.fetch).mockImplementationOnce(() => 
         new Promise((_, reject) => {
           setTimeout(() => {
             const error = new Error('Aborted');
@@ -147,15 +138,11 @@ describe('ApiClient', () => {
       
       // Mock token parsing
       const mockPayload = btoa(JSON.stringify({ exp: Date.now() / 1000 + 3600 }));
-      jest.spyOn(window, 'atob').mockReturnValueOnce(
+      vi.spyOn(window, 'atob').mockReturnValueOnce(
         JSON.stringify({ exp: Date.now() / 1000 + 3600 })
       );
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: 'Success' })
-      });
+      vi.mocked(global.fetch).mockResolvedValueOnce(createMockResponse({ data: 'Success' }));
 
       await client.get('/test');
 
@@ -169,7 +156,7 @@ describe('ApiClient', () => {
 
     it('should queue requests when offline', async () => {
       (navigator as any).onLine = false;
-      const queueSpy = jest.spyOn(requestQueue, 'addToQueue');
+      const queueSpy = vi.spyOn(requestQueue, 'addToQueue');
 
       const result = await client.post('/test', { data: 'test' });
 
@@ -182,11 +169,7 @@ describe('ApiClient', () => {
 
   describe('convenience methods', () => {
     beforeEach(() => {
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: 'Success' })
-      });
+      vi.mocked(global.fetch).mockResolvedValue(createMockResponse({ data: 'Success' }));
     });
 
     it('should support GET requests', async () => {
@@ -232,7 +215,7 @@ describe('ApiClient', () => {
 
   describe('request cancellation', () => {
     it('should cancel all requests', () => {
-      const abortSpy = jest.fn();
+      const abortSpy = vi.fn();
       (client as any).abortControllers.set('test-1', { abort: abortSpy });
       (client as any).abortControllers.set('test-2', { abort: abortSpy });
 
@@ -243,8 +226,8 @@ describe('ApiClient', () => {
     });
 
     it('should cancel requests for specific endpoint', () => {
-      const abortSpy1 = jest.fn();
-      const abortSpy2 = jest.fn();
+      const abortSpy1 = vi.fn();
+      const abortSpy2 = vi.fn();
       (client as any).abortControllers.set('GET-/users-123', { abort: abortSpy1 });
       (client as any).abortControllers.set('GET-/posts-456', { abort: abortSpy2 });
 
@@ -264,15 +247,11 @@ describe('ApiClient', () => {
         return { ...config, headers };
       });
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: 'Success' })
-      });
+      vi.mocked(global.fetch).mockResolvedValueOnce(createMockResponse({ data: 'Success' }));
 
       await client.get('/test');
 
-      const call = (global.fetch as jest.Mock).mock.calls[0];
+      const call = vi.mocked(global.fetch).mock.calls[0];
       const headers = call[1].headers;
       expect(headers.get(customHeader)).toBe('test-value');
 
@@ -283,15 +262,11 @@ describe('ApiClient', () => {
 
   describe('logging and debugging', () => {
     it('should log API requests in debug mode', async () => {
-      const logSpy = jest.spyOn(apiLogger, 'log');
+      const logSpy = vi.spyOn(apiLogger, 'log');
       
       client.configure({ debug: true });
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: 'Success' })
-      });
+      vi.mocked(global.fetch).mockResolvedValueOnce(createMockResponse({ data: 'Success' }));
 
       await client.get('/test');
 
@@ -314,7 +289,7 @@ describe('ApiClient', () => {
     });
 
     it('should clear offline queue', () => {
-      const clearSpy = jest.spyOn(requestQueue, 'clearQueue');
+      const clearSpy = vi.spyOn(requestQueue, 'clearQueue');
       client.clearOfflineQueue();
       expect(clearSpy).toHaveBeenCalled();
     });
