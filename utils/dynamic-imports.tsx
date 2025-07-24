@@ -94,44 +94,38 @@ export function createClientOnlyComponent<T = {}>(
   })
 }
 
-// Pre-configured dynamic imports for common heavy components
+// Pre-configured dynamic imports for existing heavy components
 export const DynamicComponents = {
-  // Chart components (typically heavy)
-  Chart: createClientOnlyComponent(
-    () => import('@/components/charts/transaction-chart'),
-    () => <Skeleton.Card className="h-64" />
-  ),
-  
   // File upload components
   FileUpload: createDynamicComponent(
     () => import('@/components/file-upload-enhanced'),
     { ssr: false }
   ),
   
-  // Transaction forms
-  TransactionForm: createDynamicForm(
-    () => import('@/components/transaction/transaction-form')
+  // Transaction card component
+  TransactionCard: createDynamicComponent(
+    () => import('@/components/transaction-card')
   ),
   
-  // Wallet components
-  WalletConnection: createClientOnlyComponent(
-    () => import('@/components/wallet/wallet-connection')
+  // Dashboard components
+  DashboardStats: createDynamicComponent(
+    () => import('@/components/dashboard-stats')
   ),
   
-  // Document viewer
-  DocumentViewer: createClientOnlyComponent(
-    () => import('@/components/documents/document-viewer'),
+  // Contact invitation form
+  ContactInvitationForm: createDynamicForm(
+    () => import('@/components/contact-invitation-form')
+  ),
+  
+  // Wallet connect modal
+  WalletConnectModal: createClientOnlyComponent(
+    () => import('@/components/wallet-connect-modal')
+  ),
+  
+  // Document preview modal  
+  DocumentPreviewModal: createClientOnlyComponent(
+    () => import('@/components/document-preview-modal'),
     () => <Skeleton.Card className="h-96" />
-  ),
-  
-  // Contact forms
-  ContactForm: createDynamicForm(
-    () => import('@/components/contacts/contact-form')
-  ),
-  
-  // Settings panels
-  SettingsPanel: createDynamicComponent(
-    () => import('@/components/settings/settings-panel')
   )
 }
 
