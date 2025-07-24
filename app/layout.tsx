@@ -13,6 +13,7 @@ import { TransactionProvider } from "@/context/transaction-context"
 import ErrorBoundary from "@/components/ui/error-boundary"
 import { createDynamicComponent } from "@/utils/dynamic-imports"
 import { Suspense } from "react"
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 // Dynamically import OnboardingFlow for better performance
 const OnboardingFlow = createDynamicComponent(
@@ -75,6 +76,7 @@ export default function RootLayout({
             </WalletProvider>
           </AuthProvider>
         </ErrorBoundary>
+        <SpeedInsights />
       </body>
     </html>
   )
