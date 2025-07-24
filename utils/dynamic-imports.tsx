@@ -77,20 +77,21 @@ export function createDynamicForm<T = {}>(
 ) {
   return dynamic(importFn, {
     loading: FormLoadingComponent,
-    ssr: options.ssr ?? false // Forms typically don't need SSR
+    ssr: options.ssr ?? true // Changed default to true for Next.js 15 compatibility
   })
 }
 
 /**
  * Create a client-only dynamic component (no SSR)
+ * Note: This should only be used in client components due to Next.js 15 restrictions
  */
 export function createClientOnlyComponent<T = {}>(
   importFn: () => Promise<{ default: ComponentType<T> }>,
   loading?: ComponentType
 ) {
   return dynamic(importFn, {
-    loading: loading || LoadingComponent,
-    ssr: false
+    loading: loading || LoadingComponent
+    // ssr: false removed due to Next.js 15 Server Components restriction
   })
 }
 
@@ -99,7 +100,7 @@ export const DynamicComponents = {
   // File upload components
   FileUpload: createDynamicComponent(
     () => import('@/components/file-upload-enhanced'),
-    { ssr: false }
+    { ssr: true }
   ),
   
   // Transaction card component

@@ -3,10 +3,11 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     // Enable modern optimizations
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    // Enable server components optimizations
-    serverComponentsExternalPackages: []
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons']
   },
+
+  // Server external packages (moved from experimental in Next.js 15)
+  serverExternalPackages: [],
 
   // Webpack configuration for performance
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
