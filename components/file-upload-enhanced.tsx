@@ -285,7 +285,7 @@ export default function FileUploadEnhanced({
     }
   }
 
-  const previewFile = (file: FileMetadata) => {
+  const handlePreviewFile = (file: FileMetadata) => {
     setPreviewFile(file)
     setShowPreview(true)
   }
@@ -428,7 +428,7 @@ export default function FileUploadEnhanced({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => previewFile(file)}
+                      onClick={() => handlePreviewFile(file)}
                       title="Preview"
                     >
                       <Eye className="h-4 w-4" />

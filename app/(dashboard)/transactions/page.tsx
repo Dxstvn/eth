@@ -21,13 +21,7 @@ const TransactionCard = createDynamicComponent(
   }
 )
 
-const TransactionFilters = createDynamicComponent(
-  () => import("@/components/transactions/transaction-filters"),
-  { 
-    loading: () => <Skeleton.Form />,
-    ssr: false 
-  }
-)
+// Filters are implemented inline in the component below
 
 // Transaction list loading component
 const TransactionListSkeleton = () => (
