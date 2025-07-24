@@ -11,7 +11,7 @@ import type {
   SolanaWallet,
   BitcoinWallet
 } from '@/types/wallet'
-import { ethers } from 'ethers'
+import { ethers, isAddress, getAddress } from 'ethers'
 
 // Error handling
 export enum WalletErrorCode {
@@ -101,7 +101,7 @@ export class WalletService {
       const address = accounts[0].toLowerCase()
       
       // Validate address
-      if (!ethers.utils.isAddress(address)) {
+      if (!isAddress(address)) {
         throw new WalletError(
           'Invalid Ethereum address',
           WalletErrorCode.INVALID_ADDRESS
@@ -116,7 +116,7 @@ export class WalletService {
 
       // Create connected wallet object
       const wallet: ConnectedWallet = {
-        address: ethers.utils.getAddress(address), // Checksummed address
+        address: getAddress(address), // Checksummed address
         name: provider.name,
         icon: provider.icon,
         provider: provider.provider,

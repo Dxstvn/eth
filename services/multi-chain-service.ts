@@ -1,7 +1,7 @@
 import { apiClient } from '@/services/api'
 import { API_CONFIG, SUPPORTED_NETWORKS, getChainId } from '@/services/api-config'
 import type { BlockchainNetwork, ConnectedWallet } from '@/types/wallet'
-import { ethers } from 'ethers'
+import { ethers, JsonRpcProvider, formatEther } from 'ethers'
 
 // Enhanced network configuration with additional metadata
 export interface NetworkConfig {
@@ -166,7 +166,7 @@ export interface BalanceInfo {
  * Multi-chain service for handling cross-chain operations
  */
 export class MultiChainService {
-  private providers: Map<BlockchainNetwork, ethers.providers.JsonRpcProvider> = new Map()
+  private providers: Map<BlockchainNetwork, JsonRpcProvider> = new Map()
   private balanceCache: Map<string, BalanceInfo> = new Map()
   private transactionCache: Map<string, Transaction[]> = new Map()
 
@@ -308,7 +308,7 @@ export class MultiChainService {
       return {
         address: wallet.address,
         network: wallet.network,
-        nativeBalance: ethers.utils.formatEther(balance),
+        nativeBalance: formatEther(balance),
         nativeSymbol: networkConfig.symbol,
         lastUpdated: Date.now()
       }
@@ -326,7 +326,7 @@ export class MultiChainService {
           return {
             address: wallet.address,
             network: wallet.network,
-            nativeBalance: ethers.utils.formatEther(balanceHex),
+            nativeBalance: formatEther(balanceHex),
             nativeSymbol: networkConfig.symbol,
             lastUpdated: Date.now()
           }
@@ -471,7 +471,7 @@ export class MultiChainService {
   /**
    * Get provider for a network
    */
-  private getProvider(network: BlockchainNetwork): ethers.providers.JsonRpcProvider {
+  private getProvider(network: BlockchainNetwork): JsonRpcProvider {
     if (!this.providers.has(network)) {
       const networkConfig = this.getNetworkConfig(network)
       if (!networkConfig) {
@@ -484,7 +484,7 @@ export class MultiChainService {
         throw new Error(`No available RPC URL for network: ${network}`)
       }
 
-      const provider = new ethers.providers.JsonRpcProvider(rpcUrl)
+      const provider = new JsonRpcProvider(rpcUrl)
       this.providers.set(network, provider)
     }
 

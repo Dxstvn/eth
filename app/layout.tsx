@@ -55,10 +55,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} ${openSans.variable}`}>
       <body className={openSans.className}>
-        <ErrorBoundary level="page" onError={(error, errorInfo) => {
-          // Log to monitoring service in production
-          console.error('Global error caught:', error, errorInfo)
-        }}>
+        <ErrorBoundary level="page">
           <FirebaseInitCheck />
           <AuthProvider>
             <WalletProvider>

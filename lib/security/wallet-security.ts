@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers, Mnemonic, parseUnits, parseEther, BigNumber, type TransactionRequest } from 'ethers';
 import CryptoJS from 'crypto-js';
 import { secureRandom, advancedEncryption, digitalSignature, EncryptionResult } from './crypto-utils';
 import { secureLocalStorage } from './secure-storage';
@@ -112,11 +112,11 @@ export class SecureWalletKeyManager {
     network: string = 'ethereum'
   ): Promise<{ encryptedData: EncryptedWalletData; recoveryData: WalletRecoveryData }> {
     // Validate mnemonic
-    if (!ethers.utils.isValidMnemonic(mnemonic)) {
+    if (!Mnemonic.isValidMnemonic(mnemonic)) {
       throw new Error('Invalid mnemonic phrase');
     }
     
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic, derivationPath);
+    const wallet = ethers.Wallet.fromPhrase(mnemonic, derivationPath);
     
     // Encrypt both mnemonic and private key
     const encryptedMnemonic = advancedEncryption.encryptData(
@@ -243,7 +243,7 @@ export class SecureWalletSigner {
   // Sign transaction with additional security checks
   async signTransaction(
     walletId: string,
-    transaction: ethers.providers.TransactionRequest,
+    transaction: TransactionRequest,
     password: string,
     securityChecks?: {
       maxGasPrice?: string;
@@ -262,8 +262,8 @@ export class SecureWalletSigner {
     // Security checks
     if (securityChecks) {
       if (securityChecks.maxGasPrice && transaction.gasPrice) {
-        const gasPrice = ethers.BigNumber.from(transaction.gasPrice);
-        const maxGasPrice = ethers.utils.parseUnits(securityChecks.maxGasPrice, 'gwei');
+        const gasPrice = BigNumber.from(transaction.gasPrice);
+        const maxGasPrice = parseUnits(securityChecks.maxGasPrice, 'gwei');
         
         if (gasPrice.gt(maxGasPrice)) {
           throw new Error('Gas price exceeds maximum allowed');
@@ -271,8 +271,8 @@ export class SecureWalletSigner {
       }
       
       if (securityChecks.maxValue && transaction.value) {
-        const value = ethers.BigNumber.from(transaction.value);
-        const maxValue = ethers.utils.parseEther(securityChecks.maxValue);
+        const value = BigNumber.from(transaction.value);
+        const maxValue = parseEther(securityChecks.maxValue);
         
         if (value.gt(maxValue)) {
           throw new Error('Transaction value exceeds maximum allowed');

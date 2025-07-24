@@ -16,7 +16,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  FileContract
+  FileSignature
 } from "lucide-react"
 import { toast } from "sonner"
 import type { ConnectedWallet } from "@/types/wallet"
@@ -107,7 +107,7 @@ export function TransactionHistory({
       case 'received':
         return <ArrowDownLeft className="h-4 w-4 text-green-600" />
       case 'contract':
-        return <FileContract className="h-4 w-4 text-blue-600" />
+        return <FileSignature className="h-4 w-4 text-blue-600" />
       default:
         return <ArrowUpRight className="h-4 w-4" />
     }
@@ -172,7 +172,7 @@ export function TransactionHistory({
           </div>
         ) : transactions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <FileContract className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <FileSignature className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No transactions found</p>
             <p className="text-sm">Transactions will appear here once you start using this wallet</p>
           </div>

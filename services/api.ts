@@ -1,6 +1,9 @@
 import { apiClient } from './api/client';
 import { errorHandler } from './api/error-handler';
 
+// Re-export apiClient for backward compatibility
+export { apiClient };
+
 // API base URL - environment-dependent
 const getApiUrl = () => {
   // Check if we're in development mode
