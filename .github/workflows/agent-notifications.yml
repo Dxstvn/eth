@@ -1,0 +1,49 @@
+name: Agent Activity Notifications
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, synchronize]
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  notify-agent-activity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Check for Agent Commits
+        run: |
+          if git log -1 --pretty=%B | grep -q "\[AGENT\]"; then
+            echo "Agent activity detected"
+            echo "AGENT_ACTIVE=true" >> $GITHUB_ENV
+          fi
+      
+      - name: Parse Agent Type
+        if: env.AGENT_ACTIVE == 'true'
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ $COMMIT_MSG == *"[FRONTEND]"* ]]; then
+            echo "AGENT_TYPE=Frontend Engineer" >> $GITHUB_ENV
+          elif [[ $COMMIT_MSG == *"[BACKEND]"* ]]; then
+            echo "AGENT_TYPE=Backend Engineer" >> $GITHUB_ENV
+          elif [[ $COMMIT_MSG == *"[TEST]"* ]]; then
+            echo "AGENT_TYPE=Testing Expert" >> $GITHUB_ENV
+          elif [[ $COMMIT_MSG == *"[SECURITY]"* ]]; then
+            echo "AGENT_TYPE=Cybersecurity Expert" >> $GITHUB_ENV
+          fi
+      
+      - name: Update Activity Log
+        if: env.AGENT_ACTIVE == 'true'
+        run: |
+          echo "[$(date -u +"%Y-%m-%d %H:%M:%S UTC")] [${{ env.AGENT_TYPE }}] [ACTIVE] ${{ github.event.head_commit.message }}" >> agents/activity-log.md
+      
+      - name: Create Summary
+        if: env.AGENT_ACTIVE == 'true'
+        run: |
+          echo "## 🤖 Agent Activity Detected" >> $GITHUB_STEP_SUMMARY
+          echo "**Agent**: ${{ env.AGENT_TYPE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Activity**: ${{ github.event.head_commit.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Time**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY

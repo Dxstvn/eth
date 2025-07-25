@@ -1,0 +1,321 @@
+name: Cross-Repository Synchronization
+
+on:
+  repository_dispatch:
+    types: [backend-api-changes, backend-deployment, security-alert]
+  workflow_dispatch:
+    inputs:
+      sync_type:
+        description: 'Type of synchronization'
+        required: true
+        type: choice
+        options:
+          - 'api-contract-sync'
+          - 'security-patch-sync'
+          - 'deployment-sync'
+          - 'test-results-sync'
+      source_repo:
+        description: 'Source repository'
+        required: true
+        type: choice
+        options:
+          - 'frontend'
+          - 'backend'
+
+jobs:
+  process-backend-changes:
+    if: github.event_name == 'repository_dispatch' && github.event.action == 'backend-api-changes'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Process Backend API Changes
+        run: |
+          echo "## 🔄 Backend API Changes Received" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Change Details" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend Issue: #${{ github.event.client_payload.backend_issue }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Changed Endpoints: ${{ toJson(github.event.client_payload.changed_endpoints) }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.event.client_payload.commit_sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Timestamp: ${{ github.event.client_payload.timestamp }}" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Generate Frontend Update Tasks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const endpoints = ${{ toJson(github.event.client_payload.changed_endpoints) }};
+            const updateTasks = `
+            ## 🎨 Frontend Updates Required
+            
+            Backend API changes have been detected. The following updates are required:
+            
+            ### Changed Endpoints
+            ${endpoints.map(e => `- \`/api/${e}\``).join('\n')}
+            
+            ### Required Frontend Changes
+            
+            #### 1. API Client Updates
+            ${endpoints.map(e => `- [ ] Update \`services/api/${e}.ts\``).join('\n')}
+            
+            #### 2. TypeScript Interfaces
+            ${endpoints.map(e => `- [ ] Review types for \`${e}\` endpoint`).join('\n')}
+            
+            #### 3. Component Updates
+            - [ ] Identify components using these endpoints
+            - [ ] Update error handling
+            - [ ] Test loading states
+            - [ ] Verify data transformations
+            
+            #### 4. Testing
+            - [ ] Update API mocks
+            - [ ] Run integration tests
+            - [ ] Test error scenarios
+            - [ ] Verify backwards compatibility
+            
+            ### Backend Reference
+            - Issue: personal-cryptoscrow-backend#${{ github.event.client_payload.backend_issue }}
+            - Commit: ${{ github.event.client_payload.commit_sha }}
+            
+            ### Verification Steps
+            1. Pull latest backend changes locally
+            2. Start backend server
+            3. Test frontend against new endpoints
+            4. Update documentation
+            
+            /cc @clearhold-frontend-engineer
+            `;
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '[BACKEND-SYNC] API contract updates required',
+              body: updateTasks,
+              labels: ['agent-task', 'frontend', 'backend-sync', 'priority-high']
+            });
+            
+            // Add comment linking to backend
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.data.number,
+              body: `🔗 This issue is linked to backend changes. See backend repository for full details.`
+            });
+
+  security-alert-handler:
+    if: github.event_name == 'repository_dispatch' && github.event.action == 'security-alert'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Process Security Alert
+        run: |
+          echo "## 🚨 SECURITY ALERT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Severity**: ${{ github.event.client_payload.severity }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Component**: ${{ github.event.client_payload.component }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Description**: ${{ github.event.client_payload.description }}" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Create Security Response
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const securityResponse = `
+            ## 🚨 URGENT: Security Alert from Backend
+            
+            **Severity**: ${{ github.event.client_payload.severity }}
+            **Source**: Backend Repository
+            
+            ### Alert Details
+            ${{ github.event.client_payload.description }}
+            
+            ### Immediate Actions Required
+            
+            1. **Frontend Security Review**
+               - [ ] Review authentication flows
+               - [ ] Check for exposed secrets
+               - [ ] Validate input sanitization
+               - [ ] Review CORS configuration
+               
+            2. **Dependency Check**
+               - [ ] Run \`npm audit\`
+               - [ ] Update vulnerable packages
+               - [ ] Review lock file changes
+               
+            3. **Code Audit**
+               - [ ] Check for XSS vulnerabilities
+               - [ ] Review API key usage
+               - [ ] Validate error handling
+               - [ ] Check logging for sensitive data
+               
+            ### Response Timeline
+            - **Critical**: Respond within 2 hours
+            - **High**: Respond within 24 hours
+            - **Medium**: Respond within 3 days
+            
+            /cc @clearhold-security-auditor @clearhold-frontend-engineer
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[SECURITY] ${github.event.client_payload.severity} - Immediate action required`,
+              body: securityResponse,
+              labels: ['security', 'urgent', 'cross-repo', 'agent-task']
+            });
+
+  manual-sync-handler:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Execute Manual Sync
+        run: |
+          echo "## 🔄 Manual Cross-Repository Sync" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Type**: ${{ github.event.inputs.sync_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Source**: ${{ github.event.inputs.source_repo }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Initiated by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Process Sync Request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const syncType = '${{ github.event.inputs.sync_type }}';
+            const sourceRepo = '${{ github.event.inputs.source_repo }}';
+            
+            let taskBody = '';
+            let labels = ['cross-repo', 'manual-sync'];
+            
+            switch(syncType) {
+              case 'api-contract-sync':
+                taskBody = `
+                ## 📋 API Contract Synchronization
+                
+                Manually triggered sync from ${sourceRepo} repository.
+                
+                ### Actions Required
+                1. Compare API contracts between repositories
+                2. Identify mismatches in request/response types
+                3. Update TypeScript interfaces
+                4. Test integration points
+                5. Update API documentation
+                
+                ### Verification Checklist
+                - [ ] All endpoints documented
+                - [ ] Types match exactly
+                - [ ] Error codes consistent
+                - [ ] Authentication requirements aligned
+                `;
+                labels.push('api', 'frontend', 'backend');
+                break;
+                
+              case 'security-patch-sync':
+                taskBody = `
+                ## 🔒 Security Patch Synchronization
+                
+                Security patches from ${sourceRepo} need to be applied.
+                
+                ### Patch Application
+                1. Review security patches
+                2. Test in development environment
+                3. Apply to all affected components
+                4. Run security scan
+                5. Deploy with monitoring
+                
+                ### Security Checklist
+                - [ ] Dependencies updated
+                - [ ] Security headers configured
+                - [ ] Authentication strengthened
+                - [ ] Logging reviewed
+                `;
+                labels.push('security', 'priority-critical');
+                break;
+                
+              case 'deployment-sync':
+                taskBody = `
+                ## 🚀 Deployment Synchronization
+                
+                Coordinate deployment between frontend and backend.
+                
+                ### Deployment Steps
+                1. Verify all tests passing
+                2. Check API compatibility
+                3. Update environment variables
+                4. Deploy backend first
+                5. Deploy frontend
+                6. Run smoke tests
+                
+                ### Rollback Plan
+                - [ ] Previous versions tagged
+                - [ ] Rollback scripts ready
+                - [ ] Monitoring configured
+                `;
+                labels.push('deployment');
+                break;
+                
+              case 'test-results-sync':
+                taskBody = `
+                ## 🧪 Test Results Synchronization
+                
+                Share test results from ${sourceRepo}.
+                
+                ### Test Summary
+                1. Collect test results
+                2. Identify failing tests
+                3. Check cross-repo impact
+                4. Update test suites
+                5. Re-run affected tests
+                
+                ### Coverage Goals
+                - [ ] Unit tests: 80%+
+                - [ ] Integration tests: 70%+
+                - [ ] E2E tests: Critical paths
+                `;
+                labels.push('testing');
+                break;
+            }
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[SYNC] ${syncType} from ${sourceRepo}`,
+              body: taskBody + '\n\n/cc @clearhold-frontend-engineer @cryptoescrow-backend-engineer',
+              labels: labels
+            });
+
+  sync-status-reporter:
+    needs: [process-backend-changes, security-alert-handler, manual-sync-handler]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Sync Report
+        run: |
+          echo "# 🔄 Cross-Repository Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Sync Operations Executed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.process-backend-changes.result }}" != "skipped" ]; then
+            echo "### Backend API Changes" >> $GITHUB_STEP_SUMMARY
+            echo "- Status: ${{ needs.process-backend-changes.result }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Frontend tasks created" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.security-alert-handler.result }}" != "skipped" ]; then
+            echo "### Security Alert" >> $GITHUB_STEP_SUMMARY
+            echo "- Status: ${{ needs.security-alert-handler.result }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Security team notified" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.manual-sync-handler.result }}" != "skipped" ]; then
+            echo "### Manual Sync" >> $GITHUB_STEP_SUMMARY
+            echo "- Status: ${{ needs.manual-sync-handler.result }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Sync tasks created" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Assigned agents will process tasks" >> $GITHUB_STEP_SUMMARY
+          echo "2. Results will be reported via issues" >> $GITHUB_STEP_SUMMARY
+          echo "3. Cross-repo validation will be performed" >> $GITHUB_STEP_SUMMARY
