@@ -8,11 +8,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/context/auth-context-v2"
 import { useToast } from "@/components/ui/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Shield } from "lucide-react"
 
 export default function SettingsPage() {
-  const { user, updateUserProfile } = useAuth()
+  const { user, updateProfile } = useAuth()
   const { toast } = useToast()
   const [isUpdating, setIsUpdating] = useState(false)
   const [formData, setFormData] = useState({
@@ -37,7 +40,7 @@ export default function SettingsPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Update profile
-      await updateUserProfile({
+      await updateProfile({
         displayName: formData.displayName,
       })
 
@@ -263,6 +266,69 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Developer Mode - Temporary Admin Toggle */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="mt-6 border-dashed border-2 border-yellow-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-yellow-600" />
+              Developer Mode
+            </CardTitle>
+            <CardDescription>
+              Development-only settings for testing admin features
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert className="mb-4">
+              <AlertDescription>
+                This section is only visible in development mode and will not appear in production.
+              </AlertDescription>
+            </Alert>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="admin-toggle">Admin Access</Label>
+                <p className="text-sm text-muted-foreground">
+                  Toggle admin privileges for testing KYC admin dashboard
+                </p>
+              </div>
+              <Switch
+                id="admin-toggle"
+                checked={user?.isAdmin || false}
+                onCheckedChange={async (checked) => {
+                  try {
+                    // For development testing, update localStorage directly
+                    const storedProfile = localStorage.getItem('clearhold_user_profile')
+                    if (storedProfile) {
+                      const profile = JSON.parse(storedProfile)
+                      profile.isAdmin = checked
+                      localStorage.setItem('clearhold_user_profile', JSON.stringify(profile))
+                      
+                      toast({
+                        title: checked ? "Admin access enabled" : "Admin access disabled",
+                        description: checked 
+                          ? "You now have access to admin features" 
+                          : "Admin features have been disabled",
+                      })
+                      
+                      // Reload the page to refresh the navigation and auth state
+                      setTimeout(() => {
+                        window.location.reload()
+                      }, 500)
+                    }
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to update admin status",
+                      variant: "destructive",
+                    })
+                  }
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

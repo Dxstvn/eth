@@ -1,13 +1,13 @@
 "use client"
 
 import { KYCProvider } from "@/context/kyc-context"
-import KYCStatusPage from "@/components/kyc/review/KYCStatusPage"
+import KYCReviewSummary from "@/components/kyc/review/KYCReviewSummary"
 
-export default function StatusPage() {
+export default function KYCReviewPage() {
   return (
     <KYCProvider>
       <div className="container mx-auto py-6">
-        <KYCStatusPage />
+        <KYCReviewSummary />
       </div>
     </KYCProvider>
   )

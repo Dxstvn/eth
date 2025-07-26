@@ -149,13 +149,22 @@ export default function KYCPage() {
                   3
                 </div>
                 <div className="ml-4">
+                  <p className="font-medium">Risk Assessment</p>
+                  <p className="text-sm text-gray-600">Complete compliance questionnaire (3 minutes)</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-gray-300 text-white rounded-full flex items-center justify-center font-semibold">
+                  4
+                </div>
+                <div className="ml-4">
                   <p className="font-medium">Identity Verification</p>
                   <p className="text-sm text-gray-600">Complete selfie verification (1 minute)</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gray-300 text-white rounded-full flex items-center justify-center font-semibold">
-                  4
+                  5
                 </div>
                 <div className="ml-4">
                   <p className="font-medium">Review & Approval</p>

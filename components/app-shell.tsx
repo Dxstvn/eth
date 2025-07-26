@@ -25,7 +25,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         pathname?.startsWith("/contacts") ||
         pathname?.startsWith("/settings") ||
         pathname?.startsWith("/support") ||
-        pathname?.startsWith("/kyc"))
+        pathname?.startsWith("/kyc") ||
+        pathname?.startsWith("/admin"))
     ) {
       router.push("/")
     }

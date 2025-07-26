@@ -17,6 +17,7 @@ import {
   ChevronRight,
   LogOut,
   Shield,
+  ShieldCheck,
 } from "lucide-react"
 import { useAuth } from "@/context/auth-context-v2"
 import { useMobile } from "@/hooks/use-mobile"
@@ -89,6 +90,19 @@ export default function Sidebar() {
       icon: HelpCircle,
     },
   ]
+
+  // Add admin routes if user is admin
+  const adminRoutes = user?.isAdmin
+    ? [
+        {
+          name: "KYC Admin",
+          href: "/dashboard/admin/kyc",
+          icon: ShieldCheck,
+        },
+      ]
+    : []
+
+  const allRoutes = [...routes, ...adminRoutes]
 
   // Get user's initials for the avatar
   const getUserInitials = () => {
@@ -194,7 +208,7 @@ export default function Sidebar() {
           {/* Sidebar content */}
           <ScrollArea className="flex-1 px-3 py-2">
             <nav className="flex flex-col gap-1">
-              {routes.map((route) => {
+              {allRoutes.map((route) => {
                 const isActive = pathname === route.href || pathname?.startsWith(`${route.href}/`)
 
                 return (
@@ -295,7 +309,7 @@ export default function Sidebar() {
       {/* Sidebar content */}
       <ScrollArea className="h-[calc(100vh-16rem)] px-3 py-2">
         <nav className="flex flex-col gap-1">
-          {routes.map((route) => {
+          {allRoutes.map((route) => {
             const isActive = pathname === route.href || pathname?.startsWith(`${route.href}/`)
 
             return (

@@ -144,7 +144,7 @@ export default function KYCDocumentsPage() {
       sessionStorage.setItem('kyc_submission_id', `kyc_${Date.now()}`)
 
       // Navigate to verification
-      router.push("/kyc/verification")
+      router.push("/kyc/risk-assessment")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit documents")
     } finally {
