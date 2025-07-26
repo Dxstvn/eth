@@ -22,25 +22,25 @@ If you prefer to launch agents manually:
 #### Terminal 1: Frontend Engineer
 ```bash
 cd /Users/dustinjasmin/eth-1
-claude-code --agent clearhold-frontend-engineer
+claude --agent clearhold-frontend-engineer
 ```
 
 #### Terminal 2: Backend Engineer
 ```bash
 cd /Users/dustinjasmin/personal-cryptoscrow-backend
-claude-code --agent cryptoescrow-backend-engineer
+claude --agent cryptoescrow-backend-engineer
 ```
 
 #### Terminal 3: Testing Expert
 ```bash
 cd /Users/dustinjasmin/eth-1
-claude-code --agent clearhold-testing-expert
+claude --agent clearhold-testing-expert
 ```
 
 #### Terminal 4: Security Auditor
 ```bash
 cd /Users/dustinjasmin/eth-1
-claude-code --agent clearhold-security-auditor
+claude --agent clearhold-security-auditor
 ```
 
 ## Terminal Organization Tips

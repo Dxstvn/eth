@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Shield,
 } from "lucide-react"
 import { useAuth } from "@/context/auth-context-v2"
 import { useMobile } from "@/hooks/use-mobile"
@@ -71,6 +72,11 @@ export default function Sidebar() {
       name: "Contacts",
       href: "/contacts",
       icon: Users,
+    },
+    {
+      name: "KYC Verification",
+      href: "/kyc",
+      icon: Shield,
     },
     {
       name: "Settings",

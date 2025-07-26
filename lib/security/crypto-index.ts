@@ -5,6 +5,7 @@ export * from './secure-communication';
 export * from './password-security';
 export * from './mfa-support';
 export * from './webauthn-support';
+export * from './kyc-encryption';
 
 // Re-export main security library
 export * from './index';

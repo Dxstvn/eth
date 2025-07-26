@@ -15,9 +15,10 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Check if Claude Code is installed
-if ! command -v claude-code &> /dev/null; then
+if ! command -v claude &> /dev/null; then
     echo -e "${RED}❌ Claude Code is not installed or not in PATH${NC}"
-    echo "Please install Claude Code first"
+    echo "Please install Claude Code first:"
+    echo "  npm install -g @anthropic/claude-code"
     exit 1
 fi
 
@@ -34,13 +35,13 @@ open_agent_terminal() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         osascript <<EOF
 tell application "Terminal"
-    set newWindow to do script "cd $working_dir && echo '🤖 $terminal_title' && echo '==================' && echo '' && echo 'Working Directory: $working_dir' && echo 'Agent: $agent_name' && echo '' && echo 'Starting agent...' && claude-code --agent $agent_name"
+    set newWindow to do script "cd $working_dir && echo '🤖 $terminal_title' && echo '==================' && echo '' && echo 'Working Directory: $working_dir' && echo 'Agent: $agent_name' && echo '' && echo 'Starting agent...' && claude --agent $agent_name"
     set custom title of front window to "$terminal_title"
 end tell
 EOF
     # For Linux using gnome-terminal
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        gnome-terminal --title="$terminal_title" -- bash -c "cd $working_dir && echo '🤖 $terminal_title' && echo '==================' && echo '' && echo 'Working Directory: $working_dir' && echo 'Agent: $agent_name' && echo '' && echo 'Starting agent...' && claude-code --agent $agent_name; exec bash"
+        gnome-terminal --title="$terminal_title" -- bash -c "cd $working_dir && echo '🤖 $terminal_title' && echo '==================' && echo '' && echo 'Working Directory: $working_dir' && echo 'Agent: $agent_name' && echo '' && echo 'Starting agent...' && claude --agent $agent_name; exec bash"
     fi
     
     sleep 2  # Give terminal time to open
@@ -124,9 +125,9 @@ cat > /tmp/check-agent-status.sh << 'EOF'
 echo "🤖 Agent Status Check"
 echo "===================="
 echo ""
-ps aux | grep "claude-code --agent" | grep -v grep
+ps aux | grep "claude --agent" | grep -v grep
 echo ""
-echo "Active agents: $(ps aux | grep "claude-code --agent" | grep -v grep | wc -l)"
+echo "Active agents: $(ps aux | grep "claude --agent" | grep -v grep | wc -l)"
 EOF
 
 chmod +x /tmp/check-agent-status.sh
