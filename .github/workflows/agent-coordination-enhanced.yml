@@ -1,5 +1,10 @@
 name: Enhanced Agent Coordination System
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 on:
   push:
     branches: [main, develop]

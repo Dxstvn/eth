@@ -11,6 +11,11 @@ on:
         description: 'Task for agents to handle'
         required: false
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
@@ -51,34 +56,55 @@ jobs:
         run: |
           echo "## 🎨 Frontend Agent Task Required" >> $GITHUB_STEP_SUMMARY
           echo "Changes detected in frontend files" >> $GITHUB_STEP_SUMMARY
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "(app|components|public)" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ] && git cat-file -e ${{ github.event.before }} 2>/dev/null; then
+            git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "(app|components|public)" >> $GITHUB_STEP_SUMMARY || echo "No frontend files changed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "New branch or invalid before commit - listing changed files from paths-filter" >> $GITHUB_STEP_SUMMARY
+          fi
       
       - name: Create Frontend Task Issue
         if: github.event_name == 'push'
         uses: actions/github-script@v6
         with:
           script: |
-            const files = await github.rest.repos.compareCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              base: context.payload.before,
-              head: context.sha
-            });
-            
-            const frontendFiles = files.data.files.filter(f => 
-              f.filename.includes('app/') || 
-              f.filename.includes('components/') ||
-              f.filename.includes('public/')
-            );
-            
-            if (frontendFiles.length > 0) {
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: `[FRONTEND-AGENT] Review changes in ${frontendFiles.length} files`,
-                body: `Frontend changes detected:\n${frontendFiles.map(f => `- ${f.filename}`).join('\n')}`,
-                labels: ['agent-task', 'frontend']
-              });
+            try {
+              // Check if we can compare commits
+              if (context.payload.before && context.payload.before !== '0000000000000000000000000000000000000000') {
+                const files = await github.rest.repos.compareCommits({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  base: context.payload.before,
+                  head: context.sha
+                });
+                
+                const frontendFiles = files.data.files.filter(f => 
+                  f.filename.includes('app/') || 
+                  f.filename.includes('components/') ||
+                  f.filename.includes('public/')
+                );
+                
+                if (frontendFiles.length > 0) {
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: `[FRONTEND-AGENT] Review changes in ${frontendFiles.length} files`,
+                    body: `Frontend changes detected:\n${frontendFiles.map(f => `- ${f.filename}`).join('\n')}`,
+                    labels: ['agent-task', 'frontend']
+                  });
+                }
+              } else {
+                // New branch or first commit - create a general frontend review issue
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `[FRONTEND-AGENT] Review new commit ${context.sha.substring(0, 7)}`,
+                  body: `New frontend changes detected in commit: ${context.sha}\n\nPlease review for frontend changes.`,
+                  labels: ['agent-task', 'frontend']
+                });
+              }
+            } catch (error) {
+              console.log('Failed to create issue:', error.message);
+              // Continue without failing the workflow
             }
   
   testing-agent-trigger:
@@ -122,13 +148,18 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '[SECURITY-AGENT] Urgent: Review security-sensitive changes',
-              body: 'Security-sensitive files were modified. Immediate review required.',
-              labels: ['agent-task', 'security', 'priority-high']
-            });
+            try {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '[SECURITY-AGENT] Urgent: Review security-sensitive changes',
+                body: 'Security-sensitive files were modified. Immediate review required.',
+                labels: ['agent-task', 'security', 'priority-high']
+              });
+            } catch (error) {
+              console.log('Failed to create security issue:', error.message);
+              // Continue without failing the workflow
+            }
 
   agent-summary:
     needs: [frontend-agent-tasks, testing-agent-trigger, security-review]

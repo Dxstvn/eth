@@ -1,5 +1,10 @@
 name: Agent Activity Notifications
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 on:
   push:
     branches: [main, develop]
