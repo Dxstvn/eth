@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   TrendingUp,
   TrendingDown,
@@ -25,6 +26,8 @@ import {
   Users,
   Shield,
   Star,
+  Calculator,
+  Gavel,
 } from 'lucide-react'
 import { ReputationBadge, ReputationLevel } from './ReputationBadge'
 import { ReputationHistory } from './ReputationHistory'
@@ -159,9 +162,10 @@ export function ReputationDetails({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="mt-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
+            <TabsTrigger value="disputes">Disputes</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
@@ -287,6 +291,98 @@ export function ReputationDetails({
             </Card>
           </TabsContent>
 
+          <TabsContent value="disputes" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
+                  Dispute Stake Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Current Dispute Stake Rate</span>
+                    <Badge variant="outline" className="text-lg font-mono">
+                      {getStakePercentage(level)}%
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Based on your {level} reputation tier
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">Example Stake Requirements</h4>
+                  <div className="grid gap-2">
+                    {[1000, 10000, 50000, 100000].map((amount) => (
+                      <div key={amount} className="flex justify-between items-center p-2 rounded bg-muted/50">
+                        <span className="text-sm">${amount.toLocaleString()} transaction</span>
+                        <span className="font-medium text-sm">
+                          ${Math.max(50, amount * getStakePercentage(level) / 100).toLocaleString()} stake
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">Dispute History</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total Disputes Raised</span>
+                      <span className="font-medium">3</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Disputes Won</span>
+                      <span className="font-medium text-green-600">2</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Disputes Lost</span>
+                      <span className="font-medium text-red-600">1</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total Stakes Paid</span>
+                      <span className="font-medium">$3,250</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Stakes Returned</span>
+                      <span className="font-medium text-green-600">$2,150</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Stakes Slashed</span>
+                      <span className="font-medium text-red-600">$1,100</span>
+                    </div>
+                  </div>
+                </div>
+
+                {level !== 'platinum' && (
+                  <Alert className="border-blue-200 bg-blue-50">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-sm">
+                      Improve your reputation to {getNextLevel(level)} to reduce your dispute stake to {getStakePercentage(getNextLevel(level) as ReputationLevel)}%
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Gavel className="h-5 w-5" />
+                  Active Disputes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Gavel className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p className="text-sm">No active disputes</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="achievements" className="space-y-4">
             <div className="grid gap-4">
               {achievements.map((achievement) => (
@@ -372,18 +468,21 @@ function getLevelBenefits(level: ReputationLevel): string[] {
       'Basic platform access',
       'Transaction limit: $10,000',
       'Standard support',
+      '10% dispute stake requirement',
     ],
     bronze: [
       'Transaction limit: $50,000',
       'Standard fee rates',
       'Email support',
       'Basic dispute resolution',
+      '5% dispute stake requirement',
     ],
     silver: [
       'Transaction limit: $250,000',
       '10% fee discount',
       'Priority email support',
       'Premium dispute resolution',
+      '3.5% dispute stake requirement',
     ],
     gold: [
       'Transaction limit: $1,000,000',
@@ -391,6 +490,7 @@ function getLevelBenefits(level: ReputationLevel): string[] {
       'Instant transactions available',
       'Dedicated support agent',
       'API access',
+      '2.5% dispute stake requirement',
     ],
     platinum: [
       'Unlimited transactions',
@@ -398,9 +498,21 @@ function getLevelBenefits(level: ReputationLevel): string[] {
       'White-label options',
       '24/7 phone support',
       'Custom features available',
+      '2% dispute stake requirement',
     ],
   }
   return benefits[level]
+}
+
+function getStakePercentage(level: ReputationLevel): number {
+  const percentages: Record<ReputationLevel, number> = {
+    unverified: 10.0,
+    bronze: 5.0,
+    silver: 3.5,
+    gold: 2.5,
+    platinum: 2.0,
+  }
+  return percentages[level]
 }
 
 function cn(...inputs: (string | undefined | null | false)[]) {

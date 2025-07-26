@@ -627,16 +627,30 @@ class LockExtensionIncentives {
 
 ## Dispute Escalation
 
-### Progressive Staking for Disputes
+### Transaction-Based Dispute Staking System
+
+The dispute staking mechanism uses a reputation-based percentage of the transaction amount to ensure serious disputes while preventing frivolous claims. Lower reputation scores require higher stake percentages, creating strong incentives to maintain good standing.
+
+#### Stake Percentage by Reputation Tier
 
 ```typescript
 interface DisputeStakeRequirements {
-  initial: {
-    percentage: 0.1, // 10% of transaction value
-    minimum: 50,     // $50 minimum
-    maximum: 5000    // $5000 maximum
+  // Base stake percentages by reputation tier
+  stakePercentages: {
+    platinum: 0.02,    // 2.0% - Reputation 900+
+    gold: 0.025,       // 2.5% - Reputation 750-899
+    silver: 0.035,     // 3.5% - Reputation 500-749
+    bronze: 0.05,      // 5.0% - Reputation 200-499
+    unverified: 0.10   // 10.0% - Reputation 0-199
   },
   
+  // Absolute limits
+  limits: {
+    minimum: 50,       // $50 minimum stake
+    maximum: 50000     // $50,000 maximum stake
+  },
+  
+  // Escalation multipliers
   escalation: {
     level1: { multiplier: 1, arbitrators: 1 },
     level2: { multiplier: 2, arbitrators: 3 },
@@ -644,14 +658,199 @@ interface DisputeStakeRequirements {
     final: { multiplier: 10, arbitrators: 7 }
   },
   
+  // Stake distribution after resolution
   distribution: {
-    winner: 0.8,      // 80% to winner
+    winner: 0.8,       // 80% to winner
     arbitrators: 0.15, // 15% to arbitrators
     treasury: 0.05     // 5% to treasury
   }
 }
+```
+
+#### Stake Calculation Examples
+
+```typescript
+// Example 1: Platinum user disputing a $100,000 transaction
+const transaction1 = 100000;
+const reputation1 = 950; // Platinum
+const stakeRequired1 = transaction1 * 0.02; // $2,000 stake
+
+// Example 2: Silver user disputing a $50,000 transaction
+const transaction2 = 50000;
+const reputation2 = 650; // Silver
+const stakeRequired2 = transaction2 * 0.035; // $1,750 stake
+
+// Example 3: Unverified user disputing a $10,000 transaction
+const transaction3 = 10000;
+const reputation3 = 50; // Unverified
+const stakeRequired3 = transaction3 * 0.10; // $1,000 stake
+
+// Example 4: Bronze user disputing small transaction
+const transaction4 = 500;
+const reputation4 = 350; // Bronze
+const calculatedStake4 = transaction4 * 0.05; // $25
+const stakeRequired4 = Math.max(calculatedStake4, 50); // $50 (minimum)
+```
+
+#### Reputation Impact on Dispute Costs
+
+| Transaction Value | Platinum (2%) | Gold (2.5%) | Silver (3.5%) | Bronze (5%) | Unverified (10%) |
+|------------------|---------------|-------------|---------------|-------------|------------------|
+| $1,000          | $50*          | $50*        | $50*          | $50*        | $100            |
+| $10,000         | $200          | $250        | $350          | $500        | $1,000          |
+| $50,000         | $1,000        | $1,250      | $1,750        | $2,500      | $5,000          |
+| $100,000        | $2,000        | $2,500      | $3,500        | $5,000      | $10,000         |
+| $500,000        | $10,000       | $12,500     | $17,500       | $25,000     | $50,000*        |
+
+*Adjusted for minimum/maximum limits
+
+### Progressive Staking Implementation
+
+```typescript
+class DisputeStakeCalculator {
+  // Get reputation tier from score
+  private getReputationTier(score: number): ReputationTier {
+    if (score >= 900) return 'platinum';
+    if (score >= 750) return 'gold';
+    if (score >= 500) return 'silver';
+    if (score >= 200) return 'bronze';
+    return 'unverified';
+  }
+  
+  // Calculate required dispute stake
+  calculateDisputeStake(
+    transactionAmount: number,
+    reputationScore: number
+  ): DisputeStakeResult {
+    const tier = this.getReputationTier(reputationScore);
+    const percentages = {
+      platinum: 0.02,
+      gold: 0.025,
+      silver: 0.035,
+      bronze: 0.05,
+      unverified: 0.10
+    };
+    
+    const percentage = percentages[tier];
+    const calculatedStake = transactionAmount * percentage;
+    
+    // Apply minimum and maximum limits
+    const finalStake = Math.max(
+      Math.min(calculatedStake, 50000), // Maximum $50,000
+      50 // Minimum $50
+    );
+    
+    // Calculate potential savings with better reputation
+    const savings = this.calculatePotentialSavings(
+      transactionAmount,
+      reputationScore
+    );
+    
+    return {
+      stakeAmount: finalStake,
+      percentage: percentage * 100,
+      tier,
+      reputationScore,
+      transactionAmount,
+      potentialSavings: savings,
+      warning: percentage >= 0.05 ? 'High stake due to low reputation' : null
+    };
+  }
+  
+  // Calculate savings with higher reputation
+  private calculatePotentialSavings(
+    transactionAmount: number,
+    currentScore: number
+  ): SavingsBreakdown {
+    const currentTier = this.getReputationTier(currentScore);
+    const currentStake = this.calculateDisputeStake(
+      transactionAmount,
+      currentScore
+    ).stakeAmount;
+    
+    const savings = {
+      toNextTier: 0,
+      toPlatinum: 0,
+      percentageReduction: 0
+    };
+    
+    // Calculate savings to next tier
+    const nextTierScore = this.getNextTierMinScore(currentScore);
+    if (nextTierScore) {
+      const nextStake = this.calculateDisputeStake(
+        transactionAmount,
+        nextTierScore
+      ).stakeAmount;
+      savings.toNextTier = currentStake - nextStake;
+    }
+    
+    // Calculate savings to platinum
+    if (currentScore < 900) {
+      const platinumStake = this.calculateDisputeStake(
+        transactionAmount,
+        900
+      ).stakeAmount;
+      savings.toPlatinum = currentStake - platinumStake;
+      savings.percentageReduction = 
+        ((currentStake - platinumStake) / currentStake) * 100;
+    }
+    
+    return savings;
+  }
+}
 
 class DisputeEscalationManager {
+  private stakeCalculator = new DisputeStakeCalculator();
+  
+  async initiateDispute(
+    transactionId: string,
+    reason: string,
+    evidence: Evidence[]
+  ): Promise<DisputeInitiationResult> {
+    const transaction = await this.getTransaction(transactionId);
+    const user = await this.getUser(transaction.disputingParty);
+    
+    // Calculate required stake based on reputation
+    const stakeInfo = this.stakeCalculator.calculateDisputeStake(
+      transaction.amount,
+      user.reputationScore
+    );
+    
+    // Verify user has sufficient balance
+    if (user.availableBalance < stakeInfo.stakeAmount) {
+      throw new Error(
+        `Insufficient balance. Required stake: $${stakeInfo.stakeAmount} (${stakeInfo.percentage}% of transaction)`
+      );
+    }
+    
+    // Lock the dispute stake
+    await this.lockDisputeStake(user.id, stakeInfo.stakeAmount);
+    
+    // Create dispute record
+    const dispute = await this.createDispute({
+      transactionId,
+      initiator: user.id,
+      reason,
+      evidence,
+      stake: stakeInfo.stakeAmount,
+      stakePercentage: stakeInfo.percentage,
+      reputationAtDispute: user.reputationScore,
+      status: 'pending',
+      createdAt: Date.now()
+    });
+    
+    // Notify relevant parties
+    await this.notifyDisputeParties(dispute);
+    
+    return {
+      disputeId: dispute.id,
+      stakeAmount: stakeInfo.stakeAmount,
+      stakePercentage: stakeInfo.percentage,
+      estimatedResolution: this.calculateResolutionTime(dispute),
+      nextSteps: this.getDisputeNextSteps(dispute)
+    };
+  }
+  
   async escalateDispute(
     disputeId: string,
     escalationReason: string
@@ -659,7 +858,7 @@ class DisputeEscalationManager {
     const dispute = await this.getDispute(disputeId);
     const nextLevel = this.getNextLevel(dispute.currentLevel);
     
-    // Calculate additional stake required
+    // Calculate additional stake required for escalation
     const additionalStake = this.calculateEscalationStake(
       dispute.originalStake,
       dispute.currentLevel,
@@ -709,25 +908,6 @@ class DisputeEscalationManager {
     const nextMultiplier = levelMultipliers[nextLevel] || 10;
     
     return originalStake * (nextMultiplier - currentMultiplier);
-  }
-  
-  private async selectArbitrators(
-    level: number,
-    category: string,
-    disputeValue: number
-  ): Promise<Arbitrator[]> {
-    const requirements = {
-      minReputation: 60 + (level * 10), // Higher levels need better arbitrators
-      expertise: category,
-      minStake: disputeValue * 0.1,
-      availability: true
-    };
-    
-    const pool = await this.getQualifiedArbitrators(requirements);
-    const count = this.getArbitratorCount(level);
-    
-    // Weighted random selection based on reputation and experience
-    return this.selectArbitratorsByWeight(pool, count);
   }
 }
 ```
