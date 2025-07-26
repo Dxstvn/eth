@@ -490,12 +490,12 @@ scenarios:
 - [x] Build personal info step with validation
 - [x] Set up security headers middleware
 
-### Week 2: Document Handling
-- [ ] Build document upload with preview
-- [ ] Implement liveness check component
-- [ ] Create address proof upload
-- [ ] Add mock OCR and verification
-- [ ] Implement rate limiting
+### Week 2: Document Handling ✓ COMPLETED - 2025-01-26
+- [x] Build document upload with preview
+- [x] Implement liveness check component
+- [x] Create address proof upload
+- [x] Add mock OCR and verification
+- [x] Implement rate limiting
 
 ### Week 3: Compliance & Review
 - [ ] Build risk assessment questionnaire

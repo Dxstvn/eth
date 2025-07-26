@@ -27,7 +27,13 @@ function getClientIdentifier(request: NextRequest): string {
 }
 
 // Check rate limit
-function checkRateLimit(identifier: string, path: string): { allowed: boolean; retryAfter?: number } {
+function checkRateLimit(identifier: string, path: string): { 
+  allowed: boolean; 
+  retryAfter?: number;
+  limit?: number;
+  remaining?: number;
+  reset?: Date;
+} {
   const now = Date.now()
   const limit = Object.entries(RATE_LIMITS).find(([pattern]) => path.startsWith(pattern))?.[1]
   
@@ -38,16 +44,32 @@ function checkRateLimit(identifier: string, path: string): { allowed: boolean; r
   
   if (!record || now > record.resetTime) {
     rateLimitMap.set(key, { count: 1, resetTime: now + limit.windowMs })
-    return { allowed: true }
+    return { 
+      allowed: true,
+      limit: limit.max,
+      remaining: limit.max - 1,
+      reset: new Date(now + limit.windowMs)
+    }
   }
   
   if (record.count >= limit.max) {
     const retryAfter = Math.ceil((record.resetTime - now) / 1000)
-    return { allowed: false, retryAfter }
+    return { 
+      allowed: false, 
+      retryAfter,
+      limit: limit.max,
+      remaining: 0,
+      reset: new Date(record.resetTime)
+    }
   }
   
   record.count++
-  return { allowed: true }
+  return { 
+    allowed: true,
+    limit: limit.max,
+    remaining: limit.max - record.count,
+    reset: new Date(record.resetTime)
+  }
 }
 
 // Clean up old rate limit entries periodically
@@ -121,14 +143,18 @@ export function middleware(request: NextRequest) {
   const rateLimit = checkRateLimit(clientId, pathname)
   
   if (!rateLimit.allowed) {
-    return new NextResponse(JSON.stringify({ error: 'Too many requests' }), {
+    return new NextResponse(JSON.stringify({ 
+      error: 'Too many requests',
+      message: `Rate limit exceeded. Please retry after ${rateLimit.retryAfter} seconds.`,
+      retryAfter: rateLimit.retryAfter
+    }), {
       status: 429,
       headers: {
         'Content-Type': 'application/json',
         'Retry-After': rateLimit.retryAfter!.toString(),
-        'X-RateLimit-Limit': Object.values(RATE_LIMITS)[0].max.toString(),
+        'X-RateLimit-Limit': rateLimit.limit!.toString(),
         'X-RateLimit-Remaining': '0',
-        'X-RateLimit-Reset': new Date(Date.now() + (rateLimit.retryAfter! * 1000)).toISOString()
+        'X-RateLimit-Reset': rateLimit.reset!.toISOString()
       }
     })
   }
@@ -228,7 +254,12 @@ export function middleware(request: NextRequest) {
   // Add nonce to response for use in components
   headers.set('X-Nonce', nonce)
   
-  // Add rate limit headers
+  // Add rate limit headers for successful requests
+  if (rateLimit.limit && rateLimit.remaining !== undefined && rateLimit.reset) {
+    headers.set('X-RateLimit-Limit', rateLimit.limit.toString())
+    headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString())
+    headers.set('X-RateLimit-Reset', rateLimit.reset.toISOString())
+  }
   headers.set('X-RateLimit-Policy', 'sliding-window')
   
   // Security headers for file uploads
