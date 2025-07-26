@@ -56,6 +56,12 @@ export default function KYCPersonalPage() {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [saveProgress, setSaveProgress] = useState(0)
+  const [isTouch, setIsTouch] = useState(false)
+
+  // Detect touch device
+  useEffect(() => {
+    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  }, [])
   const { 
     initialize: initializeEncryption, 
     encryptFormData, 
@@ -288,294 +294,498 @@ export default function KYCPersonalPage() {
             </CardDescription>
           </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+            {/* Screen reader status region */}
+            <div aria-live="polite" aria-atomic="true" className="sr-only">
+              {saveProgress > 0 && saveProgress < 100 && `Form auto-save in progress: ${saveProgress}%`}
+              {saveProgress === 100 && "Form data saved successfully"}
+              {isSubmitting && "Submitting form data, please wait"}
+              {error && `Error: ${error}`}
+            </div>
+            
             {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" role="alert">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                <AlertDescription>
+                  <strong>Error:</strong> {error}
+                </AlertDescription>
               </Alert>
             )}
 
             {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  {...register("firstName")}
-                  placeholder="John"
-                  className={errors.firstName ? "border-red-500" : ""}
-                />
-                {errors.firstName && (
-                  <p className="text-sm text-red-500">{errors.firstName.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="middleName">Middle Name</Label>
-                <Input
-                  id="middleName"
-                  {...register("middleName")}
-                  placeholder="Optional"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  {...register("lastName")}
-                  placeholder="Doe"
-                  className={errors.lastName ? "border-red-500" : ""}
-                />
-                {errors.lastName && (
-                  <p className="text-sm text-red-500">{errors.lastName.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Date of Birth and SSN */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  {...register("dateOfBirth")}
-                  max={format(new Date(), "yyyy-MM-dd")}
-                  className={errors.dateOfBirth ? "border-red-500" : ""}
-                />
-                {errors.dateOfBirth && (
-                  <p className="text-sm text-red-500">{errors.dateOfBirth.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="ssn">Social Security Number *</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-gray-400 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Your SSN is encrypted and used only for identity verification</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="relative">
-                  <MaskedInput
-                    mask="999-99-9999"
-                    value={watch('ssn')}
-                    onChange={(value) => setValue('ssn', value)}
-                    type={showSSN ? "text" : "password"}
-                    placeholder="XXX-XX-XXXX"
-                    className={errors.ssn ? "border-red-500 pr-10" : "pr-10"}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSSN(!showSSN)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showSSN ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {errors.ssn && (
-                  <p className="text-sm text-red-500">{errors.ssn.message}</p>
-                )}
-                {watch('ssn') && (
-                  <p className="text-xs text-green-600 flex items-center gap-1">
-                    <Lock className="h-3 w-3" />
-                    Encrypted with AES-256
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Nationality and Country */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nationality">Nationality *</Label>
-                <Select
-                  value={watch("nationality")}
-                  onValueChange={(value) => setValue("nationality", value)}
-                >
-                  <SelectTrigger className={errors.nationality ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select nationality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.nationality && (
-                  <p className="text-sm text-red-500">{errors.nationality.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="country">Country of Residence *</Label>
-                <Select
-                  value={watch("country")}
-                  onValueChange={(value) => setValue("country", value)}
-                >
-                  <SelectTrigger className={errors.country ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.country && (
-                  <p className="text-sm text-red-500">{errors.country.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Address with Autocomplete */}
-            <div className="space-y-2">
-              <Label htmlFor="address">Residential Address *</Label>
-              <AddressAutocomplete
-                value={watch('address')}
-                onChange={(value) => setValue('address', value)}
-                onAddressSelect={handleAddressSelect}
-                country={watch('country')}
-                placeholder="Start typing your address..."
-                className={errors.address ? "border-red-500" : ""}
-              />
-              {errors.address && (
-                <p className="text-sm text-red-500">{errors.address.message}</p>
-              )}
-            </div>
-
-            {/* City, State, and Postal Code */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City *</Label>
-                <Input
-                  id="city"
-                  {...register("city")}
-                  placeholder="New York"
-                  className={errors.city ? "border-red-500" : ""}
-                />
-                {errors.city && (
-                  <p className="text-sm text-red-500">{errors.city.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="state">State/Province *</Label>
-                <Select
-                  value={watch("state")}
-                  onValueChange={(value) => setValue("state", value)}
-                >
-                  <SelectTrigger className={errors.state ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(watch('country') === 'United States' ? usStates : ['Other']).map((state) => (
-                      <SelectItem key={state} value={state}>
-                        {state}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.state && (
-                  <p className="text-sm text-red-500">{errors.state.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="postalCode">Postal/ZIP Code *</Label>
-                <Input
-                  id="postalCode"
-                  {...register("postalCode")}
-                  placeholder="10001"
-                  className={errors.postalCode ? "border-red-500" : ""}
-                />
-                {errors.postalCode && (
-                  <p className="text-sm text-red-500">{errors.postalCode.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Phone and Email */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
-                <MaskedInput
-                  mask="+9 (999) 999-9999"
-                  value={watch('phone')}
-                  onChange={(value) => setValue('phone', value.replace(/\D/g, ''))}
-                  placeholder="+1 (555) 123-4567"
-                  className={errors.phone ? "border-red-500" : ""}
-                />
-                {errors.phone && (
-                  <p className="text-sm text-red-500">{errors.phone.message}</p>
-                )}
-                <p className="text-xs text-gray-500">
-                  Include country code
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  placeholder="john.doe@example.com"
-                  className={errors.email ? "border-red-500" : ""}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Employment Information */}
-            <div className="border-t pt-6 mt-6">
-              <h3 className="text-lg font-medium mb-4">Employment & Financial Information</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <fieldset className="border border-gray-200 rounded-lg p-4 sm:p-6">
+              <legend className="text-lg font-medium px-2">Personal Name Information</legend>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="occupation">Occupation *</Label>
+                  <Label htmlFor="firstName" className="font-medium">
+                    First Name
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
                   <Input
-                    id="occupation"
-                    {...register("occupation")}
-                    placeholder="Software Engineer"
-                    className={errors.occupation ? "border-red-500" : ""}
+                    id="firstName"
+                    {...register("firstName")}
+                    placeholder="Enter your first name"
+                    className={`h-12 text-base touch-manipulation ${errors.firstName ? "border-red-500" : ""}`}
+                    aria-required="true"
+                    aria-invalid={errors.firstName ? "true" : "false"}
+                    aria-describedby={errors.firstName ? "firstName-error" : undefined}
+                    autoComplete="given-name"
                   />
-                  {errors.occupation && (
-                    <p className="text-sm text-red-500">{errors.occupation.message}</p>
+                  {errors.firstName && (
+                    <p id="firstName-error" role="alert" className="text-sm text-red-500">
+                      {errors.firstName.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="employer">Employer (Optional)</Label>
+                  <Label htmlFor="middleName" className="font-medium">Middle Name</Label>
+                  <Input
+                    id="middleName"
+                    {...register("middleName")}
+                    placeholder="Optional middle name"
+                    className="h-12 text-base touch-manipulation"
+                    aria-describedby="middleName-help"
+                    autoComplete="additional-name"
+                  />
+                  <p id="middleName-help" className="text-xs text-gray-500">
+                    Optional field - leave blank if not applicable
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="font-medium">
+                    Last Name
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Input
+                    id="lastName"
+                    {...register("lastName")}
+                    placeholder="Enter your last name"
+                    className={`h-12 text-base touch-manipulation ${errors.lastName ? "border-red-500" : ""}`}
+                    aria-required="true"
+                    aria-invalid={errors.lastName ? "true" : "false"}
+                    aria-describedby={errors.lastName ? "lastName-error" : undefined}
+                    autoComplete="family-name"
+                  />
+                  {errors.lastName && (
+                    <p id="lastName-error" role="alert" className="text-sm text-red-500">
+                      {errors.lastName.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            {/* Date of Birth and SSN */}
+            <fieldset className="border border-gray-200 rounded-lg p-4 sm:p-6">
+              <legend className="text-lg font-medium px-2">Identity Information</legend>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth" className="font-medium">
+                    Date of Birth
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    {...register("dateOfBirth")}
+                    max={format(new Date(), "yyyy-MM-dd")}
+                    className={`h-12 text-base touch-manipulation ${errors.dateOfBirth ? "border-red-500" : ""}`}
+                    aria-required="true"
+                    aria-invalid={errors.dateOfBirth ? "true" : "false"}
+                    aria-describedby={errors.dateOfBirth ? "dateOfBirth-error" : "dateOfBirth-help"}
+                    autoComplete="bday"
+                  />
+                  <p id="dateOfBirth-help" className="text-xs text-gray-500">
+                    You must be at least 18 years old to proceed
+                  </p>
+                  {errors.dateOfBirth && (
+                    <p id="dateOfBirth-error" role="alert" className="text-sm text-red-500">
+                      {errors.dateOfBirth.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="ssn" className="font-medium">
+                      Social Security Number
+                      <span aria-label="required" className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-gray-400 cursor-help" aria-label="More information about SSN security" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Your SSN is encrypted and used only for identity verification</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="relative">
+                    <MaskedInput
+                      id="ssn"
+                      mask="999-99-9999"
+                      value={watch('ssn')}
+                      onChange={(value) => setValue('ssn', value)}
+                      type={showSSN ? "text" : "password"}
+                      placeholder="XXX-XX-XXXX"
+                      className={`h-12 text-base touch-manipulation ${errors.ssn ? "border-red-500 pr-12" : "pr-12"}`}
+                      aria-required="true"
+                      aria-invalid={errors.ssn ? "true" : "false"}
+                      aria-describedby={errors.ssn ? "ssn-error" : "ssn-help"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSSN(!showSSN)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 rounded touch-manipulation"
+                      aria-label={showSSN ? "Hide Social Security Number" : "Show Social Security Number"}
+                      tabIndex={0}
+                    >
+                      {showSSN ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p id="ssn-help" className="text-xs text-gray-500">
+                    Format: XXX-XX-XXXX (numbers only)
+                  </p>
+                  {errors.ssn && (
+                    <p id="ssn-error" role="alert" className="text-sm text-red-500">
+                      {errors.ssn.message}
+                    </p>
+                  )}
+                  {watch('ssn') && (
+                    <div className="text-xs text-green-600 flex items-center gap-1" role="status" aria-live="polite">
+                      <Lock className="h-3 w-3" aria-hidden="true" />
+                      <span>Encrypted with AES-256 security</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            {/* Nationality and Country */}
+            <fieldset className="border border-gray-200 rounded-lg p-4 sm:p-6">
+              <legend className="text-lg font-medium px-2">Nationality Information</legend>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nationality-select" className="font-medium">
+                    Nationality
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={watch("nationality")}
+                    onValueChange={(value) => setValue("nationality", value)}
+                    required
+                  >
+                    <SelectTrigger 
+                      id="nationality-select"
+                      className={`h-12 text-base touch-manipulation ${errors.nationality ? "border-red-500" : ""}`}
+                      aria-required="true"
+                      aria-invalid={errors.nationality ? "true" : "false"}
+                      aria-describedby={errors.nationality ? "nationality-error" : "nationality-help"}
+                    >
+                      <SelectValue placeholder="Choose your nationality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p id="nationality-help" className="text-xs text-gray-500">
+                    Select the country of your citizenship
+                  </p>
+                  {errors.nationality && (
+                    <p id="nationality-error" role="alert" className="text-sm text-red-500">
+                      {errors.nationality.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="country-select" className="font-medium">
+                    Country of Residence
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={watch("country")}
+                    onValueChange={(value) => setValue("country", value)}
+                    required
+                  >
+                    <SelectTrigger 
+                      id="country-select"
+                      className={`h-12 text-base touch-manipulation ${errors.country ? "border-red-500" : ""}`}
+                      aria-required="true"
+                      aria-invalid={errors.country ? "true" : "false"}
+                      aria-describedby={errors.country ? "country-error" : "country-help"}
+                    >
+                      <SelectValue placeholder="Choose your residence country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p id="country-help" className="text-xs text-gray-500">
+                    Select where you currently live
+                  </p>
+                  {errors.country && (
+                    <p id="country-error" role="alert" className="text-sm text-red-500">
+                      {errors.country.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            {/* Address with Autocomplete */}
+            <fieldset className="border border-gray-200 rounded-lg p-4">
+              <legend className="text-lg font-medium px-2">Address Information</legend>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="font-medium">
+                    Residential Address
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <AddressAutocomplete
+                    id="address"
+                    value={watch('address')}
+                    onChange={(value) => setValue('address', value)}
+                    onAddressSelect={handleAddressSelect}
+                    country={watch('country')}
+                    placeholder="Start typing your street address..."
+                    className={errors.address ? "border-red-500" : ""}
+                    aria-required="true"
+                    aria-invalid={errors.address ? "true" : "false"}
+                    aria-describedby={errors.address ? "address-error" : "address-help"}
+                  />
+                  <p id="address-help" className="text-xs text-gray-500">
+                    Enter your full street address including apartment/unit number if applicable
+                  </p>
+                  {errors.address && (
+                    <p id="address-error" role="alert" className="text-sm text-red-500">
+                      {errors.address.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* City, State, and Postal Code */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="city" className="font-medium">
+                      City
+                      <span aria-label="required" className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="city"
+                      {...register("city")}
+                      placeholder="Enter your city"
+                      className={`h-12 text-base touch-manipulation ${errors.city ? "border-red-500" : ""}`}
+                      aria-required="true"
+                      aria-invalid={errors.city ? "true" : "false"}
+                      aria-describedby={errors.city ? "city-error" : undefined}
+                      autoComplete="address-level2"
+                    />
+                    {errors.city && (
+                      <p id="city-error" role="alert" className="text-sm text-red-500">
+                        {errors.city.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="state-select" className="font-medium">
+                      State/Province
+                      <span aria-label="required" className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={watch("state")}
+                      onValueChange={(value) => setValue("state", value)}
+                      required
+                    >
+                      <SelectTrigger 
+                        id="state-select"
+                        className={errors.state ? "border-red-500" : ""}
+                        aria-required="true"
+                        aria-invalid={errors.state ? "true" : "false"}
+                        aria-describedby={errors.state ? "state-error" : "state-help"}
+                      >
+                        <SelectValue placeholder="Choose state/province" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(watch('country') === 'United States' ? usStates : ['Other']).map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p id="state-help" className="text-xs text-gray-500">
+                      {watch('country') === 'United States' ? 'Select your state' : 'Enter your province/region'}
+                    </p>
+                    {errors.state && (
+                      <p id="state-error" role="alert" className="text-sm text-red-500">
+                        {errors.state.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode" className="font-medium">
+                      Postal/ZIP Code
+                      <span aria-label="required" className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="postalCode"
+                      {...register("postalCode")}
+                      placeholder={watch('country') === 'United States' ? '10001' : 'Enter postal code'}
+                      className={errors.postalCode ? "border-red-500" : ""}
+                      aria-required="true"
+                      aria-invalid={errors.postalCode ? "true" : "false"}
+                      aria-describedby={errors.postalCode ? "postalCode-error" : "postalCode-help"}
+                    />
+                    <p id="postalCode-help" className="text-xs text-gray-500">
+                      {watch('country') === 'United States' ? 'Format: 12345 or 12345-6789' : 'Enter your local postal code'}
+                    </p>
+                    {errors.postalCode && (
+                      <p id="postalCode-error" role="alert" className="text-sm text-red-500">
+                        {errors.postalCode.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            {/* Phone and Email */}
+            <fieldset className="border border-gray-200 rounded-lg p-4 sm:p-6">
+              <legend className="text-lg font-medium px-2">Contact Information</legend>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="font-medium">
+                    Phone Number
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <MaskedInput
+                    id="phone"
+                    mask="+9 (999) 999-9999"
+                    value={watch('phone')}
+                    onChange={(value) => setValue('phone', value.replace(/\D/g, ''))}
+                    placeholder="+1 (555) 123-4567"
+                    className={`h-12 text-base touch-manipulation ${errors.phone ? "border-red-500" : ""}`}
+                    aria-required="true"
+                    aria-invalid={errors.phone ? "true" : "false"}
+                    aria-describedby={errors.phone ? "phone-error" : "phone-help"}
+                    inputMode="tel"
+                  />
+                  <p id="phone-help" className="text-xs text-gray-500">
+                    Include country code (e.g. +1 for US/Canada)
+                  </p>
+                  {errors.phone && (
+                    <p id="phone-error" role="alert" className="text-sm text-red-500">
+                      {errors.phone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="font-medium">
+                    Email Address
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register("email")}
+                    placeholder="john.doe@example.com"
+                    className={`h-12 text-base touch-manipulation ${errors.email ? "border-red-500" : ""}`}
+                    aria-required="true"
+                    aria-invalid={errors.email ? "true" : "false"}
+                    aria-describedby={errors.email ? "email-error" : "email-help"}
+                    autoComplete="email"
+                    inputMode="email"
+                  />
+                  <p id="email-help" className="text-xs text-gray-500">
+                    We'll use this to send important KYC updates
+                  </p>
+                  {errors.email && (
+                    <p id="email-error" role="alert" className="text-sm text-red-500">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            {/* Employment Information */}
+            <fieldset className="border border-gray-200 rounded-lg p-4">
+              <legend className="text-lg font-medium px-2">Employment & Financial Information</legend>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="occupation" className="font-medium">
+                    Occupation
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Input
+                    id="occupation"
+                    {...register("occupation")}
+                    placeholder="e.g. Software Engineer, Teacher, etc."
+                    className={errors.occupation ? "border-red-500" : ""}
+                    aria-required="true"
+                    aria-invalid={errors.occupation ? "true" : "false"}
+                    aria-describedby={errors.occupation ? "occupation-error" : "occupation-help"}
+                    autoComplete="organization-title"
+                  />
+                  <p id="occupation-help" className="text-xs text-gray-500">
+                    Enter your current job title or profession
+                  </p>
+                  {errors.occupation && (
+                    <p id="occupation-error" role="alert" className="text-sm text-red-500">
+                      {errors.occupation.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="employer" className="font-medium">Employer</Label>
                   <Input
                     id="employer"
                     {...register("employer")}
-                    placeholder="Company Name"
+                    placeholder="Company name (optional)"
+                    aria-describedby="employer-help"
+                    autoComplete="organization"
                   />
+                  <p id="employer-help" className="text-xs text-gray-500">
+                    Optional - leave blank if self-employed or unemployed
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="annualIncome">Annual Income Range *</Label>
+                  <Label htmlFor="income-select" className="font-medium">
+                    Annual Income Range
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
                   <Select
                     value={watch("annualIncome")}
                     onValueChange={(value) => setValue("annualIncome", value)}
+                    required
                   >
-                    <SelectTrigger className={errors.annualIncome ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select income range" />
+                    <SelectTrigger 
+                      id="income-select"
+                      className={errors.annualIncome ? "border-red-500" : ""}
+                      aria-required="true"
+                      aria-invalid={errors.annualIncome ? "true" : "false"}
+                      aria-describedby={errors.annualIncome ? "income-error" : "income-help"}
+                    >
+                      <SelectValue placeholder="Choose your income range" />
                     </SelectTrigger>
                     <SelectContent>
                       {incomeRanges.map((range) => (
@@ -585,19 +795,34 @@ export default function KYCPersonalPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <p id="income-help" className="text-xs text-gray-500">
+                    Select your approximate annual income (USD)
+                  </p>
                   {errors.annualIncome && (
-                    <p className="text-sm text-red-500">{errors.annualIncome.message}</p>
+                    <p id="income-error" role="alert" className="text-sm text-red-500">
+                      {errors.annualIncome.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sourceOfFunds">Primary Source of Funds *</Label>
+                  <Label htmlFor="funds-select" className="font-medium">
+                    Primary Source of Funds
+                    <span aria-label="required" className="text-red-500 ml-1">*</span>
+                  </Label>
                   <Select
                     value={watch("sourceOfFunds")}
                     onValueChange={(value) => setValue("sourceOfFunds", value)}
+                    required
                   >
-                    <SelectTrigger className={errors.sourceOfFunds ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select source" />
+                    <SelectTrigger 
+                      id="funds-select"
+                      className={errors.sourceOfFunds ? "border-red-500" : ""}
+                      aria-required="true"
+                      aria-invalid={errors.sourceOfFunds ? "true" : "false"}
+                      aria-describedby={errors.sourceOfFunds ? "funds-error" : "funds-help"}
+                    >
+                      <SelectValue placeholder="Choose primary source" />
                     </SelectTrigger>
                     <SelectContent>
                       {fundSources.map((source) => (
@@ -607,27 +832,51 @@ export default function KYCPersonalPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <p id="funds-help" className="text-xs text-gray-500">
+                    Select the main source of your funds for transactions
+                  </p>
                   {errors.sourceOfFunds && (
-                    <p className="text-sm text-red-500">{errors.sourceOfFunds.message}</p>
+                    <p id="funds-error" role="alert" className="text-sm text-red-500">
+                      {errors.sourceOfFunds.message}
+                    </p>
                   )}
                 </div>
               </div>
-            </div>
+            </fieldset>
 
             {/* Form Actions */}
-            <div className="flex justify-between pt-6 border-t">
+            <div className="flex justify-between pt-6 border-t" role="group" aria-label="Form navigation">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/kyc")}
                 disabled={isSubmitting}
+                aria-describedby="back-button-help"
               >
-                Back
+                Back to KYC Overview
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Continue"}
-                <ChevronRight className="ml-2 h-4 w-4" />
+              <div className="hidden" id="back-button-help">
+                Returns to the main KYC page without saving changes
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+                aria-describedby="submit-button-help"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="sr-only">Saving form data, please wait</span>
+                    Saving...
+                  </>
+                ) : (
+                  "Continue to Documents"
+                )}
+                {!isSubmitting && <ChevronRight className="ml-2 h-4 w-4" aria-hidden="true" />}
               </Button>
+              <div className="hidden" id="submit-button-help">
+                Saves your personal information and proceeds to document upload
+              </div>
             </div>
           </form>
         </CardContent>
@@ -650,23 +899,28 @@ export default function KYCPersonalPage() {
         </div>
 
         {/* Auto-save toggle */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg" role="region" aria-labelledby="autosave-heading">
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="autosave"
               checked={autoSaveEnabled}
               onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-              className="rounded border-gray-300"
+              className="rounded border-gray-300 focus:ring-2 focus:ring-teal-500"
+              aria-describedby="autosave-description"
             />
-            <label htmlFor="autosave" className="text-sm font-medium">
+            <label htmlFor="autosave" className="text-sm font-medium cursor-pointer" id="autosave-heading">
               Enable auto-save
             </label>
+            <p id="autosave-description" className="text-xs text-gray-500 ml-2">
+              Automatically saves your progress as you type
+            </p>
           </div>
           {lastSaved && (
-            <span className="text-xs text-gray-500">
-              Last saved: {format(lastSaved, 'MMM d, h:mm a')}
-            </span>
+            <div className="text-xs text-gray-500" role="status" aria-live="polite">
+              <span className="sr-only">Last saved</span>
+              {format(lastSaved, 'MMM d, h:mm a')}
+            </div>
           )}
         </div>
       </div>

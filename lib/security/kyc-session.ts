@@ -159,21 +159,50 @@ export function validateSessionStep(
   return requestedIndex <= currentIndex + 1
 }
 
-// Session encryption/decryption
+// [SECURITY] Session encryption/decryption - Fixed deprecated crypto functions
 const SESSION_SECRET = process.env.SESSION_SECRET || 'development-secret-change-in-production'
+const SESSION_SALT = 'clearhold-kyc-session-salt' // Static salt for session encryption
 
 function encryptSessionId(sessionId: string): string {
-  const cipher = crypto.createCipher('aes-256-cbc', SESSION_SECRET)
+  // Generate random IV for each encryption
+  const iv = crypto.randomBytes(16)
+  
+  // Derive key using scrypt for better security
+  const key = crypto.scryptSync(SESSION_SECRET, SESSION_SALT, 32)
+  
+  // Use proper cipher with IV
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
   let encrypted = cipher.update(sessionId, 'utf8', 'hex')
   encrypted += cipher.final('hex')
-  return encrypted
+  
+  // Prepend IV to encrypted data
+  return iv.toString('hex') + ':' + encrypted
 }
 
 function decryptSessionId(encryptedSessionId: string): string {
-  const decipher = crypto.createDecipher('aes-256-cbc', SESSION_SECRET)
-  let decrypted = decipher.update(encryptedSessionId, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  return decrypted
+  try {
+    // Split IV and encrypted data
+    const parts = encryptedSessionId.split(':')
+    if (parts.length !== 2) {
+      throw new Error('[SECURITY] Invalid encrypted session format')
+    }
+    
+    const iv = Buffer.from(parts[0], 'hex')
+    const encryptedData = parts[1]
+    
+    // Derive same key
+    const key = crypto.scryptSync(SESSION_SECRET, SESSION_SALT, 32)
+    
+    // Decrypt using proper decipher with IV
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
+    let decrypted = decipher.update(encryptedData, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    
+    return decrypted
+  } catch (error) {
+    console.error('[SECURITY] Session decryption failed:', error)
+    throw new Error('[SECURITY] Invalid session data')
+  }
 }
 
 // Session fingerprinting for additional security

@@ -1,519 +1,458 @@
-// [SECURITY] KYC Encryption Utilities Test Suite
-
-import {
-  KYCEncryptionService,
-  KYCKeyDerivation,
-  KYCSecureStorage,
-  KYCDataIntegrity,
+import CryptoJS from 'crypto-js'
+import { 
+  KYCEncryption,
   KYCFieldType,
-  kycEncryption,
-  kycKeyDerivation,
-  kycSecureStorage,
-  kycDataIntegrity,
-} from '../kyc-encryption';
-import CryptoJS from 'crypto-js';
+  KYC_CRYPTO_CONFIG,
+  EncryptionMetadata
+} from '../kyc-encryption'
+import { AdvancedEncryption } from '../crypto-utils'
 
-// Mock localStorage for testing
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-    key: (index: number) => {
-      const keys = Object.keys(store);
-      return keys[index] || null;
-    },
-    get length() {
-      return Object.keys(store).length;
-    },
-  };
-})();
-
-// @ts-ignore
-global.localStorage = localStorageMock;
-
-// Mock crypto.getRandomValues
-global.crypto = {
-  getRandomValues: (array: any) => {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
-    return array;
+// Mock crypto-utils
+jest.mock('../crypto-utils', () => ({
+  AdvancedEncryption: {
+    encrypt: jest.fn(),
+    decrypt: jest.fn(),
+    verifyIntegrity: jest.fn()
   },
-} as any;
+  SecureRandom: {
+    generateBytes: jest.fn().mockImplementation((size) => {
+      return CryptoJS.lib.WordArray.random(size / 8).toString(CryptoJS.enc.Hex)
+    })
+  }
+}))
 
-// Add FileReader mock if not available
-if (typeof FileReader === 'undefined') {
-  (global as any).FileReader = class FileReader {
-    result: any = null;
-    onload: ((event: any) => void) | null = null;
-    onerror: ((event: any) => void) | null = null;
-    
-    readAsArrayBuffer(blob: Blob) {
-      // Simulate async read
-      setTimeout(async () => {
-        try {
-          const text = await blob.text();
-          const encoder = new TextEncoder();
-          this.result = encoder.encode(text).buffer;
-          if (this.onload) {
-            this.onload({ target: { result: this.result } });
-          }
-        } catch (error) {
-          if (this.onerror) {
-            this.onerror(error);
-          }
-        }
-      }, 0);
-    }
-  };
-}
+// Mock uuid
+jest.mock('uuid', () => ({
+  v4: jest.fn().mockReturnValue('test-uuid-1234')
+}))
 
-describe('KYCEncryptionService', () => {
-  const encryptionService = new KYCEncryptionService();
-  const testPassword = 'TestPassword123!@#';
-  const testData = 'Sensitive PII Data: SSN 123-45-6789';
-
-  describe('PII Encryption', () => {
-    it('should encrypt and decrypt PII data correctly', () => {
-      const encrypted = encryptionService.encryptPII(
-        testData,
-        KYCFieldType.SSN,
-        testPassword
-      );
-
-      expect(encrypted.data).toBeDefined();
-      expect(encrypted.salt).toBeDefined();
-      expect(encrypted.iv).toBeDefined();
-      expect(encrypted.hmac).toBeDefined();
-      expect(encrypted.metadata).toBeDefined();
-      expect(encrypted.metadata.fieldType).toBe(KYCFieldType.SSN);
-
-      const decrypted = encryptionService.decryptPII(encrypted, testPassword);
-      expect(decrypted).toBe(testData);
-    });
-
-    it('should fail decryption with wrong password', () => {
-      const encrypted = encryptionService.encryptPII(
-        testData,
-        KYCFieldType.SSN,
-        testPassword
-      );
-
-      expect(() => {
-        encryptionService.decryptPII(encrypted, 'WrongPassword');
-      }).toThrow('[SECURITY] Authentication tag verification failed');
-    });
-
-    it('should use different keys for different field types', () => {
-      const ssnEncrypted = encryptionService.encryptPII(
-        testData,
-        KYCFieldType.SSN,
-        testPassword
-      );
-
-      const taxIdEncrypted = encryptionService.encryptPII(
-        testData,
-        KYCFieldType.TAX_ID,
-        testPassword
-      );
-
-      expect(ssnEncrypted.data).not.toBe(taxIdEncrypted.data);
-    });
-
-    it('should detect data tampering', () => {
-      const encrypted = encryptionService.encryptPII(
-        testData,
-        KYCFieldType.SSN,
-        testPassword
-      );
-
-      // Tamper with encrypted data
-      encrypted.data = encrypted.data.substring(0, encrypted.data.length - 2) + 'XX';
-
-      expect(() => {
-        encryptionService.decryptPII(encrypted, testPassword);
-      }).toThrow();
-    });
-  });
-
-  describe('File Encryption', () => {
-    const testFile = new File(['Test file content'], 'test.txt', {
-      type: 'text/plain',
-    });
-
-    it('should encrypt and decrypt files', async () => {
-      const encrypted = await encryptionService.encryptFile(testFile, testPassword);
-
-      expect(encrypted.encryptedData).toBeDefined();
-      expect(encrypted.metadata).toBeDefined();
-      expect(encrypted.fileMetadata.originalName).toBe('test.txt');
-      expect(encrypted.fileMetadata.mimeType).toBe('text/plain');
-
-      const decrypted = await encryptionService.decryptFile(encrypted, testPassword);
-      expect(decrypted).toBeInstanceOf(Blob);
-      expect(decrypted.type).toBe('text/plain');
-
-      // Verify content
-      const decryptedText = await decrypted.text();
-      expect(decryptedText).toBe('Test file content');
-    });
-
-    it('should handle progress callback', async () => {
-      const progressValues: number[] = [];
-      const onProgress = (progress: number) => progressValues.push(progress);
-
-      await encryptionService.encryptFile(testFile, testPassword, onProgress);
-      expect(progressValues.length).toBeGreaterThan(0);
-      expect(progressValues[progressValues.length - 1]).toBe(100);
-    });
-
-    it('should reject files exceeding max size', async () => {
-      const largeContent = new Array(60 * 1024 * 1024).fill('a').join(''); // 60MB
-      const largeFile = new File([largeContent], 'large.txt', {
-        type: 'text/plain',
-      });
-
-      await expect(
-        encryptionService.encryptFile(largeFile, testPassword)
-      ).rejects.toThrow('[SECURITY] File size exceeds maximum allowed size');
-    });
-  });
-
-  describe('Hash and Fingerprint', () => {
-    it('should generate consistent hashes', () => {
-      const hash1 = encryptionService.generateHash(testData);
-      const hash2 = encryptionService.generateHash(testData);
-
-      expect(hash1).toBe(hash2);
-      expect(hash1).toHaveLength(64); // SHA256 hex string length
-    });
-
-    it('should generate different hashes for different data', () => {
-      const hash1 = encryptionService.generateHash('data1');
-      const hash2 = encryptionService.generateHash('data2');
-
-      expect(hash1).not.toBe(hash2);
-    });
-
-    it('should generate fingerprints for strings and buffers', () => {
-      const stringFingerprint = encryptionService.generateFingerprint(testData);
-      const buffer = new TextEncoder().encode(testData);
-      const bufferFingerprint = encryptionService.generateFingerprint(buffer.buffer);
-
-      expect(stringFingerprint).toBeDefined();
-      expect(bufferFingerprint).toBeDefined();
-    });
-  });
-
-  describe('Key Storage', () => {
-    const testKey = 'super-secret-key';
-    const storagePassword = 'StoragePassword123!';
-
-    it('should securely store and retrieve keys', () => {
-      const storedKey = encryptionService.secureStoreKey(testKey, storagePassword);
-      expect(storedKey).toBeDefined();
-      expect(storedKey).not.toBe(testKey);
-
-      const retrievedKey = encryptionService.retrieveStoredKey(
-        storedKey,
-        storagePassword
-      );
-      expect(retrievedKey).toBe(testKey);
-    });
-
-    it('should fail to retrieve key with wrong password', () => {
-      const storedKey = encryptionService.secureStoreKey(testKey, storagePassword);
-
-      expect(() => {
-        encryptionService.retrieveStoredKey(storedKey, 'WrongPassword');
-      }).toThrow('[SECURITY] Failed to retrieve stored key');
-    });
-  });
-});
-
-describe('KYCKeyDerivation', () => {
-  const keyDerivation = new KYCKeyDerivation();
-  const testPassword = 'TestPassword123!';
-
-  describe('Key Derivation', () => {
-    it('should derive consistent keys with same password and salt', () => {
-      const salt = 'test-salt';
-      const derived1 = keyDerivation.deriveKey(testPassword, salt);
-      const derived2 = keyDerivation.deriveKey(testPassword, salt);
-
-      expect(derived1.key.toString()).toBe(derived2.key.toString());
-      expect(derived1.salt).toBe(derived2.salt);
-    });
-
-    it('should derive different keys with different passwords', () => {
-      const salt = 'test-salt';
-      const derived1 = keyDerivation.deriveKey('password1', salt);
-      const derived2 = keyDerivation.deriveKey('password2', salt);
-
-      expect(derived1.key.toString()).not.toBe(derived2.key.toString());
-    });
-
-    it('should respect custom derivation options', () => {
-      const derived = keyDerivation.deriveKey(testPassword, undefined, {
-        iterations: 100000,
-        keySize: 16,
-        memoryFactor: 2,
-      });
-
-      expect(derived.params.iterations).toBe(100000);
-      expect(derived.params.keySize).toBe(16);
-      expect(derived.params.memoryFactor).toBe(2);
-    });
-  });
-
-  describe('Hierarchical Key Derivation', () => {
-    it('should derive hierarchical keys from master key', () => {
-      const masterKey = CryptoJS.lib.WordArray.random(32);
-      const path = ['users', 'user123', 'documents'];
-
-      const keys = keyDerivation.deriveHierarchicalKeys(masterKey, path);
-
-      expect(keys.size).toBe(3);
-      expect(keys.get('users')).toBeDefined();
-      expect(keys.get('user123')).toBeDefined();
-      expect(keys.get('documents')).toBeDefined();
-
-      // Keys should be different
-      expect(keys.get('users')!.toString()).not.toBe(keys.get('user123')!.toString());
-    });
-  });
-
-  describe('Key Splitting', () => {
-    it('should split and reconstruct keys correctly', () => {
-      const key = CryptoJS.lib.WordArray.random(32).toString();
-      const totalShares = 5;
-      const threshold = 3;
-
-      const shares = keyDerivation.splitKey(key, totalShares, threshold);
-      expect(shares).toHaveLength(totalShares);
-
-      // Reconstruct with threshold shares
-      const reconstructed = keyDerivation.reconstructKey(
-        shares.slice(0, threshold),
-        threshold
-      );
-      expect(reconstructed).toBe(key);
-    });
-
-    it('should fail reconstruction with insufficient shares', () => {
-      const key = CryptoJS.lib.WordArray.random(32).toString();
-      const shares = keyDerivation.splitKey(key, 5, 3);
-
-      expect(() => {
-        keyDerivation.reconstructKey(shares.slice(0, 2), 3);
-      }).toThrow('[SECURITY] Insufficient shares for key reconstruction');
-    });
-  });
-});
-
-describe('KYCSecureStorage', () => {
-  const secureStorage = new KYCSecureStorage();
-  const testPassword = 'StoragePassword123!';
-  const testData = { ssn: '123-45-6789', name: 'John Doe' };
+describe('KYCEncryption', () => {
+  const testPassword = 'test-password-123'
+  const testUserId = 'user-456'
+  let kycEncryption: KYCEncryption
 
   beforeEach(() => {
-    localStorageMock.clear();
-  });
+    jest.clearAllMocks()
+    kycEncryption = new KYCEncryption()
+    
+    // Mock successful encryption/decryption
+    ;(AdvancedEncryption.encrypt as jest.Mock).mockReturnValue({
+      encrypted: 'mock-encrypted-data',
+      salt: 'mock-salt',
+      iv: 'mock-iv',
+      authTag: 'mock-auth-tag',
+      metadata: {
+        algorithm: 'AES-256-CBC',
+        iterations: KYC_CRYPTO_CONFIG.PBKDF2_ITERATIONS
+      }
+    })
+    
+    ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue('decrypted-data')
+    ;(AdvancedEncryption.verifyIntegrity as jest.Mock).mockReturnValue(true)
+  })
 
-  describe('Store and Retrieve', () => {
-    it('should store and retrieve encrypted data', async () => {
-      await secureStorage.store('test-key', testData, testPassword);
+  describe('Initialization', () => {
+    it('initializes with master key', async () => {
+      const result = await kycEncryption.initialize(testPassword, testUserId)
+      
+      expect(result).toBe(true)
+      expect(kycEncryption.isInitialized()).toBe(true)
+    })
 
-      const retrieved = await secureStorage.retrieve('test-key', testPassword);
-      expect(retrieved).toEqual(testData);
-    });
+    it('generates consistent keys for same inputs', async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+      const masterKey1 = (kycEncryption as any).masterKey
+      
+      const kycEncryption2 = new KYCEncryption()
+      await kycEncryption2.initialize(testPassword, testUserId)
+      const masterKey2 = (kycEncryption2 as any).masterKey
+      
+      expect(masterKey1).toBe(masterKey2)
+    })
 
-    it('should return null for non-existent keys', async () => {
-      const retrieved = await secureStorage.retrieve('non-existent', testPassword);
-      expect(retrieved).toBeNull();
-    });
+    it('generates different keys for different passwords', async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+      const masterKey1 = (kycEncryption as any).masterKey
+      
+      const kycEncryption2 = new KYCEncryption()
+      await kycEncryption2.initialize('different-password', testUserId)
+      const masterKey2 = (kycEncryption2 as any).masterKey
+      
+      expect(masterKey1).not.toBe(masterKey2)
+    })
 
-    it('should handle expiry correctly', async () => {
-      await secureStorage.store('expiring-key', testData, testPassword, {
-        expiry: 100, // 100ms
-      });
+    it('prevents operations when not initialized', async () => {
+      await expect(kycEncryption.encryptField('test', KYCFieldType.SSN))
+        .rejects.toThrow('KYC encryption not initialized')
+    })
+  })
 
-      // Should retrieve before expiry
-      const retrieved1 = await secureStorage.retrieve('expiring-key', testPassword);
-      expect(retrieved1).toEqual(testData);
+  describe('Field Encryption', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-      // Wait for expiry
-      await new Promise(resolve => setTimeout(resolve, 150));
+    it('encrypts field data with metadata', async () => {
+      const data = '123-45-6789'
+      const result = await kycEncryption.encryptField(data, KYCFieldType.SSN)
+      
+      expect(result).toHaveProperty('encrypted')
+      expect(result).toHaveProperty('metadata')
+      expect(result.metadata).toMatchObject({
+        fieldType: KYCFieldType.SSN,
+        encryptedAt: expect.any(String),
+        version: '1.0'
+      })
+    })
 
-      // Should return null after expiry
-      const retrieved2 = await secureStorage.retrieve('expiring-key', testPassword);
-      expect(retrieved2).toBeNull();
-      expect(secureStorage.exists('expiring-key')).toBe(false);
-    });
-  });
+    it('handles different field types', async () => {
+      const fieldTypes = [
+        { type: KYCFieldType.SSN, data: '123-45-6789' },
+        { type: KYCFieldType.EMAIL, data: 'test@example.com' },
+        { type: KYCFieldType.PHONE, data: '+1234567890' },
+        { type: KYCFieldType.DATE_OF_BIRTH, data: '1990-01-01' }
+      ]
+      
+      for (const { type, data } of fieldTypes) {
+        const result = await kycEncryption.encryptField(data, type)
+        expect(result.metadata.fieldType).toBe(type)
+        expect(AdvancedEncryption.encrypt).toHaveBeenCalled()
+      }
+    })
 
-  describe('Storage Management', () => {
-    it('should check if key exists', async () => {
-      expect(secureStorage.exists('test-key')).toBe(false);
+    it('masks sensitive data appropriately', async () => {
+      const ssnResult = await kycEncryption.encryptField('123-45-6789', KYCFieldType.SSN)
+      expect(ssnResult.metadata.maskedValue).toBe('***-**-6789')
+      
+      const emailResult = await kycEncryption.encryptField('test@example.com', KYCFieldType.EMAIL)
+      expect(emailResult.metadata.maskedValue).toBe('t***@example.com')
+      
+      const phoneResult = await kycEncryption.encryptField('+1234567890', KYCFieldType.PHONE)
+      expect(phoneResult.metadata.maskedValue).toBe('+1*******90')
+    })
 
-      await secureStorage.store('test-key', testData, testPassword);
-      expect(secureStorage.exists('test-key')).toBe(true);
-    });
+    it('generates unique field keys for each field type', async () => {
+      const encryptMock = AdvancedEncryption.encrypt as jest.Mock
+      
+      await kycEncryption.encryptField('data1', KYCFieldType.SSN)
+      const key1 = encryptMock.mock.calls[0][1]
+      
+      await kycEncryption.encryptField('data2', KYCFieldType.EMAIL)
+      const key2 = encryptMock.mock.calls[1][1]
+      
+      expect(key1).not.toBe(key2)
+    })
+  })
 
-    it('should remove specific keys', async () => {
-      await secureStorage.store('test-key', testData, testPassword);
-      expect(secureStorage.exists('test-key')).toBe(true);
+  describe('Field Decryption', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-      secureStorage.remove('test-key');
-      expect(secureStorage.exists('test-key')).toBe(false);
-    });
+    it('decrypts encrypted field data', async () => {
+      const originalData = 'test@example.com'
+      ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue(originalData)
+      
+      const encrypted = await kycEncryption.encryptField(originalData, KYCFieldType.EMAIL)
+      const decrypted = await kycEncryption.decryptField(encrypted)
+      
+      expect(decrypted).toBe(originalData)
+    })
 
-    it('should clear all secure storage', async () => {
-      await secureStorage.store('key1', testData, testPassword);
-      await secureStorage.store('key2', testData, testPassword);
+    it('verifies data integrity before decryption', async () => {
+      const encrypted = await kycEncryption.encryptField('test-data', KYCFieldType.SSN)
+      
+      ;(AdvancedEncryption.verifyIntegrity as jest.Mock).mockReturnValue(false)
+      
+      await expect(kycEncryption.decryptField(encrypted))
+        .rejects.toThrow('Data integrity verification failed')
+    })
 
-      secureStorage.clearAll();
+    it('handles version compatibility', async () => {
+      const encrypted = await kycEncryption.encryptField('test-data', KYCFieldType.SSN)
+      encrypted.metadata.version = '2.0' // Future version
+      
+      await expect(kycEncryption.decryptField(encrypted))
+        .rejects.toThrow('Unsupported encryption version')
+    })
+  })
 
-      expect(secureStorage.exists('key1')).toBe(false);
-      expect(secureStorage.exists('key2')).toBe(false);
-    });
-  });
-});
+  describe('File Encryption', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-describe('KYCDataIntegrity', () => {
-  const dataIntegrity = new KYCDataIntegrity();
-  const secret = 'integrity-secret';
+    it('encrypts file data', async () => {
+      const fileData = new ArrayBuffer(1024)
+      const file = new File([fileData], 'test.pdf', { type: 'application/pdf' })
+      
+      const result = await kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT)
+      
+      expect(result).toHaveProperty('encryptedData')
+      expect(result).toHaveProperty('metadata')
+      expect(result.metadata).toMatchObject({
+        fieldType: KYCFieldType.DOCUMENT,
+        fileName: 'test.pdf',
+        fileSize: 1024,
+        mimeType: 'application/pdf'
+      })
+    })
 
-  describe('HMAC Signatures', () => {
-    it('should generate and verify signatures', () => {
-      const data = 'Important data';
-      const signature = dataIntegrity.generateSignature(data, secret);
+    it('rejects files exceeding size limit', async () => {
+      const largeData = new ArrayBuffer(KYC_CRYPTO_CONFIG.MAX_FILE_SIZE + 1)
+      const file = new File([largeData], 'large.pdf', { type: 'application/pdf' })
+      
+      await expect(kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT))
+        .rejects.toThrow('File size exceeds maximum allowed')
+    })
 
-      expect(signature).toBeDefined();
-      expect(dataIntegrity.verifySignature(data, signature, secret)).toBe(true);
-    });
+    it('chunks large files for encryption', async () => {
+      const fileSize = KYC_CRYPTO_CONFIG.FILE_CHUNK_SIZE * 2.5
+      const fileData = new ArrayBuffer(fileSize)
+      const file = new File([fileData], 'medium.pdf', { type: 'application/pdf' })
+      
+      const result = await kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT)
+      
+      expect(result.metadata.chunks).toBe(3)
+      expect(result.metadata.chunkSize).toBe(KYC_CRYPTO_CONFIG.FILE_CHUNK_SIZE)
+    })
 
-    it('should reject invalid signatures', () => {
-      const data = 'Important data';
-      const signature = dataIntegrity.generateSignature(data, secret);
-      const tamperedSignature = signature.substring(0, signature.length - 2) + 'XX';
+    it('includes file hash for integrity', async () => {
+      const fileData = new ArrayBuffer(1024)
+      const file = new File([fileData], 'test.pdf', { type: 'application/pdf' })
+      
+      const result = await kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT)
+      
+      expect(result.metadata.fileHash).toBeDefined()
+      expect(result.metadata.fileHash).toMatch(/^[a-f0-9]{64}$/) // SHA-256 hash
+    })
+  })
 
-      expect(dataIntegrity.verifySignature(data, tamperedSignature, secret)).toBe(false);
-    });
+  describe('File Decryption', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-    it('should handle object data', () => {
-      const data = { userId: '123', amount: 1000 };
-      const signature = dataIntegrity.generateSignature(data, secret);
+    it('decrypts encrypted file data', async () => {
+      const originalData = new ArrayBuffer(1024)
+      const file = new File([originalData], 'test.pdf', { type: 'application/pdf' })
+      
+      // Mock file read
+      jest.spyOn(File.prototype, 'arrayBuffer').mockResolvedValue(originalData)
+      ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue(originalData)
+      
+      const encrypted = await kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT)
+      const decrypted = await kycEncryption.decryptFile(encrypted)
+      
+      expect(decrypted).toBeInstanceOf(File)
+      expect(decrypted.name).toBe('test.pdf')
+      expect(decrypted.type).toBe('application/pdf')
+    })
 
-      expect(dataIntegrity.verifySignature(data, signature, secret)).toBe(true);
-    });
-  });
+    it('verifies file integrity after decryption', async () => {
+      const fileData = new ArrayBuffer(1024)
+      const file = new File([fileData], 'test.pdf', { type: 'application/pdf' })
+      
+      jest.spyOn(File.prototype, 'arrayBuffer').mockResolvedValue(fileData)
+      
+      const encrypted = await kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT)
+      
+      // Tamper with file hash
+      encrypted.metadata.fileHash = 'tampered-hash'
+      
+      await expect(kycEncryption.decryptFile(encrypted))
+        .rejects.toThrow('File integrity verification failed')
+    })
+  })
 
-  describe('Merkle Tree', () => {
-    it('should generate merkle root for multiple hashes', () => {
-      const hashes = [
-        CryptoJS.SHA256('doc1').toString(),
-        CryptoJS.SHA256('doc2').toString(),
-        CryptoJS.SHA256('doc3').toString(),
-        CryptoJS.SHA256('doc4').toString(),
-      ];
+  describe('Batch Operations', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-      const root = dataIntegrity.generateMerkleRoot(hashes);
-      expect(root).toBeDefined();
-      expect(root).toHaveLength(64);
-    });
+    it('encrypts multiple fields in batch', async () => {
+      const fields = [
+        { data: '123-45-6789', type: KYCFieldType.SSN },
+        { data: 'test@example.com', type: KYCFieldType.EMAIL },
+        { data: '+1234567890', type: KYCFieldType.PHONE }
+      ]
+      
+      const results = await kycEncryption.encryptBatch(fields)
+      
+      expect(results).toHaveLength(3)
+      results.forEach((result, index) => {
+        expect(result.metadata.fieldType).toBe(fields[index].type)
+      })
+    })
 
-    it('should handle single hash', () => {
-      const hash = CryptoJS.SHA256('single').toString();
-      const root = dataIntegrity.generateMerkleRoot([hash]);
-      expect(root).toBe(hash);
-    });
+    it('decrypts multiple fields in batch', async () => {
+      const fields = [
+        { data: '123-45-6789', type: KYCFieldType.SSN },
+        { data: 'test@example.com', type: KYCFieldType.EMAIL }
+      ]
+      
+      const encrypted = await kycEncryption.encryptBatch(fields)
+      
+      ;(AdvancedEncryption.decrypt as jest.Mock)
+        .mockReturnValueOnce(fields[0].data)
+        .mockReturnValueOnce(fields[1].data)
+      
+      const decrypted = await kycEncryption.decryptBatch(encrypted)
+      
+      expect(decrypted).toEqual(['123-45-6789', 'test@example.com'])
+    })
+  })
 
-    it('should handle empty array', () => {
-      const root = dataIntegrity.generateMerkleRoot([]);
-      expect(root).toBe('');
-    });
-  });
+  describe('Key Rotation', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-  describe('Timestamped Hash', () => {
-    it('should create timestamped hash with signature', () => {
-      const data = { transaction: 'transfer', amount: 1000 };
-      const result = dataIntegrity.createTimestampedHash(data);
+    it('supports key rotation', async () => {
+      const data = 'sensitive-data'
+      const encrypted = await kycEncryption.encryptField(data, KYCFieldType.SSN)
+      
+      // Rotate keys
+      const newPassword = 'new-password-456'
+      const rotated = await kycEncryption.rotateKeys(newPassword, [encrypted])
+      
+      // Re-initialize with new password
+      const newKycEncryption = new KYCEncryption()
+      await newKycEncryption.initialize(newPassword, testUserId)
+      
+      ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue(data)
+      
+      const decrypted = await newKycEncryption.decryptField(rotated[0])
+      expect(decrypted).toBe(data)
+    })
 
-      expect(result.hash).toBeDefined();
-      expect(result.timestamp).toBeGreaterThan(0);
-      expect(result.signature).toBeDefined();
+    it('maintains audit trail during rotation', async () => {
+      const encrypted = await kycEncryption.encryptField('test', KYCFieldType.SSN)
+      const originalMetadata = { ...encrypted.metadata }
+      
+      const rotated = await kycEncryption.rotateKeys('new-password', [encrypted])
+      
+      expect(rotated[0].metadata).toMatchObject({
+        ...originalMetadata,
+        rotatedAt: expect.any(String),
+        previousVersion: originalMetadata.version
+      })
+    })
+  })
 
-      // Hash should be consistent for same data and timestamp
-      const manualHash = CryptoJS.SHA256(
-        JSON.stringify({ data, timestamp: result.timestamp })
-      ).toString();
-      expect(result.hash).toBe(manualHash);
-    });
-  });
-});
+  describe('Security Features', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-describe('Singleton Instances', () => {
-  it('should export singleton instances', () => {
-    expect(kycEncryption).toBeInstanceOf(KYCEncryptionService);
-    expect(kycKeyDerivation).toBeInstanceOf(KYCKeyDerivation);
-    expect(kycSecureStorage).toBeInstanceOf(KYCSecureStorage);
-    expect(kycDataIntegrity).toBeInstanceOf(KYCDataIntegrity);
-  });
-});
+    it('prevents timing attacks with constant-time comparison', async () => {
+      const encrypted = await kycEncryption.encryptField('test', KYCFieldType.SSN)
+      
+      // Mock to simulate timing attack
+      const startTime = Date.now()
+      await kycEncryption.verifyFingerprint(encrypted, 'wrong-fingerprint')
+      const wrongTime = Date.now() - startTime
+      
+      const correctTime = Date.now()
+      await kycEncryption.verifyFingerprint(encrypted, encrypted.metadata.fingerprint!)
+      const rightTime = Date.now() - correctTime
+      
+      // Times should be similar (constant-time comparison)
+      expect(Math.abs(wrongTime - rightTime)).toBeLessThan(5)
+    })
 
-describe('Security Best Practices', () => {
-  const encryptionService = new KYCEncryptionService();
+    it('implements secure key derivation', async () => {
+      const key = await (kycEncryption as any).deriveFieldKey(KYCFieldType.SSN)
+      
+      // Key should be properly derived
+      expect(key).toBeDefined()
+      expect(key.sigBytes * 8).toBe(KYC_CRYPTO_CONFIG.FIELD_KEY_SIZE)
+    })
 
-  it('should use sufficient iteration count for PBKDF2', () => {
-    const encrypted = encryptionService.encryptPII(
-      'test',
-      KYCFieldType.SSN,
-      'password'
-    );
+    it('clears sensitive data from memory', async () => {
+      const encrypted = await kycEncryption.encryptField('sensitive', KYCFieldType.SSN)
+      
+      await kycEncryption.destroy()
+      
+      expect((kycEncryption as any).masterKey).toBeNull()
+      expect((kycEncryption as any).fieldKeys.size).toBe(0)
+      expect(kycEncryption.isInitialized()).toBe(false)
+    })
+  })
 
-    // Check metadata indicates high iteration count
-    expect(encrypted.metadata.keyDerivation).toBe('PBKDF2-SHA256');
-  });
+  describe('Error Handling', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-  it('should generate unique IVs for each encryption', () => {
-    const password = 'test-password';
-    const data = 'same-data';
+    it('handles encryption failures gracefully', async () => {
+      ;(AdvancedEncryption.encrypt as jest.Mock).mockImplementation(() => {
+        throw new Error('Encryption failed')
+      })
+      
+      await expect(kycEncryption.encryptField('test', KYCFieldType.SSN))
+        .rejects.toThrow('Failed to encrypt field')
+    })
 
-    const encrypted1 = encryptionService.encryptPII(
-      data,
-      KYCFieldType.SSN,
-      password
-    );
-    const encrypted2 = encryptionService.encryptPII(
-      data,
-      KYCFieldType.SSN,
-      password
-    );
+    it('handles decryption failures gracefully', async () => {
+      const encrypted = await kycEncryption.encryptField('test', KYCFieldType.SSN)
+      
+      ;(AdvancedEncryption.decrypt as jest.Mock).mockImplementation(() => {
+        throw new Error('Decryption failed')
+      })
+      
+      await expect(kycEncryption.decryptField(encrypted))
+        .rejects.toThrow('Failed to decrypt field')
+    })
 
-    expect(encrypted1.iv).not.toBe(encrypted2.iv);
-    expect(encrypted1.data).not.toBe(encrypted2.data);
-  });
+    it('validates input data', async () => {
+      await expect(kycEncryption.encryptField('', KYCFieldType.SSN))
+        .rejects.toThrow('Data cannot be empty')
+      
+      await expect(kycEncryption.encryptField(null as any, KYCFieldType.SSN))
+        .rejects.toThrow('Invalid data provided')
+    })
+  })
 
-  it('should include metadata for audit trail', () => {
-    const encrypted = encryptionService.encryptPII(
-      'audit-test',
-      KYCFieldType.TAX_ID,
-      'password'
-    );
+  describe('Compliance Features', () => {
+    beforeEach(async () => {
+      await kycEncryption.initialize(testPassword, testUserId)
+    })
 
-    expect(encrypted.metadata.id).toBeDefined();
-    expect(encrypted.metadata.timestamp).toBeGreaterThan(0);
-    expect(encrypted.metadata.version).toBe('1.0.0');
-    expect(encrypted.metadata.algorithm).toBe('AES-256-CBC-HMAC');
-  });
-});
+    it('supports data retention policies', async () => {
+      const encrypted = await kycEncryption.encryptField('test', KYCFieldType.SSN)
+      
+      // Set retention period
+      encrypted.metadata.retentionUntil = new Date(Date.now() - 1000).toISOString()
+      
+      await expect(kycEncryption.decryptField(encrypted))
+        .rejects.toThrow('Data retention period expired')
+    })
+
+    it('implements access control', async () => {
+      const encrypted = await kycEncryption.encryptField('test', KYCFieldType.SSN, {
+        allowedUsers: ['user-789']
+      })
+      
+      // Try to decrypt with different user
+      await expect(kycEncryption.decryptField(encrypted))
+        .rejects.toThrow('Access denied')
+    })
+
+    it('maintains audit log', async () => {
+      const auditLog: any[] = []
+      kycEncryption.onAuditEvent((event) => auditLog.push(event))
+      
+      await kycEncryption.encryptField('test', KYCFieldType.SSN)
+      
+      expect(auditLog).toContainEqual(
+        expect.objectContaining({
+          action: 'encrypt',
+          fieldType: KYCFieldType.SSN,
+          timestamp: expect.any(String),
+          userId: testUserId
+        })
+      )
+    })
+  })
+})

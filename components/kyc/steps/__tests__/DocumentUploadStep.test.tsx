@@ -1,298 +1,558 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import React from 'react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi } from 'vitest'
-import { DocumentUploadStep, DocumentFile, DocumentType } from '../DocumentUploadStep'
+import { DocumentUploadStep } from '../DocumentUploadStep'
 import { useAuth } from '@/context/auth-context-v2'
+import { performOCR, validateOCRResult } from '@/lib/services/mock-ocr-service'
+import { act } from 'react-dom/test-utils'
 
 // Mock dependencies
-vi.mock('@/context/auth-context-v2')
-vi.mock('@/components/kyc/secure-file-upload', () => ({
-  SecureFileUpload: vi.fn(({ label, onFileSelect, onRemove, value, preview, showSecurityIndicators }) => (
-    <div data-testid={`secure-upload-${label}`}>
-      <span>{label}</span>
-      {showSecurityIndicators && <span data-testid="security-indicators">Security</span>}
+jest.mock('@/context/auth-context-v2')
+jest.mock('@/lib/services/mock-ocr-service')
+jest.mock('@/components/kyc/secure-file-upload', () => ({
+  SecureFileUpload: ({ label, onFileSelect, onRemove, value, preview, ...props }: any) => (
+    <div data-testid={`secure-upload-${props.id}`}>
+      <label>{label}</label>
       <input
         type="file"
-        data-testid={`file-input-${label}`}
+        data-testid={`file-input-${props.id}`}
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) {
-            onFileSelect(file, { encrypted: 'test-encrypted' })
+            onFileSelect(file, { encrypted: 'mock-encrypted-data' })
           }
         }}
       />
       {value && (
-        <div data-testid={`file-preview-${label}`}>
-          <span>{value.name}</span>
-          <button onClick={onRemove} data-testid={`remove-file-${label}`}>Remove</button>
+        <div>
+          <span data-testid={`file-name-${props.id}`}>{value.name}</span>
+          <button
+            data-testid={`remove-${props.id}`}
+            onClick={() => onRemove()}
+          >
+            Remove
+          </button>
         </div>
       )}
-      {preview && <img src={preview} alt="preview" data-testid={`image-preview-${label}`} />}
+      {preview && <img data-testid={`preview-${props.id}`} src={preview} alt="Preview" />}
     </div>
-  ))
+  )
 }))
 
 describe('DocumentUploadStep', () => {
-  const mockOnComplete = vi.fn()
-  const mockOnBack = vi.fn()
-  const mockUser = { uid: 'test-uid', email: 'test@example.com' }
+  const mockOnComplete = jest.fn()
+  const mockOnBack = jest.fn()
+  const mockPerformOCR = performOCR as jest.MockedFunction<typeof performOCR>
+  const mockValidateOCRResult = validateOCRResult as jest.MockedFunction<typeof validateOCRResult>
+  const user = userEvent.setup()
+
+  // Helper to create a mock file
+  const createMockFile = (name: string, type: string = 'image/png') => {
+    const file = new File(['test'], name, { type })
+    Object.defineProperty(file, 'size', { value: 1024 * 1024 }) // 1MB
+    return file
+  }
+
+  // Helper to create a mock FileReader
+  const mockFileReader = () => {
+    const reader = {
+      readAsDataURL: jest.fn(),
+      onloadend: null as any,
+      result: 'data:image/png;base64,mock-image-data'
+    }
+    jest.spyOn(window, 'FileReader').mockImplementation(() => reader as any)
+    return reader
+  }
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    ;(useAuth as vi.Mock).mockReturnValue({ user: mockUser })
+    jest.clearAllMocks()
+    
+    ;(useAuth as jest.Mock).mockReturnValue({
+      user: { uid: 'test-user-123' }
+    })
+
+    mockPerformOCR.mockResolvedValue({
+      success: true,
+      confidence: 95,
+      extractedData: {
+        firstName: 'John',
+        lastName: 'Doe',
+        dateOfBirth: '1990-01-01',
+        documentNumber: 'P123456789',
+        expiryDate: '2030-12-31',
+        nationality: 'USA',
+        documentType: 'passport'
+      },
+      requiresManualReview: false
+    })
+
+    mockValidateOCRResult.mockReturnValue({
+      isValid: true,
+      issues: []
+    })
   })
 
-  it('renders all document type tabs', () => {
-    render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-    expect(screen.getByText('Passport')).toBeInTheDocument()
-    expect(screen.getByText("Driver's License")).toBeInTheDocument()
-    expect(screen.getByText('National ID Card')).toBeInTheDocument()
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
 
-  it('displays progress indicator', () => {
-    render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-    expect(screen.getByText('Upload Progress')).toBeInTheDocument()
-    expect(screen.getByText('0%')).toBeInTheDocument()
-  })
-
-  describe('File validation', () => {
-    it('accepts JPEG files', async () => {
-      const user = userEvent.setup()
+  describe('Rendering', () => {
+    it('renders document type tabs', () => {
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const jpegFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
       
-      await user.upload(fileInput, jpegFile)
+      expect(screen.getByRole('tab', { name: /passport/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /driver's license/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /national id card/i })).toBeInTheDocument()
+    })
 
+    it('shows progress bar', () => {
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      expect(screen.getByText(/upload progress/i)).toBeInTheDocument()
+      expect(screen.getByRole('progressbar')).toBeInTheDocument()
+    })
+
+    it('displays security notice', () => {
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      expect(screen.getByText(/bank-level security/i)).toBeInTheDocument()
+      expect(screen.getByText(/aes-256 encryption/i)).toBeInTheDocument()
+    })
+
+    it('shows tips for selected document type', () => {
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      expect(screen.getByText(/tips for passport/i)).toBeInTheDocument()
+      expect(screen.getByText(/ensure photo page is clearly visible/i)).toBeInTheDocument()
+    })
+
+    it('renders back button when onBack prop is provided', () => {
+      render(<DocumentUploadStep onComplete={mockOnComplete} onBack={mockOnBack} />)
+      
+      expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument()
+    })
+  })
+
+  describe('Document Type Selection', () => {
+    it('switches between document types', async () => {
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      // Initially shows passport
+      expect(screen.getByText(/passport \(front\)/i)).toBeInTheDocument()
+      
+      // Switch to driver's license
+      await user.click(screen.getByRole('tab', { name: /driver's license/i }))
+      expect(screen.getByText(/driver's license \(front\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/driver's license \(back\)/i)).toBeInTheDocument()
+      
+      // Switch to ID card
+      await user.click(screen.getByRole('tab', { name: /national id card/i }))
+      expect(screen.getByText(/national id card \(front\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/national id card \(back\)/i)).toBeInTheDocument()
+    })
+
+    it('shows correct number of upload fields for each document type', async () => {
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      // Passport - only front
+      expect(screen.getAllByRole('textbox')).toHaveLength(1)
+      
+      // Driver's license - front and back
+      await user.click(screen.getByRole('tab', { name: /driver's license/i }))
+      expect(screen.getAllByRole('textbox')).toHaveLength(2)
+    })
+  })
+
+  describe('File Upload', () => {
+    it('handles file selection', async () => {
+      const reader = mockFileReader()
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        // Trigger FileReader onloadend
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
       await waitFor(() => {
-        expect(screen.getByTestId('file-preview-Passport (Front)')).toBeInTheDocument()
+        expect(screen.getByTestId('file-name-passport_front')).toHaveTextContent('passport.png')
+        expect(screen.getByTestId('preview-passport_front')).toBeInTheDocument()
       })
     })
 
-    it('accepts PNG files', async () => {
-      const user = userEvent.setup()
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const pngFile = new File(['test'], 'test.png', { type: 'image/png' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-      
-      await user.upload(fileInput, pngFile)
-
-      await waitFor(() => {
-        expect(screen.getByTestId('file-preview-Passport (Front)')).toBeInTheDocument()
-      })
-    })
-
-    it('accepts PDF files', async () => {
-      const user = userEvent.setup()
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const pdfFile = new File(['test'], 'test.pdf', { type: 'application/pdf' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-      
-      await user.upload(fileInput, pdfFile)
-
-      await waitFor(() => {
-        expect(screen.getByTestId('file-preview-Passport (Front)')).toBeInTheDocument()
-      })
-    })
-
-    it('shows file size validation in SecureFileUpload component', () => {
+    it('handles file removal', async () => {
+      const reader = mockFileReader()
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
       
-      // Verify SecureFileUpload is rendered with proper props
-      expect(screen.getByTestId('secure-upload-Passport (Front)')).toBeInTheDocument()
-    })
-  })
-
-  describe('Document preview', () => {
-    it('displays image preview for image files', async () => {
-      const user = userEvent.setup()
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const imageFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-
-      // Mock FileReader
-      const mockFileReader = {
-        readAsDataURL: vi.fn(),
-        result: 'data:image/jpeg;base64,test',
-        onloadend: null as any
-      }
-      vi.spyOn(window, 'FileReader').mockImplementation(() => mockFileReader as any)
-
-      await user.upload(fileInput, imageFile)
-
-      // Trigger FileReader onloadend
-      mockFileReader.onloadend?.()
-
-      await waitFor(() => {
-        expect(screen.getByTestId('image-preview-Passport (Front)')).toBeInTheDocument()
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
       })
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('file-name-passport_front')).toBeInTheDocument()
+      })
+      
+      await user.click(screen.getByTestId('remove-passport_front'))
+      
+      expect(screen.queryByTestId('file-name-passport_front')).not.toBeInTheDocument()
     })
 
-    it('does not display preview for PDF files', async () => {
-      const user = userEvent.setup()
+    it('updates progress when files are uploaded', async () => {
+      const reader = mockFileReader()
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const pdfFile = new File(['test'], 'test.pdf', { type: 'application/pdf' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-
-      await user.upload(fileInput, pdfFile)
-
+      
+      expect(screen.getByText('0%')).toBeInTheDocument()
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      // For passport, only front is required, so it should be 100% with one file
       await waitFor(() => {
-        expect(screen.getByTestId('file-preview-Passport (Front)')).toBeInTheDocument()
-        expect(screen.queryByTestId('image-preview-Passport (Front)')).not.toBeInTheDocument()
+        expect(screen.queryByText('0%')).not.toBeInTheDocument()
       })
     })
   })
 
-  describe('Watermark functionality', () => {
-    it('enables watermark on SecureFileUpload', () => {
+  describe('OCR Processing', () => {
+    it('performs OCR on front document upload', async () => {
+      const reader = mockFileReader()
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const secureUpload = screen.getByTestId('secure-upload-Passport (Front)')
-      expect(secureUpload).toBeInTheDocument()
       
-      // Verify watermark props are passed to SecureFileUpload
-      // This is handled by the mock implementation
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(mockPerformOCR).toHaveBeenCalledWith('passport', file)
+      })
+    })
+
+    it('displays OCR processing indicator', async () => {
+      const reader = mockFileReader()
+      mockPerformOCR.mockImplementation(() => {
+        return new Promise(resolve => {
+          setTimeout(() => resolve({
+            success: true,
+            confidence: 95,
+            extractedData: {
+              firstName: 'John',
+              lastName: 'Doe',
+              dateOfBirth: '1990-01-01',
+              documentNumber: 'P123456789',
+              expiryDate: '2030-12-31',
+              nationality: 'USA',
+              documentType: 'passport'
+            },
+            requiresManualReview: false
+          }), 100)
+        })
+      })
+      
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      expect(screen.getByText(/extracting document information/i)).toBeInTheDocument()
+      
+      await waitFor(() => {
+        expect(screen.queryByText(/extracting document information/i)).not.toBeInTheDocument()
+      })
+    })
+
+    it('displays extracted data after successful OCR', async () => {
+      const reader = mockFileReader()
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.getByText('Extracted Information')).toBeInTheDocument()
+        expect(screen.getByText('John')).toBeInTheDocument()
+        expect(screen.getByText('Doe')).toBeInTheDocument()
+        expect(screen.getByText('P123456789')).toBeInTheDocument()
+        expect(screen.getByText('95%')).toBeInTheDocument() // Confidence score
+      })
+    })
+
+    it('shows error when OCR fails', async () => {
+      const reader = mockFileReader()
+      mockPerformOCR.mockResolvedValueOnce({
+        success: false,
+        confidence: 0,
+        requiresManualReview: false
+      })
+      
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.getByText(/failed to extract document information/i)).toBeInTheDocument()
+      })
+    })
+
+    it('shows validation errors when OCR data is invalid', async () => {
+      const reader = mockFileReader()
+      mockValidateOCRResult.mockReturnValueOnce({
+        isValid: false,
+        issues: ['Document expired', 'Name mismatch']
+      })
+      
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.getByText(/document expired, name mismatch/i)).toBeInTheDocument()
+      })
+    })
+
+    it('shows manual review warning for low quality images', async () => {
+      const reader = mockFileReader()
+      mockPerformOCR.mockResolvedValueOnce({
+        success: true,
+        confidence: 65,
+        extractedData: {
+          firstName: 'John',
+          lastName: 'Doe',
+          dateOfBirth: '1990-01-01',
+          documentNumber: 'P123456789',
+          expiryDate: '2030-12-31',
+          nationality: 'USA',
+          documentType: 'passport'
+        },
+        requiresManualReview: true
+      })
+      
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.getByText(/image quality is low/i)).toBeInTheDocument()
+        expect(screen.getByText(/please review and correct/i)).toBeInTheDocument()
+      })
     })
   })
 
-  describe('Driver\'s License handling', () => {
-    it('shows both front and back upload for driver\'s license', async () => {
-      const user = userEvent.setup()
+  describe('Data Editing', () => {
+    it('allows editing extracted data', async () => {
+      const reader = mockFileReader()
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.getByText('John')).toBeInTheDocument()
+      })
+      
+      // Click edit button for first name
+      const editButtons = screen.getAllByRole('button', { name: '' })
+      const firstNameEditButton = editButtons.find(btn => 
+        btn.closest('div')?.textContent?.includes('First Name')
+      )
+      
+      await user.click(firstNameEditButton!)
+      
+      // Edit field should appear
+      const editInput = screen.getByDisplayValue('John')
+      await user.clear(editInput)
+      await user.type(editInput, 'Jane')
+      
+      // Click check button to save
+      const checkButtons = screen.getAllByRole('button')
+      const checkButton = checkButtons.find(btn => 
+        btn.querySelector('svg')?.classList.contains('h-3')
+      )
+      await user.click(checkButton!)
+      
+      expect(screen.getByText('Jane')).toBeInTheDocument()
+    })
+  })
 
-      // Switch to driver's license tab
-      await user.click(screen.getByText("Driver's License"))
-
-      expect(screen.getByText("Driver's License (Front)")).toBeInTheDocument()
-      expect(screen.getByText("Driver's License (Back)")).toBeInTheDocument()
+  describe('Document Validation', () => {
+    it('validates that at least one document is uploaded', async () => {
+      render(<DocumentUploadStep onComplete={mockOnComplete} />)
+      
+      const continueButton = screen.getByRole('button', { name: /continue/i })
+      expect(continueButton).toBeDisabled()
+      
+      // Upload a file
+      const reader = mockFileReader()
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(continueButton).not.toBeDisabled()
+      })
     })
 
-    it('requires both sides for driver\'s license validation', async () => {
-      const user = userEvent.setup()
+    it('requires both sides for driver license and ID card', async () => {
+      const reader = mockFileReader()
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      await user.click(screen.getByText("Driver's License"))
-
+      
+      // Switch to driver's license
+      await user.click(screen.getByRole('tab', { name: /driver's license/i }))
+      
       // Upload only front
-      const frontFile = new File(['test'], 'front.jpg', { type: 'image/jpeg' })
-      const frontInput = screen.getByTestId("file-input-Driver's License (Front)")
-      await user.upload(frontInput, frontFile)
-
-      // Try to continue
-      const continueButton = screen.getByRole('button', { name: /continue/i })
-      await user.click(continueButton)
-
-      // Should show error about missing back
-      await waitFor(() => {
-        expect(screen.getByText(/please upload at least one valid identification document/i)).toBeInTheDocument()
+      const frontFile = createMockFile('license-front.png')
+      const frontInput = screen.getByTestId('file-input-drivers_license_front')
+      
+      await act(async () => {
+        fireEvent.change(frontInput, { target: { files: [frontFile] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
       })
-    })
-  })
-
-  describe('Error handling', () => {
-    it('displays validation errors', async () => {
-      const user = userEvent.setup()
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
+      
+      // Click continue
       const continueButton = screen.getByRole('button', { name: /continue/i })
       await user.click(continueButton)
-
+      
       await waitFor(() => {
         expect(screen.getByText(/please upload at least one valid identification document/i)).toBeInTheDocument()
       })
     })
 
-    it('clears error when file is uploaded', async () => {
-      const user = userEvent.setup()
+    it('shows verification status badges', async () => {
+      const reader = mockFileReader()
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      // Trigger error first
-      const continueButton = screen.getByRole('button', { name: /continue/i })
-      await user.click(continueButton)
-
-      await waitFor(() => {
-        expect(screen.getByText(/please upload at least one valid identification document/i)).toBeInTheDocument()
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
       })
-
-      // Upload file
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-      await user.upload(fileInput, file)
-
-      await waitFor(() => {
-        expect(screen.queryByText(/please upload at least one valid identification document/i)).not.toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('Verification status', () => {
-    it('shows pending status after file upload', async () => {
-      const user = userEvent.setup()
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-      await user.upload(fileInput, file)
-
+      
       await waitFor(() => {
         expect(screen.getByText('Pending Verification')).toBeInTheDocument()
       })
-    })
-
-    it('shows verified status after validation', async () => {
-      const user = userEvent.setup()
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-      await user.upload(fileInput, file)
-
+      
+      // Click continue to validate
       const continueButton = screen.getByRole('button', { name: /continue/i })
       await user.click(continueButton)
-
+      
       await waitFor(() => {
         expect(screen.getByText('Verified')).toBeInTheDocument()
       })
     })
-  })
 
-  describe('Navigation', () => {
-    it('calls onBack when back button is clicked', async () => {
-      const user = userEvent.setup()
-      render(<DocumentUploadStep onComplete={mockOnComplete} onBack={mockOnBack} />)
-
-      const backButton = screen.getByRole('button', { name: /back/i })
-      await user.click(backButton)
-
-      expect(mockOnBack).toHaveBeenCalled()
-    })
-
-    it('calls onComplete with documents when validation passes', async () => {
-      const user = userEvent.setup()
+    it('calls onComplete with validated documents', async () => {
+      const reader = mockFileReader()
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-      await user.upload(fileInput, file)
-
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.getByText('John')).toBeInTheDocument()
+      })
+      
       const continueButton = screen.getByRole('button', { name: /continue/i })
       await user.click(continueButton)
-
+      
       await waitFor(() => {
         expect(mockOnComplete).toHaveBeenCalledWith(
           expect.objectContaining({
             passport_front: expect.objectContaining({
               type: 'passport',
-              file,
+              file: file,
               uploaded: true,
-              verificationStatus: 'verified'
+              verificationStatus: 'verified',
+              ocrResult: expect.objectContaining({
+                success: true,
+                confidence: 95
+              })
             })
           })
         )
@@ -300,72 +560,104 @@ describe('DocumentUploadStep', () => {
     })
   })
 
-  describe('Mobile responsiveness', () => {
-    it('hides tab labels on small screens', () => {
+  describe('Error Handling', () => {
+    it('handles OCR processing errors gracefully', async () => {
+      const reader = mockFileReader()
+      mockPerformOCR.mockRejectedValueOnce(new Error('OCR service unavailable'))
+      
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      // The component uses hidden sm:inline classes
-      const tabLabels = screen.getAllByText('Passport')
-      expect(tabLabels[0]).toHaveClass('sm:inline')
+      
+      const file = createMockFile('passport.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.getByText(/an error occurred while processing the document/i)).toBeInTheDocument()
+      })
     })
 
-    it('maintains full functionality on mobile', async () => {
-      const user = userEvent.setup()
-      
-      // Mock mobile viewport
-      vi.stubGlobal('innerWidth', 375)
+    it('clears error when new file is selected', async () => {
+      const reader = mockFileReader()
+      mockPerformOCR.mockRejectedValueOnce(new Error('OCR failed'))
       
       render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      // Should still be able to upload files
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const fileInput = screen.getByTestId('file-input-Passport (Front)')
-      await user.upload(fileInput, file)
-
+      
+      const file1 = createMockFile('passport1.png')
+      const fileInput = screen.getByTestId('file-input-passport_front')
+      
+      // First upload fails
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file1] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
       await waitFor(() => {
-        expect(screen.getByTestId('file-preview-Passport (Front)')).toBeInTheDocument()
+        expect(screen.getByText(/an error occurred/i)).toBeInTheDocument()
+      })
+      
+      // Remove file
+      await user.click(screen.getByTestId('remove-passport_front'))
+      
+      // Second upload succeeds
+      mockPerformOCR.mockResolvedValueOnce({
+        success: true,
+        confidence: 95,
+        extractedData: {
+          firstName: 'John',
+          lastName: 'Doe',
+          dateOfBirth: '1990-01-01',
+          documentNumber: 'P123456789',
+          expiryDate: '2030-12-31',
+          nationality: 'USA',
+          documentType: 'passport'
+        },
+        requiresManualReview: false
+      })
+      
+      const file2 = createMockFile('passport2.png')
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [file2] } })
+        if (reader.onloadend) {
+          reader.onloadend({} as any)
+        }
+      })
+      
+      await waitFor(() => {
+        expect(screen.queryByText(/an error occurred/i)).not.toBeInTheDocument()
+        expect(screen.getByText('John')).toBeInTheDocument()
       })
     })
   })
 
-  describe('Security indicators', () => {
-    it('displays security notice', () => {
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      expect(screen.getByText('Bank-Level Security')).toBeInTheDocument()
-      expect(screen.getByText(/AES-256 encryption/i)).toBeInTheDocument()
-      expect(screen.getByText(/watermarked and securely deleted/i)).toBeInTheDocument()
-    })
-
-    it('shows security indicators on file upload components', () => {
-      render(<DocumentUploadStep onComplete={mockOnComplete} />)
-
-      const securityIndicators = screen.getAllByTestId('security-indicators')
-      expect(securityIndicators.length).toBeGreaterThan(0)
-    })
-  })
-
-  describe('Initial documents', () => {
-    it('loads with initial documents if provided', () => {
-      const initialDocs: Record<string, DocumentFile> = {
+  describe('Initial Documents', () => {
+    it('displays initial documents when provided', () => {
+      const initialDocs = {
         passport_front: {
-          type: 'passport',
+          type: 'passport' as const,
           subType: 'front',
-          file: new File(['test'], 'passport.jpg', { type: 'image/jpeg' }),
-          preview: 'data:image/jpeg;base64,test',
+          file: createMockFile('existing-passport.png'),
+          preview: 'data:image/png;base64,existing',
           uploaded: true,
-          verificationStatus: 'verified'
+          verificationStatus: 'verified' as const
         }
       }
-
+      
       render(
         <DocumentUploadStep 
           onComplete={mockOnComplete} 
           initialDocuments={initialDocs}
         />
       )
-
-      expect(screen.getByTestId('file-preview-Passport (Front)')).toBeInTheDocument()
+      
+      expect(screen.getByTestId('file-name-passport_front')).toHaveTextContent('existing-passport.png')
       expect(screen.getByText('Verified')).toBeInTheDocument()
     })
   })

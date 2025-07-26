@@ -309,11 +309,11 @@ export function SecureFileUpload({
       <div className="flex items-center justify-between">
         <label htmlFor={id} className="text-sm font-medium text-gray-900">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span aria-label="required" className="text-red-500 ml-1">*</span>}
         </label>
         {showSecurityIndicators && (
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-teal-600" />
+          <div className="flex items-center gap-2" role="img" aria-label="Secure upload indicator">
+            <Shield className="h-4 w-4 text-teal-600" aria-hidden="true" />
             <span className="text-xs text-teal-600 font-medium">Secure Upload</span>
           </div>
         )}
@@ -324,9 +324,11 @@ export function SecureFileUpload({
       )}
 
       {error && (
-        <Alert variant="destructive" className="py-2">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-sm">{error}</AlertDescription>
+        <Alert variant="destructive" className="py-2" role="alert">
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
+          <AlertDescription className="text-sm">
+            <strong>Upload Error:</strong> {error}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -355,51 +357,82 @@ export function SecureFileUpload({
           disabled={disabled || isUploading}
           className="sr-only"
           capture={isMobile ? "environment" : undefined}
+          aria-describedby={`${id}-description`}
+          aria-required={required}
         />
         
         {!value ? (
-          <label
-            htmlFor={id}
-            className={cn(
-              "flex flex-col items-center justify-center cursor-pointer space-y-3",
-              disabled && "cursor-not-allowed"
-            )}
-          >
-            <div className="relative">
-              <Upload className="h-10 w-10 text-gray-400" />
-              {enableEncryption && (
-                <Lock className="h-4 w-4 text-teal-600 absolute -bottom-1 -right-1" />
+          <>
+            <label
+              htmlFor={id}
+              className={cn(
+                "flex flex-col items-center justify-center cursor-pointer space-y-3 focus-within:outline-none focus-within:ring-2 focus-within:ring-teal-500 focus-within:ring-offset-2 rounded-lg",
+                disabled && "cursor-not-allowed opacity-50"
               )}
-            </div>
+              role="button"
+              tabIndex={disabled ? -1 : 0}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+                  e.preventDefault()
+                  fileInputRef.current?.click()
+                }
+              }}
+              aria-describedby={`${id}-description`}
+            >
+              <div className="relative">
+                <Upload className="h-10 w-10 text-gray-400" aria-hidden="true" />
+                {enableEncryption && (
+                  <Lock 
+                    className="h-4 w-4 text-teal-600 absolute -bottom-1 -right-1" 
+                    aria-label="Encryption enabled"
+                  />
+                )}
+              </div>
+              
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700">
+                  {isMobile ? 'Tap to capture or select file' : 'Click to upload file'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  or drag and drop here
+                </p>
+              </div>
+            </label>
             
-            <div className="text-center">
-              <p className="text-sm font-medium text-gray-700">
-                {isMobile ? 'Tap to capture or select' : 'Click to upload'}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {isMobile ? 'or drag and drop' : 'or drag and drop'}
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                JPEG, PNG, PDF up to 10MB
-              </p>
+            <div id={`${id}-description`} className="text-xs text-gray-400 text-center mt-2">
+              Accepted formats: JPEG, PNG, PDF • Maximum size: 10MB
+              {enableEncryption && " • Files are encrypted for security"}
             </div>
 
-            {isMobile && (
+            {/* Mobile camera and file options */}
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <Button
                 type="button"
-                variant="secondary"
-                size="sm"
+                variant="outline"
                 onClick={(e) => {
                   e.preventDefault()
                   fileInputRef.current?.click()
                 }}
-                className="mt-2"
+                className="flex-1 h-12 text-base touch-manipulation active:scale-98 transition-transform"
+                disabled={disabled}
               >
-                <Camera className="h-4 w-4 mr-2" />
-                Take Photo
+                <Upload className="h-5 w-5 mr-2" aria-hidden="true" />
+                Choose File
               </Button>
-            )}
-          </label>
+              
+              {(fieldType === KYCFieldType.PASSPORT || fieldType === KYCFieldType.DRIVERS_LICENSE) && (
+                <Button
+                  type="button"
+                  onClick={openCamera}
+                  className="flex-1 h-12 text-base bg-teal-600 hover:bg-teal-700 touch-manipulation active:scale-98 transition-transform"
+                  disabled={disabled}
+                >
+                  <Camera className="h-5 w-5 mr-2" aria-hidden="true" />
+                  Use Camera
+                </Button>
+              )}
+            </div>
+          </>
         ) : (
           <div className="space-y-4">
             {/* File preview */}
@@ -407,25 +440,31 @@ export function SecureFileUpload({
               <div className="relative">
                 <img
                   src={preview}
-                  alt={value.name}
+                  alt={`Preview of uploaded file: ${value.name}`}
                   className="max-w-full h-48 object-contain mx-auto rounded"
+                  role="img"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowPreview(!showPreview)}
-                  className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                  className="absolute top-2 right-2 bg-white/80 hover:bg-white focus:ring-2 focus:ring-teal-500"
+                  aria-label={showPreview ? "Hide file preview" : "Show file preview"}
                 >
-                  {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPreview ? 
+                    <EyeOff className="h-4 w-4" aria-hidden="true" /> : 
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  }
                 </Button>
                 
                 {/* Watermark canvas (hidden) */}
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                <canvas ref={canvasRef} style={{ display: 'none' }} aria-hidden="true" />
               </div>
             ) : (
-              <div className="flex items-center justify-center p-8 bg-gray-50 rounded">
-                <FileText className="h-12 w-12 text-gray-400" />
+              <div className="flex items-center justify-center p-8 bg-gray-50 rounded" role="img" aria-label="Document file preview">
+                <FileText className="h-12 w-12 text-gray-400" aria-hidden="true" />
+                <span className="sr-only">Non-image file uploaded: {value.name}</span>
               </div>
             )}
 
@@ -450,8 +489,10 @@ export function SecureFileUpload({
                 size="sm"
                 onClick={handleRemove}
                 disabled={disabled}
+                className="w-10 h-10 touch-manipulation active:scale-95 transition-transform"
+                aria-label={`Remove uploaded file: ${value.name}`}
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </Button>
             </div>
 
@@ -473,12 +514,19 @@ export function SecureFileUpload({
 
         {/* Upload progress */}
         {isUploading && (
-          <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-lg">
+          <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-lg" role="dialog" aria-labelledby="upload-progress-title">
             <div className="w-full max-w-xs space-y-3">
-              <Progress value={uploadProgress} className="h-2" />
-              <p className="text-sm text-center text-gray-600">
-                {isEncrypting ? 'Encrypting...' : 'Processing...'}
+              <Progress 
+                value={uploadProgress} 
+                className="h-2" 
+                aria-label={`Upload progress: ${uploadProgress}%`}
+              />
+              <p id="upload-progress-title" className="text-sm text-center text-gray-600">
+                {isEncrypting ? 'Encrypting file...' : 'Processing upload...'}
               </p>
+              <div className="sr-only" aria-live="polite" aria-atomic="true">
+                {uploadProgress}% complete. {isEncrypting ? 'Encrypting file for security.' : 'Processing your upload.'}
+              </div>
             </div>
           </div>
         )}
