@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
 
 // Rate limiting configuration
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
@@ -86,7 +85,9 @@ if (typeof setInterval !== 'undefined') {
 
 // Generate CSP nonce
 function generateNonce(): string {
-  return crypto.randomBytes(16).toString('base64')
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  return btoa(String.fromCharCode.apply(null, Array.from(array)))
 }
 
 // Validate request headers for security

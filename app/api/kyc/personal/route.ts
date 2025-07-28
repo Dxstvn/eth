@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withRequestValidation, KYCSchemas } from '@/lib/security/request-validator'
 import { getSecurityHeaders, validateCSRFToken, encryptData } from '@/lib/security/kyc-security'
-import { apiClient } from '@/services/api-client-v2'
+import { apiClient } from '@/services/api'
 
 // Example KYC personal information API route with full security implementation
 export async function POST(request: NextRequest) {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     
     for (const field of sensitiveFields) {
       if (encryptedData[field]) {
-        const encrypted = encryptData(
+        const encrypted = await encryptData(
           JSON.stringify(encryptedData[field]),
           encryptionKey
         )
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const response = await apiClient.post('/kyc/personal', {
       data: encryptedData,
       timestamp: Date.now(),
-      checksum: generateChecksum(encryptedData)
+      checksum: await generateChecksum(encryptedData)
     }, {
       headers: {
         'Authorization': `Bearer ${authToken}`,
@@ -129,12 +129,12 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 // Helper functions
-function generateChecksum(data: any): string {
-  const crypto = require('crypto')
-  return crypto
-    .createHash('sha256')
-    .update(JSON.stringify(data))
-    .digest('hex')
+async function generateChecksum(data: any): Promise<string> {
+  const encoder = new TextEncoder()
+  const dataBuffer = encoder.encode(JSON.stringify(data))
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
+  const hashArray = new Uint8Array(hashBuffer)
+  return Array.from(hashArray, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 function generateRequestId(): string {

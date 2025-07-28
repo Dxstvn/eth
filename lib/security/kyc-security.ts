@@ -1,5 +1,4 @@
 import { headers } from 'next/headers'
-import crypto from 'crypto'
 
 // Security configuration for KYC routes
 export const KYC_SECURITY_CONFIG = {
@@ -165,7 +164,9 @@ export function validateInput(input: string, type: keyof typeof KYC_SECURITY_CON
 
 // Generate CSRF token
 export function generateCSRFToken(): string {
-  return crypto.randomBytes(32).toString('hex')
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 // Validate CSRF token
@@ -173,64 +174,139 @@ export function validateCSRFToken(token: string, sessionToken: string): boolean 
   if (!token || !sessionToken) return false
   
   // Use constant-time comparison to prevent timing attacks
-  return crypto.timingSafeEqual(
-    Buffer.from(token),
-    Buffer.from(sessionToken)
-  )
+  if (token.length !== sessionToken.length) return false
+  
+  let result = 0
+  for (let i = 0; i < token.length; i++) {
+    result |= token.charCodeAt(i) ^ sessionToken.charCodeAt(i)
+  }
+  return result === 0
 }
 
 // Encrypt sensitive data
-export function encryptData(data: string, key: string): { encrypted: string; iv: string; tag: string } {
-  const iv = crypto.randomBytes(KYC_SECURITY_CONFIG.ENCRYPTION.ivLength)
-  const cipher = crypto.createCipheriv(
-    KYC_SECURITY_CONFIG.ENCRYPTION.algorithm,
-    Buffer.from(key, 'hex'),
-    iv
+export async function encryptData(data: string, key: string): Promise<{ encrypted: string; iv: string; tag: string }> {
+  const encoder = new TextEncoder()
+  const dataBuffer = encoder.encode(data)
+  
+  // Generate random IV
+  const iv = crypto.getRandomValues(new Uint8Array(KYC_SECURITY_CONFIG.ENCRYPTION.ivLength))
+  
+  // Import key
+  const keyBuffer = new Uint8Array(key.match(/.{2}/g)!.map(byte => parseInt(byte, 16)))
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBuffer,
+    'AES-GCM',
+    false,
+    ['encrypt']
   )
   
-  let encrypted = cipher.update(data, 'utf8', 'hex')
-  encrypted += cipher.final('hex')
+  // Encrypt data
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    {
+      name: 'AES-GCM',
+      iv: iv,
+      tagLength: KYC_SECURITY_CONFIG.ENCRYPTION.tagLength * 8
+    },
+    cryptoKey,
+    dataBuffer
+  )
   
-  const tag = cipher.getAuthTag()
+  // Split encrypted data and tag
+  const encrypted = new Uint8Array(encryptedBuffer.slice(0, -KYC_SECURITY_CONFIG.ENCRYPTION.tagLength))
+  const tag = new Uint8Array(encryptedBuffer.slice(-KYC_SECURITY_CONFIG.ENCRYPTION.tagLength))
   
   return {
-    encrypted,
-    iv: iv.toString('hex'),
-    tag: tag.toString('hex')
+    encrypted: Array.from(encrypted, byte => byte.toString(16).padStart(2, '0')).join(''),
+    iv: Array.from(iv, byte => byte.toString(16).padStart(2, '0')).join(''),
+    tag: Array.from(tag, byte => byte.toString(16).padStart(2, '0')).join('')
   }
 }
 
 // Decrypt sensitive data
-export function decryptData(encryptedData: string, key: string, iv: string, tag: string): string {
-  const decipher = crypto.createDecipheriv(
-    KYC_SECURITY_CONFIG.ENCRYPTION.algorithm,
-    Buffer.from(key, 'hex'),
-    Buffer.from(iv, 'hex')
+export async function decryptData(encryptedData: string, key: string, iv: string, tag: string): Promise<string> {
+  // Convert hex strings to Uint8Arrays
+  const encryptedBuffer = new Uint8Array(encryptedData.match(/.{2}/g)!.map(byte => parseInt(byte, 16)))
+  const ivBuffer = new Uint8Array(iv.match(/.{2}/g)!.map(byte => parseInt(byte, 16)))
+  const tagBuffer = new Uint8Array(tag.match(/.{2}/g)!.map(byte => parseInt(byte, 16)))
+  const keyBuffer = new Uint8Array(key.match(/.{2}/g)!.map(byte => parseInt(byte, 16)))
+  
+  // Combine encrypted data and tag for Web Crypto API
+  const combinedBuffer = new Uint8Array(encryptedBuffer.length + tagBuffer.length)
+  combinedBuffer.set(encryptedBuffer)
+  combinedBuffer.set(tagBuffer, encryptedBuffer.length)
+  
+  // Import key
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBuffer,
+    'AES-GCM',
+    false,
+    ['decrypt']
   )
   
-  decipher.setAuthTag(Buffer.from(tag, 'hex'))
+  // Decrypt data
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: ivBuffer,
+      tagLength: KYC_SECURITY_CONFIG.ENCRYPTION.tagLength * 8
+    },
+    cryptoKey,
+    combinedBuffer
+  )
   
-  let decrypted = decipher.update(encryptedData, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  
-  return decrypted
+  const decoder = new TextDecoder()
+  return decoder.decode(decryptedBuffer)
 }
 
 // Generate secure session ID
 export function generateSessionId(): string {
-  return crypto.randomBytes(32).toString('hex')
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 // Hash sensitive data (one-way)
-export function hashData(data: string, salt?: string): string {
-  const actualSalt = salt || crypto.randomBytes(KYC_SECURITY_CONFIG.ENCRYPTION.saltLength).toString('hex')
-  return crypto.pbkdf2Sync(
-    data,
-    actualSalt,
-    KYC_SECURITY_CONFIG.ENCRYPTION.iterations,
-    KYC_SECURITY_CONFIG.ENCRYPTION.keyLength,
-    'sha256'
-  ).toString('hex')
+export async function hashData(data: string, salt?: string): Promise<string> {
+  const encoder = new TextEncoder()
+  
+  // Generate salt if not provided
+  let actualSalt: string
+  if (salt) {
+    actualSalt = salt
+  } else {
+    const saltArray = new Uint8Array(KYC_SECURITY_CONFIG.ENCRYPTION.saltLength)
+    crypto.getRandomValues(saltArray)
+    actualSalt = Array.from(saltArray, byte => byte.toString(16).padStart(2, '0')).join('')
+  }
+  
+  // Convert salt to Uint8Array
+  const saltBuffer = new Uint8Array(actualSalt.match(/.{2}/g)!.map(byte => parseInt(byte, 16)))
+  
+  // Import key material
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(data),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  )
+  
+  // Derive key
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: saltBuffer,
+      iterations: KYC_SECURITY_CONFIG.ENCRYPTION.iterations,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    KYC_SECURITY_CONFIG.ENCRYPTION.keyLength * 8
+  )
+  
+  const hashArray = new Uint8Array(derivedBits)
+  return Array.from(hashArray, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 // Security headers helper for API routes
