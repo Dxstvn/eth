@@ -115,12 +115,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "script-src 'self' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://static.sumsub.com",
+              "style-src 'self' https://fonts.googleapis.com https://static.sumsub.com",
               "img-src 'self' data: https: blob:",
-              "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://api.clearhold.app https://*.firebaseapp.com https://*.googleapis.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
-              "frame-src 'self' https://accounts.google.com https://clearhold.firebaseapp.com",
+              "font-src 'self' https://fonts.gstatic.com https://static.sumsub.com",
+              "connect-src 'self' https://api.clearhold.app https://*.firebaseapp.com https://*.googleapis.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.sumsub.com https://static.sumsub.com",
+              "frame-src 'self' https://accounts.google.com https://clearhold.firebaseapp.com https://api.sumsub.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -214,11 +214,17 @@ const nextConfig = {
 
   // Rewrites for optimization
   async rewrites() {
+    // Only add rewrite if API URL is defined
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    if (!apiUrl) {
+      return []
+    }
+    
     return [
       // API proxy for better caching
       {
         source: '/api-proxy/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+        destination: `${apiUrl}/:path*`,
       },
     ]
   },

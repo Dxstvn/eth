@@ -66,7 +66,7 @@ export default function KYCPage() {
   ]
 
   const handleStartKYC = () => {
-    router.push("/kyc/personal")
+    router.push("/onboarding/welcome")
   }
 
   const handleCheckStatus = () => {

@@ -17,6 +17,8 @@ import {
   authTokenInterceptor,
   errorNormalizationInterceptor 
 } from './interceptors';
+import { getHMACSigningKey } from './hmac-interceptor';
+import { signRequest, requiresSigning } from '@/lib/security/request-signing';
 
 export class ApiClient {
   private static instance: ApiClient;
@@ -68,8 +70,23 @@ export class ApiClient {
       })
     );
 
+
     // Add response error normalization
     this.interceptors.addResponseInterceptor(errorNormalizationInterceptor);
+  }
+
+  private getUserIdFromToken(): string | undefined {
+    const token = typeof window !== 'undefined' ? 
+      localStorage.getItem('clearhold_auth_token') : null;
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.userId || payload.sub;
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
   }
 
   private async getAuthToken(): Promise<string | null> {
@@ -175,6 +192,32 @@ export class ApiClient {
           // Apply request interceptors
           if (!skipAuth) {
             config = await this.interceptors.applyRequestInterceptors(config);
+          }
+
+          // Apply HMAC signing for critical endpoints
+          if (requiresSigning(endpoint)) {
+            const signingKey = getHMACSigningKey();
+            if (signingKey) {
+              const signatureHeaders = signRequest(
+                method,
+                endpoint,
+                {
+                  secretKey: signingKey,
+                  userId: this.getUserIdFromToken(),
+                  includeBody: !!data
+                },
+                data
+              );
+
+              // Add signature headers
+              const headers = new Headers(config.headers);
+              Object.entries(signatureHeaders).forEach(([key, value]) => {
+                headers.set(key, value);
+              });
+              config.headers = headers;
+            } else {
+              console.warn('HMAC signing key not available for critical endpoint:', endpoint);
+            }
           }
 
           // Make the request

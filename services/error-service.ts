@@ -236,8 +236,9 @@ class ErrorService {
 
 // Create singleton instance
 const errorService = new ErrorService({
-  apiEndpoint: process.env.NEXT_PUBLIC_ERROR_LOGGING_ENDPOINT,
-  apiKey: process.env.NEXT_PUBLIC_ERROR_LOGGING_API_KEY
+  // Error logging should go through backend to avoid exposing API keys
+  apiEndpoint: '/api/error-log', // Use backend proxy endpoint
+  apiKey: undefined // Never expose API keys in client-side code
 })
 
 // React hook for error handling
