@@ -89,6 +89,19 @@ export const API_CONFIG = {
       base: '/health',
       simple: '/health/simple',
       full: '/health/'
+    },
+    
+    // KYC endpoints
+    kyc: {
+      base: '/kyc',
+      sessionStart: '/kyc/session/start',
+      documentUpload: '/kyc/document/upload',
+      livenessCheck: '/kyc/liveness/check',
+      status: '/kyc/status',
+      personal: '/kyc/personal',
+      sessionComplete: '/kyc/session/complete',
+      adminPendingReviews: '/kyc/admin/pending-reviews',
+      adminManualReview: '/kyc/admin/manual-review'
     }
   }
 };
@@ -202,6 +215,100 @@ export interface FileUploadResponse {
   message: string;
   fileId: string;
   url: string;
+}
+
+// KYC type definitions
+export interface KYCSessionStartRequest {
+  requiredLevel?: 'basic' | 'enhanced' | 'full';
+}
+
+export interface KYCSessionResponse {
+  success: boolean;
+  session: {
+    sessionId: string;
+    requiredLevel: string;
+    requiredDocuments: string[];
+    steps: Record<string, { status: string; completedAt?: string }>;
+    status: string;
+  };
+}
+
+export interface KYCDocumentUploadResponse {
+  success: boolean;
+  result: {
+    documentId: string;
+    documentType: string;
+    status: string;
+    extractedData?: {
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: string;
+      documentNumber?: string;
+      expiryDate?: string;
+      nationality?: string;
+      address?: {
+        fullAddress?: string;
+        street?: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+        country?: string;
+      };
+    };
+    temporaryUrl?: string;
+    expiresAt?: string;
+  };
+}
+
+export interface KYCLivenessCheckRequest {
+  sessionId: string;
+  imageData: string; // base64 encoded image
+}
+
+export interface KYCLivenessCheckResponse {
+  success: boolean;
+  result: {
+    isLive: boolean;
+    confidence: number;
+    checks: Record<string, boolean>;
+    selfieUrl?: string;
+    sessionUpdated: boolean;
+  };
+}
+
+export interface KYCStatusResponse {
+  success: boolean;
+  status: {
+    level: 'none' | 'basic' | 'enhanced' | 'full';
+    status: 'pending' | 'in_progress' | 'approved' | 'rejected' | 'expired';
+    lastUpdated: string;
+    expiryDate?: string;
+    reviewRequired: boolean;
+    completedSteps?: string[];
+    riskProfile?: {
+      overallRisk: 'low' | 'medium' | 'high' | 'critical';
+    };
+  };
+}
+
+export interface KYCPersonalInfoRequest {
+  sessionId: string;
+  personalInfo: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    nationality: string;
+    countryOfResidence: string;
+    address: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    phoneNumber?: string;
+    email?: string;
+    occupation?: string;
+    employer?: string;
+  };
 }
 
 // Supported networks with chain IDs

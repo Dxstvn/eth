@@ -77,8 +77,8 @@ export default function BasicInfoPage() {
       // Store in session for Sumsub
       sessionStorage.setItem("kycBasicInfo", JSON.stringify(data))
       
-      // Navigate to document selection
-      router.push("/onboarding/document-type")
+      // Navigate to KYC document upload
+      router.push("/onboarding/kyc-documents")
     } catch (error) {
       console.error("Error saving basic info:", error)
       setLoading(false)

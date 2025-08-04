@@ -38,6 +38,18 @@ export interface UserProfile {
     addedAt: Date;
   }>;
   createdAt?: Date;
+  // KYC/AML fields
+  kycStatus?: {
+    level: 'none' | 'basic' | 'enhanced' | 'full';
+    status: 'pending' | 'in_progress' | 'approved' | 'rejected' | 'expired';
+    lastUpdated: string;
+    expiryDate?: string;
+    reviewRequired: boolean;
+  };
+  kycLevel?: 'none' | 'basic' | 'enhanced' | 'full';
+  kycCompletedAt?: string;
+  kycSessionId?: string;
+  facialVerificationStatus?: 'pending' | 'passed' | 'failed';
 }
 
 export interface AuthTokenInfo {

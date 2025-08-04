@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { 
   CheckCircle, 
+  CheckCircle2,
   XCircle, 
   Shield, 
   AlertTriangle, 
@@ -14,9 +15,12 @@ import {
   Home,
   RefreshCw,
   Phone,
-  Clock
+  Clock,
+  FileCheck
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "@/context/auth-context-v2"
+import { useKYC } from "@/context/kyc-context"
 import confetti from "canvas-confetti"
 
 type VerificationStatus = "GREEN" | "YELLOW" | "RED" | null
@@ -59,60 +63,111 @@ const statusConfigs: Record<string, StatusConfig> = {
 
 export default function CompletePage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [status, setStatus] = useState<VerificationStatus>(null)
+  const { user, updateProfile } = useAuth()
+  const { kycData, refreshKYCStatus } = useKYC()
+  const [isUpdating, setIsUpdating] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  // Trigger confetti animation on mount
   useEffect(() => {
-    // Get status from URL params
-    const statusParam = searchParams.get("status") as VerificationStatus
-    
-    if (!statusParam || !["GREEN", "YELLOW", "RED"].includes(statusParam)) {
-      // If no valid status, redirect to welcome
-      router.push("/onboarding/welcome")
-      return
+    const duration = 3 * 1000
+    const animationEnd = Date.now() + duration
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min
     }
 
-    setStatus(statusParam)
+    const interval: any = setInterval(function() {
+      const timeLeft = animationEnd - Date.now()
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval)
+      }
+
+      const particleCount = 50 * (timeLeft / duration)
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      })
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      })
+    }, 250)
+
     setLoading(false)
-
-    // Trigger confetti for successful verification
-    if (statusParam === "GREEN") {
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        })
-      }, 500)
-    }
 
     // Clear session storage
     sessionStorage.removeItem("kycBasicInfo")
     sessionStorage.removeItem("kycDocumentType")
-  }, [router, searchParams])
 
-  const handleContinue = () => {
-    if (status === "GREEN") {
+    return () => clearInterval(interval)
+  }, [])
+
+  // Refresh KYC status on mount
+  useEffect(() => {
+    refreshKYCStatus()
+  }, [])
+
+  const handleContinueToDashboard = async () => {
+    setIsUpdating(true)
+    
+    try {
+      // Update user profile to mark onboarding as complete
+      await updateProfile({
+        hasCompletedOnboarding: true,
+        onboardingCompletedAt: new Date().toISOString()
+      })
+      
+      // Navigate to dashboard
       router.push("/dashboard")
-    } else {
-      router.push("/dashboard?kyc=pending")
+    } catch (error) {
+      console.error("Failed to update profile:", error)
+      // Still navigate to dashboard even if update fails
+      router.push("/dashboard")
     }
   }
 
-  const handleRetry = () => {
-    router.push("/onboarding/welcome")
+  const getVerificationStatus = () => {
+    if (kycData.status === 'approved') {
+      return {
+        title: "Identity Verified",
+        description: "Your identity has been successfully verified",
+        icon: CheckCircle2,
+        color: "text-green-600",
+        bgColor: "bg-green-100"
+      }
+    } else if (kycData.status === 'under_review') {
+      return {
+        title: "Verification In Progress",
+        description: "Your documents are being reviewed. This usually takes 1-2 minutes.",
+        icon: Clock,
+        color: "text-amber-600",
+        bgColor: "bg-amber-100"
+      }
+    } else {
+      return {
+        title: "Verification Pending",
+        description: "Your verification is being processed",
+        icon: FileCheck,
+        color: "text-blue-600",
+        bgColor: "bg-blue-100"
+      }
+    }
   }
 
-  if (loading || !status) {
+  const status = getVerificationStatus()
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[600px]">
         <div className="animate-spin h-8 w-8 border-4 border-gray-300 border-t-teal-600 rounded-full"></div>
       </div>
     )
   }
-
-  const config = statusConfigs[status]
 
   return (
     <div className="space-y-6">
@@ -125,177 +180,107 @@ export default function CompletePage() {
         <Progress value={100} className="h-2" />
       </div>
 
-      <Card className="shadow-lg">
+      <Card className="shadow-soft border-gray-200">
         <CardHeader className="text-center pb-8">
-          <div className={`mx-auto w-24 h-24 ${config.iconBg} rounded-full flex items-center justify-center mb-6`}>
-            <config.icon className={`h-12 w-12 ${config.iconColor}`} />
+          <div className="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
+            <CheckCircle2 className="h-12 w-12 text-green-600" />
           </div>
           
-          <CardTitle className="text-3xl font-bold">
-            {config.title}
+          <CardTitle className="text-3xl font-bold text-teal-900 font-display">
+            Welcome to ClearHold!
           </CardTitle>
           
-          <CardDescription className="text-base mt-3 max-w-lg mx-auto">
-            {config.description}
+          <CardDescription className="text-lg mt-3 text-gray-600 font-sans">
+            You've successfully completed the onboarding process
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Status-specific content */}
-          {status === "GREEN" && (
-            <>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                <h3 className="font-semibold text-green-900 mb-3">What's Next?</h3>
-                <ul className="space-y-2 text-sm text-green-800">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
-                    <span>Create your first escrow transaction</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
-                    <span>Connect your crypto wallet</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
-                    <span>Explore our secure escrow features</span>
-                  </li>
-                </ul>
+          {/* Status Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Shield className="h-6 w-6 text-teal-600" />
               </div>
+              <h3 className="font-semibold text-sm mb-1">Account Created</h3>
+              <p className="text-xs text-gray-600">Your secure account is ready</p>
+            </div>
 
-              <Alert className="bg-teal-50 border-teal-200">
-                <Shield className="h-4 w-4 text-teal-700" />
-                <AlertDescription className="text-teal-800">
-                  <strong>Enhanced Security Enabled</strong>
-                  <p className="mt-1">Your account now has access to high-value transactions and advanced escrow features.</p>
-                </AlertDescription>
-              </Alert>
-            </>
-          )}
-
-          {status === "YELLOW" && (
-            <>
-              <Alert className="bg-yellow-50 border-yellow-200">
-                <Clock className="h-4 w-4 text-yellow-700" />
-                <AlertDescription className="text-yellow-800">
-                  <strong>What happens next?</strong>
-                  <ul className="mt-2 space-y-1 text-sm">
-                    <li>• Our compliance team will review your application</li>
-                    <li>• You'll receive an email within 24-48 hours</li>
-                    <li>• You may be asked to provide additional documentation</li>
-                    <li>• Limited platform access is available while we review</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <Phone className="h-5 w-5 text-gray-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Need help?</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Contact our support team at support@clearhold.app or call +1 (555) 123-4567
-                    </p>
-                  </div>
-                </div>
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className={`w-12 h-12 ${status.bgColor} rounded-full flex items-center justify-center mx-auto mb-3`}>
+                <status.icon className={`h-6 w-6 ${status.color}`} />
               </div>
-            </>
-          )}
+              <h3 className="font-semibold text-sm mb-1">{status.title}</h3>
+              <p className="text-xs text-gray-600">{status.description}</p>
+            </div>
 
-          {status === "RED" && (
-            <>
-              <Alert className="bg-red-50 border-red-200">
-                <AlertTriangle className="h-4 w-4 text-red-700" />
-                <AlertDescription className="text-red-800">
-                  <strong>Common reasons for verification failure:</strong>
-                  <ul className="mt-2 space-y-1 text-sm">
-                    <li>• Document was unclear or partially obscured</li>
-                    <li>• Information didn't match your application</li>
-                    <li>• Document has expired</li>
-                    <li>• Technical issues during capture</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-blue-900 mb-2">
-                  Before trying again:
-                </p>
-                <ul className="space-y-1 text-sm text-blue-800">
-                  <li>• Ensure your document is valid and not expired</li>
-                  <li>• Use good lighting with no shadows or glare</li>
-                  <li>• Make sure all text is clearly readable</li>
-                  <li>• Check that your information matches your document exactly</li>
-                </ul>
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FileCheck className="h-6 w-6 text-purple-600" />
               </div>
-            </>
-          )}
-
-          {/* Action Buttons */}
-          <div className="space-y-3 pt-4">
-            {status === "GREEN" ? (
-              <Button
-                onClick={handleContinue}
-                size="lg"
-                className="w-full h-14 text-base font-semibold"
-              >
-                Go to Dashboard
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            ) : status === "YELLOW" ? (
-              <>
-                <Button
-                  onClick={handleContinue}
-                  size="lg"
-                  className="w-full h-14 text-base font-semibold"
-                >
-                  Continue with Limited Access
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button
-                  onClick={() => router.push("/")}
-                  variant="outline"
-                  size="lg"
-                  className="w-full h-14 text-base"
-                >
-                  <Home className="mr-2 h-5 w-5" />
-                  Return to Homepage
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  onClick={handleRetry}
-                  size="lg"
-                  className="w-full h-14 text-base font-semibold"
-                >
-                  <RefreshCw className="mr-2 h-5 w-5" />
-                  Try Again
-                </Button>
-                <Button
-                  onClick={() => router.push("/support")}
-                  variant="outline"
-                  size="lg"
-                  className="w-full h-14 text-base"
-                >
-                  <Phone className="mr-2 h-5 w-5" />
-                  Contact Support
-                </Button>
-                <Button
-                  onClick={() => router.push("/")}
-                  variant="ghost"
-                  size="lg"
-                  className="w-full h-14 text-base"
-                >
-                  Return to Homepage
-                </Button>
-              </>
-            )}
+              <h3 className="font-semibold text-sm mb-1">Ready to Transact</h3>
+              <p className="text-xs text-gray-600">Start creating secure escrows</p>
+            </div>
           </div>
 
+          {/* What's Next Section */}
+          <div className="border-t pt-6">
+            <h3 className="font-semibold text-lg mb-4 text-teal-900">What you can do now:</h3>
+            <ul className="space-y-3 text-sm text-gray-700">
+              <li className="flex items-start">
+                <span className="text-teal-600 mr-2">•</span>
+                <span>Create your first escrow transaction for crypto or real estate</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-teal-600 mr-2">•</span>
+                <span>Connect your crypto wallets to start transacting</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-teal-600 mr-2">•</span>
+                <span>Invite contacts to join your trusted network</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-teal-600 mr-2">•</span>
+                <span>Explore our secure document storage features</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Verification Status Note */}
+          {kycData.status === 'under_review' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-800">
+                <strong>Note:</strong> While your verification is being processed, you can explore the platform. 
+                Some features may be limited until verification is complete.
+              </p>
+            </div>
+          )}
+
+          {/* Continue Button */}
+          <Button
+            onClick={handleContinueToDashboard}
+            disabled={isUpdating}
+            size="lg"
+            className="w-full h-14 text-base font-semibold bg-teal-900 hover:bg-teal-800"
+          >
+            {isUpdating ? (
+              "Loading Dashboard..."
+            ) : (
+              <>
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </>
+            )}
+          </Button>
+
           {/* Security Footer */}
-          <div className="text-center pt-6 border-t">
-            <p className="text-xs text-gray-500">
-              Your verification data is encrypted and stored securely in compliance with GDPR and data protection regulations.
+          <div className="text-center text-sm text-gray-500 mt-6">
+            <p>Your data is protected with bank-level encryption</p>
+            <p className="mt-1">
+              Questions? Contact our support team at{" "}
+              <a href="mailto:support@clearhold.app" className="text-teal-600 hover:underline">
+                support@clearhold.app
+              </a>
             </p>
           </div>
         </CardContent>

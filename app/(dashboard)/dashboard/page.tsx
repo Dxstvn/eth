@@ -17,6 +17,8 @@ import { Skeleton } from "@/components/ui/design-system"
 import ErrorBoundary from "@/components/ui/error-boundary"
 import { RetryWrapper } from "@/components/ui/retry-wrapper"
 import { useAuth } from "@/context/auth-context-v2"
+import { KYCNotificationBanner } from "@/components/kyc/kyc-notification-banner"
+import { KYCGuard } from "@/components/kyc/kyc-guard"
 
 export default function DashboardPage() {
   const { getTransactions } = useDatabaseStore()
@@ -294,20 +296,24 @@ export default function DashboardPage() {
   }
 
   return (
-    <ResponsiveContainer>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-display text-3xl md:text-4xl font-bold text-teal-900 tracking-tight">ClearHold Dashboard</h1>
-            <p className="text-body text-gray-600 mt-2">Manage your real estate transactions securely with blockchain technology</p>
+    <>
+      {/* KYC Notification Banner */}
+      <KYCNotificationBanner variant="inline" position="top" />
+      
+      <ResponsiveContainer>
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-display text-3xl md:text-4xl font-bold text-teal-900 tracking-tight">ClearHold Dashboard</h1>
+              <p className="text-body text-gray-600 mt-2">Manage your real estate transactions securely with blockchain technology</p>
+            </div>
+            <Link href="/transactions/new">
+              <Button size="lg" className="shadow-md">
+                <Plus className="mr-2 h-5 w-5" />
+                New Transaction
+              </Button>
+            </Link>
           </div>
-          <Link href="/transactions/new">
-            <Button size="lg" className="shadow-md">
-              <Plus className="mr-2 h-5 w-5" />
-              New Transaction
-            </Button>
-          </Link>
-        </div>
 
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8" aria-label="Dashboard tabs">
@@ -345,7 +351,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {renderTabContent()}
-    </ResponsiveContainer>
+        {renderTabContent()}
+      </ResponsiveContainer>
+    </>
   )
 }

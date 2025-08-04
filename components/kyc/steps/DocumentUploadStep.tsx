@@ -21,7 +21,7 @@ import {
   Shield,
   CreditCard,
   Car,
-  Passport,
+  FileImage,
   Loader2,
   Edit3,
   Eye,
@@ -57,7 +57,7 @@ interface DocumentUploadStepProps {
 const documentConfig = {
   passport: {
     label: "Passport",
-    icon: Passport,
+    icon: FileImage,
     description: "International passport with photo page",
     fieldType: KYCFieldType.PASSPORT,
     requiresBack: false,

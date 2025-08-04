@@ -23,6 +23,7 @@ import { useTransaction } from "@/context/transaction-context"
 import { ContactProvider } from "@/context/contact-context"
 import ContactSelector from "@/components/contact-selector"
 import { Contact } from "@/services/contacts-api"
+import { KYCGuard } from "@/components/kyc/kyc-guard"
 
 function NewTransactionPageContent() {
   const { isConnected, connectWallet, isConnecting, error: walletError } = useWallet()
@@ -736,8 +737,14 @@ function NewTransactionPageContent() {
 
 export default function NewTransactionPage() {
   return (
-    <ContactProvider>
-      <NewTransactionPageContent />
-    </ContactProvider>
+    <KYCGuard 
+      requiredLevel="basic" 
+      blockingMode="full"
+      customMessage="Complete identity verification to create secure escrow transactions"
+    >
+      <ContactProvider>
+        <NewTransactionPageContent />
+      </ContactProvider>
+    </KYCGuard>
   )
 }

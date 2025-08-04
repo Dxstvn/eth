@@ -12,6 +12,7 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean
   requireEmailVerified?: boolean
   requireOnboarding?: boolean
+  requireKYC?: boolean | 'basic' | 'enhanced' | 'full'
   fallbackPath?: string
 }
 
@@ -21,6 +22,7 @@ export function ProtectedRoute({
   requireAdmin = false,
   requireEmailVerified = false,
   requireOnboarding = false,
+  requireKYC = false,
   fallbackPath = "/sign-in"
 }: ProtectedRouteProps) {
   const router = useRouter()
@@ -63,9 +65,35 @@ export function ProtectedRoute({
       return
     }
 
+    // Check KYC requirement
+    if (requireKYC && user) {
+      const requiredLevel = typeof requireKYC === 'string' ? requireKYC : 'basic'
+      const userKYCLevel = user.kycLevel || 'none'
+      const levels = ['none', 'basic', 'enhanced', 'full']
+      const userLevelIndex = levels.indexOf(userKYCLevel)
+      const requiredLevelIndex = levels.indexOf(requiredLevel)
+      
+      if (userLevelIndex < requiredLevelIndex || 
+          user.kycStatus?.status !== 'approved' ||
+          (user.kycStatus?.expiryDate && new Date(user.kycStatus.expiryDate) < new Date())) {
+        toast.warning("Please complete identity verification to access this feature")
+        router.push("/onboarding/kyc-documents")
+        setIsAuthorized(false)
+        return
+      }
+      
+      // Check facial verification if KYC is required
+      if (user.facialVerificationStatus !== 'passed') {
+        toast.warning("Please complete facial verification")
+        router.push("/onboarding/kyc-selfie")
+        setIsAuthorized(false)
+        return
+      }
+    }
+
     // All checks passed
     setIsAuthorized(true)
-  }, [user, loading, isAdmin, requireAuth, requireAdmin, requireEmailVerified, requireOnboarding, router, pathname, fallbackPath])
+  }, [user, loading, isAdmin, requireAuth, requireAdmin, requireEmailVerified, requireOnboarding, requireKYC, router, pathname, fallbackPath])
 
   // Show loading while checking auth
   if (loading || isAuthorized === null) {

@@ -1,6 +1,9 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
+import { useAuth } from '@/context/auth-context-v2'
+import { kycAPI } from '@/lib/services/kyc-api-service'
+import type { KYCStatusResponse } from '@/services/api-config'
 
 export interface PersonalInfo {
   firstName: string
@@ -63,6 +66,10 @@ export interface KYCData {
   additionalInfoRequested?: string[]
   riskScore?: 'low' | 'medium' | 'high'
   verificationId?: string
+  sessionId?: string
+  kycLevel?: 'none' | 'basic' | 'enhanced' | 'full'
+  expiryDate?: string
+  facialVerificationStatus?: 'pending' | 'passed' | 'failed'
 }
 
 interface KYCContextType {
@@ -76,6 +83,11 @@ interface KYCContextType {
   resetKYC: () => void
   isLoading: boolean
   error: string | null
+  startKYCSession: (requiredLevel?: 'basic' | 'enhanced' | 'full') => Promise<void>
+  uploadDocument: (documentType: string, file: File) => Promise<void>
+  performLivenessCheck: (imageData: string) => Promise<void>
+  completeKYCSession: () => Promise<void>
+  refreshKYCStatus: () => Promise<void>
 }
 
 const defaultKYCData: KYCData = {
@@ -90,6 +102,8 @@ export function KYCProvider({ children }: { children: ReactNode }) {
   const [kycData, setKYCData] = useState<KYCData>(defaultKYCData)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { user, authToken } = useAuth()
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   const updatePersonalInfo = useCallback((info: Partial<PersonalInfo>) => {
     setKYCData(prev => ({
@@ -140,27 +154,178 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  const submitKYC = useCallback(async () => {
+  // Fetch KYC status on mount and when user changes
+  useEffect(() => {
+    if (user && authToken) {
+      refreshKYCStatus()
+    }
+  }, [user, authToken])
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+      }
+    }
+  }, [pollingInterval])
+
+  const refreshKYCStatus = useCallback(async () => {
+    if (!authToken) return
+    
+    try {
+      const statusResponse = await kycAPI.getStatus()
+      if (statusResponse.success && statusResponse.status) {
+        setKYCData(prev => ({
+          ...prev,
+          status: statusResponse.status.status === 'approved' ? 'approved' : 
+                  statusResponse.status.status === 'rejected' ? 'rejected' :
+                  statusResponse.status.status === 'pending' ? 'under_review' : 'in_progress',
+          kycLevel: statusResponse.status.level,
+          expiryDate: statusResponse.status.expiryDate,
+          completedSteps: statusResponse.status.completedSteps || [],
+          riskScore: statusResponse.status.riskProfile?.overallRisk || 'low'
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to fetch KYC status:', error)
+    }
+  }, [authToken])
+
+  const startKYCSession = useCallback(async (requiredLevel: 'basic' | 'enhanced' | 'full' = 'basic') => {
     setIsLoading(true)
     setError(null)
     
     try {
-      // TODO: Integrate with backend API
-      // For now, simulate submission
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      setKYCData(prev => ({
-        ...prev,
-        status: 'under_review',
-        submittedAt: new Date().toISOString()
-      }))
+      const sessionResponse = await kycAPI.startSession(requiredLevel)
+      if (sessionResponse.success && sessionResponse.session) {
+        setKYCData(prev => ({
+          ...prev,
+          sessionId: sessionResponse.session.sessionId,
+          status: 'in_progress'
+        }))
+        
+        // Start polling for status updates
+        const interval = setInterval(() => {
+          refreshKYCStatus()
+        }, 30000) // Poll every 30 seconds
+        setPollingInterval(interval)
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit KYC')
+      setError(err instanceof Error ? err.message : 'Failed to start KYC session')
       throw err
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [refreshKYCStatus])
+
+  const uploadDocument = useCallback(async (documentType: string, file: File) => {
+    if (!kycData.sessionId) {
+      throw new Error('No active KYC session')
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const uploadResponse = await kycAPI.uploadDocument(kycData.sessionId, documentType, file)
+      if (uploadResponse.success && uploadResponse.result) {
+        // Update document info with extracted data
+        if (uploadResponse.result.extractedData) {
+          const extractedData = uploadResponse.result.extractedData
+          setKYCData(prev => ({
+            ...prev,
+            personalInfo: {
+              ...prev.personalInfo,
+              firstName: extractedData.firstName || prev.personalInfo?.firstName || '',
+              lastName: extractedData.lastName || prev.personalInfo?.lastName || '',
+              dateOfBirth: extractedData.dateOfBirth || prev.personalInfo?.dateOfBirth || ''
+            } as PersonalInfo,
+            documentInfo: {
+              ...prev.documentInfo,
+              idType: documentType as any,
+              idNumber: extractedData.documentNumber || prev.documentInfo?.idNumber || '',
+              idExpiryDate: extractedData.expiryDate || prev.documentInfo?.idExpiryDate || ''
+            } as DocumentInfo
+          }))
+        }
+        markStepCompleted('document_upload')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload document')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [kycData.sessionId])
+
+  const performLivenessCheck = useCallback(async (imageData: string) => {
+    if (!kycData.sessionId) {
+      throw new Error('No active KYC session')
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const livenessResponse = await kycAPI.performLivenessCheck(kycData.sessionId, imageData)
+      if (livenessResponse.success && livenessResponse.result) {
+        setKYCData(prev => ({
+          ...prev,
+          facialVerificationStatus: livenessResponse.result.isLive ? 'passed' : 'failed',
+          documentInfo: {
+            ...prev.documentInfo,
+            selfieUrl: livenessResponse.result.selfieUrl
+          } as DocumentInfo
+        }))
+        
+        if (livenessResponse.result.isLive) {
+          markStepCompleted('liveness_check')
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Liveness check failed')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [kycData.sessionId])
+
+  const completeKYCSession = useCallback(async () => {
+    if (!kycData.sessionId) {
+      throw new Error('No active KYC session')
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const completeResponse = await kycAPI.completeSession(kycData.sessionId)
+      if (completeResponse) {
+        setKYCData(prev => ({
+          ...prev,
+          status: 'under_review',
+          submittedAt: new Date().toISOString()
+        }))
+        
+        // Stop polling as KYC is complete
+        if (pollingInterval) {
+          clearInterval(pollingInterval)
+          setPollingInterval(null)
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to complete KYC session')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [kycData.sessionId, pollingInterval])
+
+  const submitKYC = useCallback(async () => {
+    // This is now just an alias for completeKYCSession for backward compatibility
+    await completeKYCSession()
+  }, [completeKYCSession])
 
   const resetKYC = useCallback(() => {
     setKYCData(defaultKYCData)
@@ -177,7 +342,12 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     submitKYC,
     resetKYC,
     isLoading,
-    error
+    error,
+    startKYCSession,
+    uploadDocument,
+    performLivenessCheck,
+    completeKYCSession,
+    refreshKYCStatus
   }
 
   return <KYCContext.Provider value={value}>{children}</KYCContext.Provider>

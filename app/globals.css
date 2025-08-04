@@ -298,6 +298,20 @@
   }
 }
 
+/* Passwordless Authentication Animations */
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress {
+  animation: progress 2s ease-in-out infinite;
+}
+
 /* High Specificity Overrides for Consistent Branding */
 button[class*="bg-teal-900"],
 button[class*="bg-teal-800"],

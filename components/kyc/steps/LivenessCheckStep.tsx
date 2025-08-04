@@ -27,6 +27,8 @@ import {
   Sun,
   Moon
 } from "lucide-react"
+import { useKYC } from "@/context/kyc-context"
+import { toast } from "sonner"
 
 export interface LivenessCheckData {
   capturedImage: string | null
@@ -66,6 +68,7 @@ export function LivenessCheckStep({
   initialData,
   className
 }: LivenessCheckStepProps) {
+  const { performLivenessCheck, isLoading: kycLoading } = useKYC()
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -114,7 +117,7 @@ export function LivenessCheckStep({
         videoRef.current.srcObject = mediaStream
       }
       
-      // Start mock face detection
+      // Start face detection (simulated for now, but prepares real image for backend)
       setTimeout(() => {
         setFaceDetected(true)
         startLivenessDetection()
@@ -222,20 +225,37 @@ export function LivenessCheckStep({
   }, [initializeCamera])
   
   // Complete verification
-  const completeVerification = useCallback(() => {
+  const completeVerification = useCallback(async () => {
     if (!capturedImage) return
     
-    const data: LivenessCheckData = {
-      capturedImage,
-      timestamp: Date.now(),
-      deviceType,
-      livenessScore: Math.random() * 0.3 + 0.7, // Mock score between 0.7-1.0
-      verificationStatus: "verified",
-      detectionSteps: completedSteps
-    }
+    setIsLoading(true)
     
-    onComplete(data)
-  }, [capturedImage, deviceType, completedSteps, onComplete])
+    try {
+      // Send image to backend for liveness check
+      await performLivenessCheck(capturedImage)
+      
+      // Create data object for parent component
+      const data: LivenessCheckData = {
+        capturedImage,
+        timestamp: Date.now(),
+        deviceType,
+        livenessScore: 0.95, // Will be updated by backend
+        verificationStatus: "verified",
+        detectionSteps: completedSteps
+      }
+      
+      toast.success("Facial verification completed successfully")
+      onComplete(data)
+    } catch (error) {
+      console.error('Liveness check failed:', error)
+      toast.error('Facial verification failed. Please try again.')
+      
+      // Allow retry
+      retakePhoto()
+    } finally {
+      setIsLoading(false)
+    }
+  }, [capturedImage, deviceType, completedSteps, onComplete, performLivenessCheck, retakePhoto])
   
   // Cleanup on unmount
   useEffect(() => {
@@ -506,8 +526,16 @@ export function LivenessCheckStep({
                     <Button
                       onClick={completeVerification}
                       className="bg-teal-600 hover:bg-teal-700 text-white"
+                      disabled={isLoading || kycLoading}
                     >
-                      Continue
+                      {isLoading || kycLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        'Continue'
+                      )}
                     </Button>
                   </div>
                 </div>
