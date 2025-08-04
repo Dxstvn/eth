@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { AuthProvider } from "@/context/auth-context-v2"
 import { WalletProvider } from "@/context/wallet-context"
 import FirebaseInitCheck from "@/components/firebase-init-check"
+import DebugAuthState from "@/components/debug-auth-state"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { OnboardingProvider } from "@/context/onboarding-context"
@@ -58,6 +59,7 @@ export default function RootLayout({
       <body className={openSans.className}>
         <ErrorBoundary level="page">
           <FirebaseInitCheck />
+          <DebugAuthState />
           <AuthProvider>
             <WalletProvider>
               <ToastProvider>
