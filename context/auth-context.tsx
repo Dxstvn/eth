@@ -117,6 +117,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Helper to get headers with ngrok bypass if needed
+  const getRequestHeaders = (additionalHeaders?: Record<string, string>) => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...additionalHeaders
+    }
+    
+    // Add ngrok bypass header if using ngrok URL
+    if (API_URL.includes('.ngrok.io') || API_URL.includes('.ngrok-free.app') || API_URL.includes('.ngrok.app')) {
+      headers['ngrok-skip-browser-warning'] = 'true'
+    }
+    
+    return headers
+  }
+
   // Store token and set up refresh
   const storeAuthToken = (token: string) => {
     setAuthToken(token)
@@ -265,9 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 3. Send token to backend for verification
       const response = await fetch(`${API_URL}/auth/signInGoogle`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getRequestHeaders(),
         body: JSON.stringify({ idToken }),
       })
 
@@ -313,9 +326,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 2. Send request to backend (backend handles Firebase authentication)
       const response = await fetch(`${API_URL}/auth/signInEmailPass`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getRequestHeaders(),
         body: JSON.stringify({ email, password }),
       })
 
@@ -358,9 +369,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 2. Send request to backend (backend handles Firebase user creation)
       const response = await fetch(`${API_URL}/auth/signUpEmailPass`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getRequestHeaders(),
         body: JSON.stringify({ email, password }),
       })
 
