@@ -34,8 +34,8 @@ type AuthContextType = {
   refreshToken: () => Promise<void>
 }
 
-// Backend API URL - Using production environment
-const API_URL = "https://api.clearhold.app"
+// Backend API URL - Using environment variable or fallback to production
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.clearhold.app"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -47,6 +47,11 @@ const createAPIClient = (token?: string) => {
   
   if (token) {
     headers.Authorization = `Bearer ${token}`
+  }
+  
+  // Add ngrok bypass header if using ngrok URL
+  if (API_URL.includes('.ngrok.io') || API_URL.includes('.ngrok-free.app') || API_URL.includes('.ngrok.app')) {
+    headers['ngrok-skip-browser-warning'] = 'true'
   }
   
   return {
@@ -91,9 +96,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Helper function to check if backend is available
   const checkBackendConnection = async (): Promise<boolean> => {
     try {
+      const headers: Record<string, string> = { 
+        "Content-Type": "application/json" 
+      }
+      
+      // Add ngrok bypass header if using ngrok URL
+      if (API_URL.includes('.ngrok.io') || API_URL.includes('.ngrok-free.app') || API_URL.includes('.ngrok.app')) {
+        headers['ngrok-skip-browser-warning'] = 'true'
+      }
+      
       const response = await fetch(`${API_URL}/health`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers,
         signal: AbortSignal.timeout(3000),
       })
       return response.ok
