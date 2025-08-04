@@ -77,7 +77,7 @@ export const defaultRequestInterceptor: RequestInterceptor = (config) => {
   // Add ngrok bypass header for development
   if (typeof window !== 'undefined') {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    if (apiUrl.includes('ngrok-free.app')) {
+    if (apiUrl.includes('.ngrok.io') || apiUrl.includes('.ngrok-free.app') || apiUrl.includes('.ngrok.app')) {
       headers.set('ngrok-skip-browser-warning', 'true');
     }
   }
