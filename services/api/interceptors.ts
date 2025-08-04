@@ -74,6 +74,14 @@ export const defaultRequestInterceptor: RequestInterceptor = (config) => {
     headers.set('X-Request-ID', `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   }
   
+  // Add ngrok bypass header for development
+  if (typeof window !== 'undefined') {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    if (apiUrl.includes('ngrok-free.app')) {
+      headers.set('ngrok-skip-browser-warning', 'true');
+    }
+  }
+  
   return {
     ...config,
     headers
