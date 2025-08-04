@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Full Stack Test - ClearHold + Ngrok</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Full Stack Test - ClearHold + Ngrok</h1>
+    
+    <div id="tests"></div>
+    
+    <script>
+        const API_URL = 'https://1f2561dafffa.ngrok-free.app';
+        const testsDiv = document.getElementById('tests');
+        
+        async function runTest(name, testFn) {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            testDiv.innerHTML = `<h3>${name}</h3><div class="result">Running...</div>`;
+            testsDiv.appendChild(testDiv);
+            
+            try {
+                const result = await testFn();
+                testDiv.querySelector('.result').innerHTML = `
+                    <div class="success">✓ Success</div>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                testDiv.querySelector('.result').innerHTML = `
+                    <div class="error">✗ Failed: ${error.message}</div>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        }
+        
+        // Test 1: Basic health check without header
+        runTest('Health Check WITHOUT ngrok header', async () => {
+            const response = await fetch(`${API_URL}/health`, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0'
+                }
+            });
+            
+            const text = await response.text();
+            if (text.includes('<!DOCTYPE html>')) {
+                throw new Error('Got ngrok warning page instead of API response');
+            }
+            
+            return { status: response.status, body: text };
+        });
+        
+        // Test 2: Health check with header
+        runTest('Health Check WITH ngrok header', async () => {
+            const response = await fetch(`${API_URL}/health`, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0',
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            const data = await response.json();
+            return { status: response.status, data };
+        });
+        
+        // Test 3: CORS Preflight
+        runTest('CORS Preflight Request', async () => {
+            const response = await fetch(`${API_URL}/health`, {
+                method: 'OPTIONS',
+                headers: {
+                    'Origin': 'https://www.clearhold.app',
+                    'Access-Control-Request-Method': 'GET',
+                    'Access-Control-Request-Headers': 'Content-Type,Authorization,ngrok-skip-browser-warning'
+                }
+            });
+            
+            return {
+                status: response.status,
+                allowOrigin: response.headers.get('Access-Control-Allow-Origin'),
+                allowHeaders: response.headers.get('Access-Control-Allow-Headers'),
+                allowMethods: response.headers.get('Access-Control-Allow-Methods')
+            };
+        });
+        
+        // Test 4: Simulated Auth Request
+        runTest('Simulated Auth Request', async () => {
+            const response = await fetch(`${API_URL}/auth/profile`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true',
+                    'Origin': 'https://www.clearhold.app'
+                }
+            });
+            
+            return {
+                status: response.status,
+                statusText: response.statusText,
+                headers: {
+                    'content-type': response.headers.get('content-type'),
+                    'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+                }
+            };
+        });
+    </script>
+</body>
+</html>
