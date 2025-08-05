@@ -344,14 +344,16 @@ export default function LoginPage() {
             </CardContent>
           </Card>
           
-          <Button
-            variant="ghost"
-            className="w-fit mx-auto mt-4 text-neutral-600 hover:text-neutral-900 font-medium transition-colors"
-            onClick={() => setCurrentStep("email")}
-          >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Go back
-          </Button>
+          <div className="flex justify-center mt-4">
+            <Button
+              variant="ghost"
+              className="text-neutral-600 hover:text-neutral-900 font-medium transition-colors"
+              onClick={() => setCurrentStep("email")}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Go back
+            </Button>
+          </div>
         </>
         )}
 
