@@ -239,21 +239,9 @@ export default function LoginPage() {
 
         {/* Step 2: Authentication Method */}
         {currentStep === "auth" && !showPasswordlessSuccess && (
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="pb-4">
-              <Button
-                variant="ghost"
-                className="w-fit -ml-2 mb-2 text-neutral-600 hover:text-neutral-900"
-                onClick={() => setCurrentStep("email")}
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Go back
-              </Button>
-              <CardTitle className="text-xl font-display">
-                {isLogin ? "Sign in" : "Create your account"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
+          <>
+            <Card className="border-0 shadow-lg">
+              <CardContent className="pt-6">
               {error && (
                 <Alert variant="destructive" className="mb-6">
                   <AlertCircle className="h-4 w-4" />
@@ -352,6 +340,16 @@ export default function LoginPage() {
               )}
             </CardContent>
           </Card>
+          
+          <Button
+            variant="ghost"
+            className="w-full mt-4 text-neutral-600 hover:text-neutral-900"
+            onClick={() => setCurrentStep("email")}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Go back
+          </Button>
+        </>
         )}
 
         {/* Passwordless Success State */}
