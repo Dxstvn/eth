@@ -241,7 +241,7 @@ export default function LoginPage() {
         {currentStep === "auth" && !showPasswordlessSuccess && (
           <>
             <Card className="border-0 shadow-lg">
-              <CardContent className="pt-6">
+              <CardContent className="p-8">
               {error && (
                 <Alert variant="destructive" className="mb-6">
                   <AlertCircle className="h-4 w-4" />
@@ -250,30 +250,33 @@ export default function LoginPage() {
                 </Alert>
               )}
 
-              <div className="mb-6">
-                <Label className="text-neutral-600">Email</Label>
-                <p className="text-neutral-900 font-medium">{email}</p>
+              <div className="mb-6 space-y-2">
+                <Label className="text-sm font-medium text-neutral-700">Email</Label>
+                <div className="flex items-center px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-md">
+                  <Mail className="h-4 w-4 text-neutral-400 mr-3" />
+                  <span className="text-neutral-900 font-medium">{email}</span>
+                </div>
               </div>
 
               <form onSubmit={handlePasswordAuth} className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-sm font-medium text-neutral-700">Password</Label>
                     {isLogin && (
-                      <Link href="/forgot-password" className="text-sm text-teal-700 hover:text-teal-900">
+                      <Link href="/forgot-password" className="text-sm text-teal-700 hover:text-teal-900 transition-colors">
                         Forgot your password?
                       </Link>
                     )}
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 focus:ring-teal-500"
+                      className="pl-10 pr-10 h-12 bg-white border-neutral-200 focus:border-teal-500 focus:ring-teal-500 transition-colors"
                       autoFocus
                       required
                     />
@@ -281,7 +284,7 @@ export default function LoginPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1 top-1 h-8 w-8 text-neutral-500"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-neutral-400 hover:text-neutral-600"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -291,16 +294,16 @@ export default function LoginPage() {
 
                 {!isLogin && (
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Label htmlFor="confirm-password" className="text-sm font-medium text-neutral-700">Confirm Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                       <Input
                         id="confirm-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Confirm your password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="pl-10 pr-10 focus:ring-teal-500"
+                        className="pl-10 pr-10 h-12 bg-white border-neutral-200 focus:border-teal-500 focus:ring-teal-500 transition-colors"
                         required
                       />
                     </div>
@@ -309,7 +312,7 @@ export default function LoginPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-teal-900 hover:bg-teal-800 text-white"
+                  className="w-full h-12 bg-teal-900 hover:bg-teal-800 text-white font-medium transition-all hover:shadow-md"
                   disabled={loading}
                 >
                   {loading ? `${isLogin ? "Signing in" : "Creating account"}...` : isLogin ? "Sign in" : "Create account"}
@@ -323,14 +326,14 @@ export default function LoginPage() {
                       <div className="w-full border-t border-neutral-200"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="bg-white px-2 text-neutral-500">Or</span>
+                      <span className="bg-white px-3 text-neutral-400 font-medium">Or</span>
                     </div>
                   </div>
 
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full border-neutral-200 hover:bg-neutral-50 hover:text-teal-900 hover:border-teal-200"
+                    className="w-full h-12 border-neutral-200 hover:bg-neutral-50 hover:text-teal-900 hover:border-teal-300 font-medium transition-all"
                     onClick={handlePasswordlessSignIn}
                   >
                     <Mail className="mr-2 h-4 w-4" />
@@ -343,7 +346,7 @@ export default function LoginPage() {
           
           <Button
             variant="ghost"
-            className="w-full mt-4 text-neutral-600 hover:text-neutral-900"
+            className="w-fit mx-auto mt-4 text-neutral-600 hover:text-neutral-900 font-medium transition-colors"
             onClick={() => setCurrentStep("email")}
           >
             <ChevronLeft className="mr-1 h-4 w-4" />
