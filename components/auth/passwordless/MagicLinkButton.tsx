@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, Mail, CheckCircle, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { passwordlessAuthService } from "@/services/passwordless-auth-service"
+import { useAuth } from "@/context/auth-context-v2"
 
 interface MagicLinkButtonProps {
   email: string
@@ -25,6 +25,7 @@ export default function MagicLinkButton({
   className,
   disabled = false
 }: MagicLinkButtonProps) {
+  const { sendPasswordlessLink } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
@@ -46,20 +47,16 @@ export default function MagicLinkButton({
     setIsSuccess(false)
 
     try {
-      const response = await passwordlessAuthService.sendSignInLink(email)
+      await sendPasswordlessLink(email)
       
-      if (response.success) {
-        setIsSuccess(true)
-        setCooldownSeconds(60) // 1 minute cooldown
-        setRateLimitRemaining(prev => Math.max(0, prev - 1))
-        
-        onSuccess?.()
-        
-        // Reset success indicator after 3 seconds
-        setTimeout(() => setIsSuccess(false), 3000)
-      } else {
-        throw new Error(response.error || "Failed to send sign-in link")
-      }
+      setIsSuccess(true)
+      setCooldownSeconds(60) // 1 minute cooldown
+      setRateLimitRemaining(prev => Math.max(0, prev - 1))
+      
+      onSuccess?.()
+      
+      // Reset success indicator after 3 seconds
+      setTimeout(() => setIsSuccess(false), 3000)
     } catch (err: any) {
       const errorMessage = err.message || "Failed to send sign-in link"
       

@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Mail, CheckCircle, AlertCircle, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { passwordlessAuthService } from "@/services/passwordless-auth-service"
+import { useAuth } from "@/context/auth-context-v2"
 
 interface PasswordlessSignInFormProps {
   onSuccess?: (email: string) => void
@@ -23,6 +23,7 @@ export default function PasswordlessSignInForm({
   className,
   initialEmail = ""
 }: PasswordlessSignInFormProps) {
+  const { sendPasswordlessLink } = useAuth()
   const [email, setEmail] = useState(initialEmail)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,14 +52,9 @@ export default function PasswordlessSignInForm({
     setIsLoading(true)
 
     try {
-      const response = await passwordlessAuthService.sendSignInLink(email)
-      
-      if (response.success) {
-        setSuccess(true)
-        onSuccess?.(email)
-      } else {
-        throw new Error(response.error || "Failed to send sign-in link")
-      }
+      await sendPasswordlessLink(email)
+      setSuccess(true)
+      onSuccess?.(email)
     } catch (err: any) {
       const errorMessage = err.message || "Failed to send sign-in link. Please try again."
       setError(errorMessage)
@@ -66,7 +62,7 @@ export default function PasswordlessSignInForm({
       // Check if it's a rate limit error
       if (errorMessage.includes("Too many attempts")) {
         setRateLimitRemaining(0)
-        setRateLimitResetTime(passwordlessAuthService.getRateLimitResetTime(email))
+        setRateLimitResetTime(new Date(Date.now() + 60 * 60 * 1000)) // 1 hour from now
       }
       
       onError?.(errorMessage)

@@ -15,7 +15,7 @@ import { useAuth } from "@/context/auth-context-v2"
 export default function EmailActionPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { setUser } = useAuth()
+  const { verifyPasswordlessLink } = useAuth()
   
   // State management
   const [status, setStatus] = useState<"loading" | "needEmail" | "verifying" | "success" | "error">("loading")
@@ -51,39 +51,14 @@ export default function EmailActionPage() {
     setError(null)
 
     try {
-      // Verify the sign-in link
-      const response = await passwordlessAuthService.verifySignInLink(emailToUse, currentUrl)
-
-      if (response.success && response.token && response.user) {
-        // Store the token
-        localStorage.setItem("clearhold_auth_token", response.token)
-        
-        // Update auth context
-        setUser({
-          uid: response.user.uid,
-          email: response.user.email || "",
-          displayName: "",
-          emailVerified: response.user.emailVerified,
-          photoURL: null,
-          wallet: null,
-          kycStatus: "not_started"
-        })
-
-        // Set success state
-        setIsNewUser(response.isNewUser || false)
-        setStatus("success")
-
-        // Redirect after a short delay
-        setTimeout(() => {
-          if (response.isNewUser) {
-            router.push("/onboarding/welcome")
-          } else {
-            router.push("/dashboard")
-          }
-        }, 2000)
-      } else {
-        throw new Error("Invalid response from server")
-      }
+      // Use auth context to verify the sign-in link
+      await verifyPasswordlessLink(emailToUse, currentUrl)
+      
+      // Set success state - the auth context handles the rest
+      setStatus("success")
+      setIsNewUser(false) // The auth context handles redirection based on user status
+      
+      // Auth context handles redirection, but we show success state briefly
     } catch (err: any) {
       console.error("Sign-in error:", err)
       setError(err.message || "Failed to complete sign-in. Please try again.")

@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { useRouter } from "next/navigation"
 import LoadingScreen from "@/components/loading-screen"
 import { authService, type UserProfile } from "@/services/auth-service"
+import { passwordlessAuthService } from "@/services/passwordless-auth-service"
 import { toast } from "sonner"
 
 type AuthContextType = {
@@ -23,6 +24,11 @@ type AuthContextType = {
   requestPasswordReset: (email: string) => Promise<void>
   sendVerificationEmail: () => Promise<void>
   refreshProfile: () => Promise<void>
+  // Passwordless authentication methods
+  sendPasswordlessLink: (email: string) => Promise<void>
+  verifyPasswordlessLink: (email: string, link: string) => Promise<void>
+  isPasswordlessSignIn: boolean
+  passwordlessEmail: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -34,6 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [isDemoAccount, setIsDemoAccount] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
+  const [isPasswordlessSignIn, setIsPasswordlessSignIn] = useState(false)
+  const [passwordlessEmail, setPasswordlessEmail] = useState<string | null>(null)
 
   // Initialize auth state from storage
   useEffect(() => {
@@ -288,6 +296,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Send passwordless sign-in link
+  const sendPasswordlessLink = async (email: string) => {
+    try {
+      setIsPasswordlessSignIn(true);
+      setPasswordlessEmail(email);
+      
+      const response = await passwordlessAuthService.sendSignInLink(email);
+      
+      if (response.success) {
+        toast.success("Magic link sent! Check your email.");
+      } else {
+        throw new Error(response.error || "Failed to send magic link");
+      }
+    } catch (error: any) {
+      console.error("Passwordless link error:", error);
+      toast.error(error.message || "Failed to send magic link");
+      setIsPasswordlessSignIn(false);
+      setPasswordlessEmail(null);
+      throw error;
+    }
+  };
+
+  // Verify passwordless sign-in link
+  const verifyPasswordlessLink = async (email: string, link: string) => {
+    try {
+      setLoading(true);
+      
+      const response = await passwordlessAuthService.verifySignInLink(email, link);
+      
+      if (response.success && response.token && response.user) {
+        // Store the token
+        localStorage.setItem("clearhold_auth_token", response.token);
+        
+        // Create user profile
+        const profile: UserProfile = {
+          uid: response.user.uid,
+          email: response.user.email || email,
+          displayName: "",
+          emailVerified: response.user.emailVerified,
+          photoURL: null,
+          wallet: null,
+          kycStatus: "not_started",
+          isAdmin: false
+        };
+        
+        // Store profile
+        localStorage.setItem("clearhold_user_profile", JSON.stringify(profile));
+        
+        // Update state
+        setUser(profile);
+        setAuthToken(response.token);
+        setIsAdmin(false);
+        setIsDemoAccount(profile.email === "jasmindustin@gmail.com" || profile.email === "dev@clearhold.local");
+        setIsPasswordlessSignIn(false);
+        setPasswordlessEmail(null);
+        
+        // Refresh profile from backend to get full details
+        await refreshProfile();
+        
+        toast.success("Successfully signed in!");
+        
+        // Redirect based on user status
+        if (response.isNewUser) {
+          router.push("/onboarding/welcome");
+        } else {
+          redirectToDashboard();
+        }
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (error: any) {
+      console.error("Passwordless verification error:", error);
+      toast.error(error.message || "Failed to verify sign-in link");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Listen for storage changes (multi-tab sync)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -345,6 +432,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     requestPasswordReset,
     sendVerificationEmail,
     refreshProfile,
+    // Passwordless authentication
+    sendPasswordlessLink,
+    verifyPasswordlessLink,
+    isPasswordlessSignIn,
+    passwordlessEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
