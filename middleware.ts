@@ -10,7 +10,8 @@ export function middleware(request: NextRequest) {
       pathname === '/login' || 
       pathname === '/signup' ||
       pathname === '/forgot-password' ||
-      pathname === '/reset-password') {
+      pathname === '/reset-password' ||
+      pathname.startsWith('/auth/email-action')) {
     return authMiddleware(request)
   }
   
@@ -31,6 +32,7 @@ export const config = {
     '/signup',
     '/forgot-password',
     '/reset-password',
+    '/auth/email-action',
     // KYC routes
     '/kyc/:path*',
     '/api/kyc/:path*',

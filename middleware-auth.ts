@@ -69,6 +69,11 @@ const AUTH_RATE_LIMITS = {
     windowMs: 60 * 1000, // 1 minute
     max: 10, // 10 page loads per minute
     blockDuration: 15 * 60 * 1000 // 15 minute block
+  },
+  '/auth/email-action': { 
+    windowMs: 60 * 1000, // 1 minute
+    max: 20, // 20 page loads per minute
+    blockDuration: 15 * 60 * 1000 // 15 minute block
   }
 }
 
@@ -228,7 +233,8 @@ export function authMiddleware(request: NextRequest) {
                      pathname === '/login' || 
                      pathname === '/signup' ||
                      pathname === '/forgot-password' ||
-                     pathname === '/reset-password'
+                     pathname === '/reset-password' ||
+                     pathname.startsWith('/auth/email-action')
   
   if (!isAuthPath) {
     return NextResponse.next()
