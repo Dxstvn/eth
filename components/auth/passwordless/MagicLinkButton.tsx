@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, Mail, CheckCircle, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { passwordlessAuthService } from "@/services/passwordless-auth-service"
 
 interface MagicLinkButtonProps {
   email: string
@@ -45,26 +46,29 @@ export default function MagicLinkButton({
     setIsSuccess(false)
 
     try {
-      // TODO: Replace with actual API call in Phase 2
-      // const response = await passwordlessAuthService.sendSignInLink(email)
+      const response = await passwordlessAuthService.sendSignInLink(email)
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      setIsSuccess(true)
-      setCooldownSeconds(60) // 1 minute cooldown
-      setRateLimitRemaining(prev => Math.max(0, prev - 1))
-      
-      onSuccess?.()
-      
-      // Reset success indicator after 3 seconds
-      setTimeout(() => setIsSuccess(false), 3000)
+      if (response.success) {
+        setIsSuccess(true)
+        setCooldownSeconds(60) // 1 minute cooldown
+        setRateLimitRemaining(prev => Math.max(0, prev - 1))
+        
+        onSuccess?.()
+        
+        // Reset success indicator after 3 seconds
+        setTimeout(() => setIsSuccess(false), 3000)
+      } else {
+        throw new Error(response.error || "Failed to send sign-in link")
+      }
     } catch (err: any) {
-      if (err.status === 429) {
+      const errorMessage = err.message || "Failed to send sign-in link"
+      
+      if (errorMessage.includes("Too many attempts")) {
         setRateLimitRemaining(0)
         setCooldownSeconds(3600) // 1 hour for rate limit
       }
-      onError?.(err.message || "Failed to send sign-in link")
+      
+      onError?.(errorMessage)
     } finally {
       setIsLoading(false)
     }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,19 +8,22 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Mail, CheckCircle, AlertCircle, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { passwordlessAuthService } from "@/services/passwordless-auth-service"
 
 interface PasswordlessSignInFormProps {
   onSuccess?: (email: string) => void
   onError?: (error: string) => void
   className?: string
+  initialEmail?: string
 }
 
 export default function PasswordlessSignInForm({
   onSuccess,
   onError,
-  className
+  className,
+  initialEmail = ""
 }: PasswordlessSignInFormProps) {
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(initialEmail)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -48,28 +51,25 @@ export default function PasswordlessSignInForm({
     setIsLoading(true)
 
     try {
-      // TODO: Replace with actual API call in Phase 2
-      // const response = await passwordlessAuthService.sendSignInLink(email)
+      const response = await passwordlessAuthService.sendSignInLink(email)
       
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Store email for verification
-      localStorage.setItem("clearhold_email_for_signin", email)
-      
-      setSuccess(true)
-      onSuccess?.(email)
-    } catch (err: any) {
-      if (err.status === 429) {
-        // Rate limit error
-        setError("Too many attempts. Please try again in 1 hour.")
-        setRateLimitRemaining(0)
-        setRateLimitResetTime(new Date(Date.now() + 60 * 60 * 1000))
+      if (response.success) {
+        setSuccess(true)
+        onSuccess?.(email)
       } else {
-        const errorMessage = err.message || "Failed to send sign-in link. Please try again."
-        setError(errorMessage)
-        onError?.(errorMessage)
+        throw new Error(response.error || "Failed to send sign-in link")
       }
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to send sign-in link. Please try again."
+      setError(errorMessage)
+      
+      // Check if it's a rate limit error
+      if (errorMessage.includes("Too many attempts")) {
+        setRateLimitRemaining(0)
+        setRateLimitResetTime(passwordlessAuthService.getRateLimitResetTime(email))
+      }
+      
+      onError?.(errorMessage)
     } finally {
       setIsLoading(false)
     }

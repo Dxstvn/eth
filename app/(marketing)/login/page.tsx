@@ -96,7 +96,7 @@ export default function LoginPage() {
   }
 
   const handlePasswordlessSignIn = () => {
-    // Show the passwordless form
+    // The PasswordlessSignInForm will be shown with the current email pre-filled
     setShowPasswordlessSuccess(true)
   }
 
@@ -361,6 +361,7 @@ export default function LoginPage() {
         {currentStep === "auth" && showPasswordlessSuccess && (
           <PasswordlessSignInForm 
             className="border-0 shadow-lg"
+            initialEmail={email}
             onSuccess={(email) => {
               // Success is handled within the component
               console.log("Magic link sent to:", email)
