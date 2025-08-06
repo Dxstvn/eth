@@ -101,7 +101,8 @@ export const API_CONFIG = {
       personal: '/kyc/personal',
       sessionComplete: '/kyc/session/complete',
       adminPendingReviews: '/kyc/admin/pending-reviews',
-      adminManualReview: '/kyc/admin/manual-review'
+      adminManualReview: '/kyc/admin/manual-review',
+      openSanctionsSearch: '/kyc/opensanctions/search'
     }
   }
 };

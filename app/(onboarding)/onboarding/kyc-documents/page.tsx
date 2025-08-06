@@ -75,16 +75,16 @@ export default function KYCDocumentsPage() {
             <span>Step 3 of 5</span>
             <span>Document Verification</span>
           </div>
-          <Progress value={60} className="h-2 bg-gray-200 [&>div]:bg-teal-600" />
+          <Progress value={60} className="h-2 bg-gray-200 [&>div]:bg-purple-600" />
         </div>
         
         {/* Main card with brand shadow */}
         <Card className="shadow-soft border-gray-200">
           <CardHeader className="text-center pb-8">
-            <div className="mx-auto w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mb-6">
-              <FileText className="h-10 w-10 text-teal-900" />
+            <div className="mx-auto w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+              <FileText className="h-10 w-10 text-purple-900" />
             </div>
-            <CardTitle className="text-3xl font-bold text-teal-900 font-display">
+            <CardTitle className="text-3xl font-bold text-purple-900 font-display">
               Document Verification
             </CardTitle>
             <CardDescription className="text-lg mt-3 text-gray-600 font-sans">
@@ -94,7 +94,7 @@ export default function KYCDocumentsPage() {
           <CardContent className="space-y-6">
             {isStartingSession || isLoading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-900 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Initializing verification session...</p>
               </div>
             ) : (
@@ -110,10 +110,10 @@ export default function KYCDocumentsPage() {
         </Card>
         
         {/* Security notice with brand styling */}
-        <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-teal-600 flex-shrink-0" />
-            <div className="text-sm text-teal-800 font-sans">
+            <Shield className="h-5 w-5 text-purple-600 flex-shrink-0" />
+            <div className="text-sm text-purple-800 font-sans">
               <p className="font-medium mb-1">Bank-Level Security</p>
               <p className="text-xs">
                 Your documents are encrypted end-to-end using AES-256 encryption. 

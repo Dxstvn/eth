@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, ArrowRight, User, Calendar, MapPin, Briefcase } from "lucide-react"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { countries } from "@/lib/constants/countries"
+import { useKYC } from "@/context/kyc-context"
+import { toast } from "sonner"
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -49,6 +51,7 @@ const sourcesOfFunds = [
 export default function BasicInfoPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const { updatePersonalInfo, submitPersonalInfo, startKYCSession, kycData } = useKYC()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -71,16 +74,45 @@ export default function BasicInfoPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true)
     try {
-      // TODO: Save to backend
-      console.log("Form data:", data)
+      // Start KYC session if not already started
+      if (!kycData.sessionId) {
+        await startKYCSession('basic')
+      }
+
+      // Transform form data to match PersonalInfo interface
+      const personalInfo = {
+        firstName: data.firstName,
+        middleName: data.middleName,
+        lastName: data.lastName,
+        dateOfBirth: data.dateOfBirth,
+        nationality: data.nationality,
+        countryOfResidence: data.country,
+        address: data.address,
+        city: data.city,
+        state: "", // Not collected in this form
+        postalCode: data.postalCode,
+        country: data.country,
+        phoneNumber: data.phone,
+        email: "", // Should be filled from auth context
+        occupation: data.occupation,
+        employer: "" // Not collected in this form
+      }
+
+      // Update local context
+      updatePersonalInfo(personalInfo)
+
+      // Save to backend if we have a session
+      if (kycData.sessionId) {
+        await submitPersonalInfo(personalInfo)
+      }
       
-      // Store in session for Sumsub
-      sessionStorage.setItem("kycBasicInfo", JSON.stringify(data))
+      toast.success("Personal information saved successfully")
       
       // Navigate to KYC document upload
       router.push("/onboarding/kyc-documents")
     } catch (error) {
       console.error("Error saving basic info:", error)
+      toast.error("Failed to save personal information. Please try again.")
       setLoading(false)
     }
   }
@@ -93,7 +125,7 @@ export default function BasicInfoPage() {
           <span>Step 2 of 6</span>
           <span>Basic Information</span>
         </div>
-        <Progress value={33.33} className="h-2" />
+        <Progress value={33.33} className="h-2 bg-gray-200 [&>div]:bg-purple-600" />
       </div>
 
       <Card className="shadow-lg">
@@ -358,7 +390,7 @@ export default function BasicInfoPage() {
                   type="submit"
                   disabled={loading}
                   size="lg"
-                  className="w-full h-14 text-base font-semibold"
+                  className="w-full h-14 text-base font-semibold bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   {loading ? (
                     "Saving..."

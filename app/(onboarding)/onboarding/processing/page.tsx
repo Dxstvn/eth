@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Shield, Clock, CheckCircle, Loader2 } from "lucide-react"
-import { apiClient } from "@/services/api/client"
+import { useKYC } from "@/context/kyc-context"
+import { cn } from "@/lib/utils"
 
 const processingSteps = [
   { id: 1, label: "Verifying document authenticity", duration: 3000 },
@@ -19,6 +20,7 @@ export default function ProcessingPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null)
+  const { refreshKYCStatus, kycData } = useKYC()
 
   useEffect(() => {
     simulateProcessing()
@@ -44,32 +46,31 @@ export default function ProcessingPage() {
       const pollStatus = async (): Promise<void> => {
         attempts++
         
-        const response = await apiClient.get('/api/kyc/status')
+        await refreshKYCStatus()
         
-        if (response.success && response.data) {
-          const { status, reviewResult } = response.data
+        // Check if KYC is now approved or rejected
+        if (kycData.status === 'approved') {
+          setVerificationStatus('GREEN')
           
-          if (reviewResult) {
-            setVerificationStatus(reviewResult)
-            
-            // Clear session storage
-            sessionStorage.removeItem('kycBasicInfo')
-            sessionStorage.removeItem('kycDocumentType')
-            
-            // Redirect based on result
-            setTimeout(() => {
-              router.push(`/onboarding/complete?status=${reviewResult}`)
-            }, 1500)
-          } else if (attempts < maxAttempts) {
-            // Continue polling
-            setTimeout(pollStatus, 3000)
-          } else {
-            // Timeout - assume success for demo
-            setVerificationStatus('GREEN')
-            setTimeout(() => {
-              router.push('/onboarding/complete?status=GREEN')
-            }, 1500)
-          }
+          // Redirect to complete page
+          setTimeout(() => {
+            router.push(`/onboarding/complete?status=GREEN`)
+          }, 1500)
+        } else if (kycData.status === 'rejected') {
+          setVerificationStatus('RED')
+          
+          setTimeout(() => {
+            router.push(`/onboarding/complete?status=RED`)
+          }, 1500)
+        } else if (attempts < maxAttempts && (kycData.status === 'under_review' || kycData.status === 'in_progress')) {
+          // Continue polling
+          setTimeout(pollStatus, 3000)
+        } else {
+          // Timeout - assume success for demo
+          setVerificationStatus('GREEN')
+          setTimeout(() => {
+            router.push('/onboarding/complete?status=GREEN')
+          }, 1500)
         }
       }
 
@@ -96,16 +97,16 @@ export default function ProcessingPage() {
           <span>Step 5 of 6</span>
           <span>Processing</span>
         </div>
-        <Progress value={83.33} className="h-2" />
+        <Progress value={83.33} className="h-2 bg-gray-200 [&>div]:bg-purple-600" />
       </div>
 
       <Card className="shadow-lg">
         <CardHeader className="text-center pb-8">
-          <div className="mx-auto w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mb-6">
+          <div className="mx-auto w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6">
             {verificationStatus === 'GREEN' ? (
-              <CheckCircle className="h-10 w-10 text-teal-900" />
+              <CheckCircle className="h-10 w-10 text-green-600" />
             ) : (
-              <Shield className="h-10 w-10 text-teal-900" />
+              <Shield className="h-10 w-10 text-purple-900" />
             )}
           </div>
           
@@ -144,7 +145,7 @@ export default function ProcessingPage() {
                     {index < currentStep ? (
                       <CheckCircle className="h-5 w-5 text-green-600" />
                     ) : index === currentStep ? (
-                      <Loader2 className="h-5 w-5 text-teal-600 animate-spin" />
+                      <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
                     )}
@@ -200,9 +201,4 @@ export default function ProcessingPage() {
       </Card>
     </div>
   )
-}
-
-// Add missing import
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
 }

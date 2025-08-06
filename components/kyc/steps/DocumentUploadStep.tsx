@@ -274,7 +274,7 @@ export function DocumentUploadStep({
     <div className={cn("space-y-6", className)}>
       <Card className="shadow-soft border-gray-200">
         <CardHeader>
-          <CardTitle className="text-2xl text-teal-900">Identity Verification</CardTitle>
+          <CardTitle className="text-2xl text-purple-900">Identity Verification</CardTitle>
           <CardDescription className="text-gray-600">
             Upload a government-issued ID to verify your identity
           </CardDescription>
@@ -284,7 +284,7 @@ export function DocumentUploadStep({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Upload Progress</span>
-              <span className="font-medium text-teal-900">{progress}%</span>
+              <span className="font-medium text-purple-900">{progress}%</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
@@ -372,10 +372,10 @@ export function DocumentUploadStep({
                   
                   {/* Extracted Data Display */}
                   {showExtractedData && documents[`${key}_front`]?.extractedData && key === selectedDocType && (
-                    <Card className="mt-4 border-teal-200 bg-teal-50/50">
+                    <Card className="mt-4 border-purple-200 bg-purple-50/50">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-base text-teal-900">Extracted Information</CardTitle>
+                          <CardTitle className="text-base text-purple-900">Extracted Information</CardTitle>
                           <Button
                             type="button"
                             variant="ghost"
@@ -504,7 +504,7 @@ export function DocumentUploadStep({
                         
                         {/* OCR Confidence */}
                         {documents[`${key}_front`]?.ocrResult && (
-                          <div className="pt-2 border-t border-teal-200">
+                          <div className="pt-2 border-t border-purple-200">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-600">OCR Confidence</span>
                               <Badge 
@@ -595,7 +595,7 @@ export function DocumentUploadStep({
               onClick={validateDocuments}
               disabled={isValidating || Object.keys(documents).length === 0}
               className={cn(
-                "bg-teal-600 hover:bg-teal-700 text-white",
+                "bg-purple-600 hover:bg-purple-700 text-white",
                 !onBack && "ml-auto"
               )}
             >
@@ -606,10 +606,10 @@ export function DocumentUploadStep({
       </Card>
       
       {/* Security Notice */}
-      <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
         <div className="flex items-center gap-3">
-          <Shield className="h-5 w-5 text-teal-600 flex-shrink-0" />
-          <div className="text-sm text-teal-800">
+          <Shield className="h-5 w-5 text-purple-600 flex-shrink-0" />
+          <div className="text-sm text-purple-800">
             <p className="font-medium mb-1">Bank-Level Security</p>
             <p className="text-xs">
               Your documents are encrypted end-to-end using AES-256 encryption. 

@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import { useAuth } from '@/context/auth-context-v2'
-import { kycAPI } from '@/lib/services/kyc-api-service'
-import type { KYCStatusResponse } from '@/services/api-config'
+import { kycService } from '@/services/kyc-service'
+import type { KYCStatusResponse, PersonalInfo as ServicePersonalInfo, OpenSanctionsSearchResult } from '@/services/kyc-service'
 
 export interface PersonalInfo {
   firstName: string
@@ -88,6 +88,13 @@ interface KYCContextType {
   performLivenessCheck: (imageData: string) => Promise<void>
   completeKYCSession: () => Promise<void>
   refreshKYCStatus: () => Promise<void>
+  submitPersonalInfo: (personalInfo: PersonalInfo) => Promise<void>
+  searchOpenSanctions: (name: string, options?: {
+    threshold?: number;
+    limit?: number;
+    dateOfBirth?: string;
+    nationality?: string;
+  }) => Promise<OpenSanctionsSearchResult>
 }
 
 const defaultKYCData: KYCData = {
@@ -174,7 +181,7 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     if (!authToken) return
     
     try {
-      const statusResponse = await kycAPI.getStatus()
+      const statusResponse = await kycService.getStatus()
       if (statusResponse.success && statusResponse.status) {
         setKYCData(prev => ({
           ...prev,
@@ -197,7 +204,7 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     setError(null)
     
     try {
-      const sessionResponse = await kycAPI.startSession(requiredLevel)
+      const sessionResponse = await kycService.startSession(requiredLevel)
       if (sessionResponse.success && sessionResponse.session) {
         setKYCData(prev => ({
           ...prev,
@@ -228,7 +235,7 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     setError(null)
     
     try {
-      const uploadResponse = await kycAPI.uploadDocument(kycData.sessionId, documentType, file)
+      const uploadResponse = await kycService.uploadDocument(kycData.sessionId, documentType, file)
       if (uploadResponse.success && uploadResponse.result) {
         // Update document info with extracted data
         if (uploadResponse.result.extractedData) {
@@ -268,7 +275,7 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     setError(null)
     
     try {
-      const livenessResponse = await kycAPI.performLivenessCheck(kycData.sessionId, imageData)
+      const livenessResponse = await kycService.performLivenessCheck(kycData.sessionId, imageData)
       if (livenessResponse.success && livenessResponse.result) {
         setKYCData(prev => ({
           ...prev,
@@ -300,7 +307,7 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     setError(null)
     
     try {
-      const completeResponse = await kycAPI.completeSession(kycData.sessionId)
+      const completeResponse = await kycService.completeSession(kycData.sessionId)
       if (completeResponse) {
         setKYCData(prev => ({
           ...prev,
@@ -332,6 +339,77 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     setError(null)
   }, [])
 
+  const submitPersonalInfo = useCallback(async (personalInfo: PersonalInfo) => {
+    if (!kycData.sessionId) {
+      throw new Error('No active KYC session')
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      // Convert context PersonalInfo to service PersonalInfo
+      const servicePersonalInfo: ServicePersonalInfo = {
+        firstName: personalInfo.firstName,
+        lastName: personalInfo.lastName,
+        dateOfBirth: personalInfo.dateOfBirth,
+        nationality: personalInfo.nationality,
+        countryOfResidence: personalInfo.countryOfResidence,
+        address: personalInfo.address,
+        city: personalInfo.city,
+        state: personalInfo.state,
+        postalCode: personalInfo.postalCode,
+        country: personalInfo.country,
+        phoneNumber: personalInfo.phoneNumber,
+        email: personalInfo.email,
+        occupation: personalInfo.occupation,
+        employer: personalInfo.employer
+      }
+
+      const response = await kycService.submitPersonalInfo(kycData.sessionId, servicePersonalInfo)
+      if (response.success) {
+        // Update local data
+        updatePersonalInfo(personalInfo)
+        markStepCompleted('personal_info')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit personal information')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [kycData.sessionId, updatePersonalInfo, markStepCompleted])
+
+  const searchOpenSanctions = useCallback(async (
+    name: string, 
+    options?: {
+      threshold?: number;
+      limit?: number;
+      dateOfBirth?: string;
+      nationality?: string;
+    }
+  ): Promise<OpenSanctionsSearchResult> => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const result = await kycService.searchOpenSanctions(name, {
+        threshold: options?.threshold,
+        limit: options?.limit,
+        dateOfBirth: options?.dateOfBirth,
+        nationality: options?.nationality,
+        entityType: 'individual'
+      })
+      
+      return result
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'OpenSanctions search failed')
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const value: KYCContextType = {
     kycData,
     updatePersonalInfo,
@@ -347,7 +425,9 @@ export function KYCProvider({ children }: { children: ReactNode }) {
     uploadDocument,
     performLivenessCheck,
     completeKYCSession,
-    refreshKYCStatus
+    refreshKYCStatus,
+    submitPersonalInfo,
+    searchOpenSanctions
   }
 
   return <KYCContext.Provider value={value}>{children}</KYCContext.Provider>
