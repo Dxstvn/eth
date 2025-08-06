@@ -11,6 +11,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Loader2, Mail, CheckCircle, AlertCircle, Home, ArrowRight } from "lucide-react"
 import { passwordlessAuthService } from "@/services/passwordless-auth-service"
 import { useAuth } from "@/context/auth-context-v2"
+import CrossDeviceAuthForm from "@/components/auth/passwordless/CrossDeviceAuthForm"
+import DeviceVerificationCard from "@/components/auth/passwordless/DeviceVerificationCard"
+import { PasswordlessErrorState, ExpiredLinkError, InvalidLinkError } from "@/components/auth/passwordless/PasswordlessErrorStates"
+import PasswordlessErrorBoundary from "@/components/auth/passwordless/PasswordlessErrorBoundary"
 
 export default function EmailActionPage() {
   const router = useRouter()
@@ -98,49 +102,21 @@ export default function EmailActionPage() {
 
       case "needEmail":
         return (
-          <Card className="border-0 shadow-lg max-w-md mx-auto">
-            <CardHeader className="text-center">
-              <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-6 w-6 text-teal-900" />
-              </div>
-              <CardTitle className="text-2xl font-display">Complete Sign In</CardTitle>
-              <CardDescription>
-                Please enter the email address you used to request the sign-in link
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {error && (
-                <Alert variant="destructive" className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <form onSubmit={handleEmailSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-12"
-                    autoFocus
-                    required
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 bg-teal-900 hover:bg-teal-800 text-white font-medium"
-                >
-                  Continue
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <>
+            <CrossDeviceAuthForm
+              onSubmit={handleSignIn}
+              isLoading={false}
+              error={error}
+              className="border-0 shadow-lg max-w-md mx-auto"
+            />
+            
+            {/* Device verification card for additional context */}
+            <div className="mt-6">
+              <DeviceVerificationCard
+                className="border-0 shadow-lg max-w-md mx-auto"
+              />
+            </div>
+          </>
         )
 
       case "verifying":
@@ -176,42 +152,25 @@ export default function EmailActionPage() {
         )
 
       case "error":
+        // Determine error type based on error message
+        const errorType = error?.includes("expired") ? "expired" : 
+                         error?.includes("Invalid sign-in link") ? "invalid-link" :
+                         error?.includes("email") ? "invalid-email" : "generic"
+        
         return (
-          <Card className="border-0 shadow-lg max-w-md mx-auto">
-            <CardHeader className="text-center">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              </div>
-              <CardTitle className="text-2xl font-display">Sign In Failed</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Alert variant="destructive" className="mb-6">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-
-              <div className="space-y-3">
-                <Button 
-                  onClick={() => router.push("/login")}
-                  className="w-full bg-teal-900 hover:bg-teal-800 text-white"
-                >
-                  Back to Login
-                </Button>
-                
-                <p className="text-sm text-neutral-600">
-                  Need help?{" "}
-                  <Link href="/support" className="text-teal-700 hover:text-teal-900">
-                    Contact support
-                  </Link>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <PasswordlessErrorState
+            type={errorType}
+            message={error || undefined}
+            onRetry={() => router.push("/login")}
+            className="border-0 shadow-lg max-w-md mx-auto"
+          />
         )
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 px-4 py-12">
+    <PasswordlessErrorBoundary>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 px-4 py-12">
       {/* Gradient header */}
       <div className="w-full bg-gradient-to-b from-teal-900 to-transparent h-32 absolute top-0 left-0 z-0"></div>
 
@@ -258,5 +217,6 @@ export default function EmailActionPage() {
         )}
       </div>
     </div>
+    </PasswordlessErrorBoundary>
   )
 }

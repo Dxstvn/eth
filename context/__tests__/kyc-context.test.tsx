@@ -1,22 +1,23 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { KYCProvider, useKYC } from '../kyc-context'
 import { useAuth } from '../auth-context-v2'
 import { kycAPI } from '@/lib/services/kyc-api-service'
 
 // Mock dependencies
-jest.mock('../auth-context-v2', () => ({
-  useAuth: jest.fn()
+vi.mock('../auth-context-v2', () => ({
+  useAuth: vi.fn()
 }))
 
-jest.mock('@/lib/services/kyc-api-service', () => ({
+vi.mock('@/lib/services/kyc-api-service', () => ({
   kycAPI: {
-    startSession: jest.fn(),
-    uploadDocument: jest.fn(),
-    performLivenessCheck: jest.fn(),
-    completeSession: jest.fn(),
-    getStatus: jest.fn(),
-    submitPersonalInfo: jest.fn()
+    startSession: vi.fn(),
+    uploadDocument: vi.fn(),
+    performLivenessCheck: vi.fn(),
+    completeSession: vi.fn(),
+    getStatus: vi.fn(),
+    submitPersonalInfo: vi.fn()
   }
 }))
 
@@ -26,8 +27,8 @@ describe('KYCContext', () => {
   )
 
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(useAuth as jest.Mock).mockReturnValue({
+    vi.clearAllMocks()
+    ;(useAuth as any).mockReturnValue({
       user: { id: 'test-user-123' },
       authToken: 'test-token'
     })
@@ -120,7 +121,7 @@ describe('KYCContext', () => {
         }
       }
 
-      ;(kycAPI.startSession as jest.Mock).mockResolvedValue(mockSessionResponse)
+      ;(kycAPI.startSession as any).mockResolvedValue(mockSessionResponse)
 
       const { result } = renderHook(() => useKYC(), { wrapper })
 
@@ -135,7 +136,7 @@ describe('KYCContext', () => {
 
     it('should handle session start error', async () => {
       const mockError = new Error('Failed to start session')
-      ;(kycAPI.startSession as jest.Mock).mockRejectedValue(mockError)
+      ;(kycAPI.startSession as any).mockRejectedValue(mockError)
 
       const { result } = renderHook(() => useKYC(), { wrapper })
 
@@ -165,7 +166,7 @@ describe('KYCContext', () => {
         }
       }
 
-      ;(kycAPI.uploadDocument as jest.Mock).mockResolvedValue(mockUploadResponse)
+      ;(kycAPI.uploadDocument as any).mockResolvedValue(mockUploadResponse)
 
       const { result } = renderHook(() => useKYC(), { wrapper })
 
@@ -208,7 +209,7 @@ describe('KYCContext', () => {
         }
       }
 
-      ;(kycAPI.performLivenessCheck as jest.Mock).mockResolvedValue(mockLivenessResponse)
+      ;(kycAPI.performLivenessCheck as any).mockResolvedValue(mockLivenessResponse)
 
       const { result } = renderHook(() => useKYC(), { wrapper })
 
@@ -236,7 +237,7 @@ describe('KYCContext', () => {
         }
       }
 
-      ;(kycAPI.performLivenessCheck as jest.Mock).mockResolvedValue(mockLivenessResponse)
+      ;(kycAPI.performLivenessCheck as any).mockResolvedValue(mockLivenessResponse)
 
       const { result } = renderHook(() => useKYC(), { wrapper })
 
@@ -260,7 +261,7 @@ describe('KYCContext', () => {
         message: 'Session completed'
       }
 
-      ;(kycAPI.completeSession as jest.Mock).mockResolvedValue(mockCompleteResponse)
+      ;(kycAPI.completeSession as any).mockResolvedValue(mockCompleteResponse)
 
       const { result } = renderHook(() => useKYC(), { wrapper })
 
@@ -293,7 +294,7 @@ describe('KYCContext', () => {
         }
       }
 
-      ;(kycAPI.getStatus as jest.Mock).mockResolvedValue(mockStatusResponse)
+      ;(kycAPI.getStatus as any).mockResolvedValue(mockStatusResponse)
 
       const { result } = renderHook(() => useKYC(), { wrapper })
 
@@ -318,7 +319,7 @@ describe('KYCContext', () => {
         }
       }
 
-      ;(kycAPI.getStatus as jest.Mock).mockResolvedValue(mockStatusResponse)
+      ;(kycAPI.getStatus as any).mockResolvedValue(mockStatusResponse)
 
       renderHook(() => useKYC(), { wrapper })
 
@@ -328,7 +329,7 @@ describe('KYCContext', () => {
     })
 
     it('should not refresh status when no user', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: null,
         authToken: null
       })

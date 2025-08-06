@@ -319,28 +319,24 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {isLogin && (
-                <>
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-neutral-200"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="bg-white px-3 text-neutral-400 font-medium">Or</span>
-                    </div>
-                  </div>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-white px-3 text-neutral-400 font-medium">Or</span>
+                </div>
+              </div>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 border-neutral-200 hover:bg-neutral-50 hover:text-teal-900 hover:border-teal-300 font-medium transition-all"
-                    onClick={handlePasswordlessSignIn}
-                  >
-                    <Mail className="mr-2 h-4 w-4" />
-                    Email me a sign-in link
-                  </Button>
-                </>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 border-neutral-200 hover:bg-neutral-50 hover:text-teal-900 hover:border-teal-300 font-medium transition-all"
+                onClick={handlePasswordlessSignIn}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                {isLogin ? "Email me a sign-in link" : "Sign up without password"}
+              </Button>
             </CardContent>
           </Card>
           

@@ -19,6 +19,7 @@ export interface RequestOptions extends RequestInit {
   retryable?: boolean;
   timeout?: number;
   skipLogging?: boolean;
+  skipQueue?: boolean;  // Add skipQueue option
 }
 
 export interface ApiClientConfig {
@@ -68,4 +69,5 @@ export interface ApiLogEntry {
   error?: any;
   requestBody?: any;
   responseBody?: any;
+  message?: string;  // Add message field for logging
 }

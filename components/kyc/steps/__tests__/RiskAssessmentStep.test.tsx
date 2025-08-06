@@ -1,12 +1,13 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RiskAssessmentStep from '../RiskAssessmentStep'
 import { useKYC } from '@/context/kyc-context'
 
 // Mock dependencies
-jest.mock('@/context/kyc-context')
-jest.mock('@/lib/countries', () => ({
+vi.mock('@/context/kyc-context')
+vi.mock('@/lib/countries', () => ({
   countries: [
     { code: 'US', name: 'United States', restricted: false },
     { code: 'CA', name: 'Canada', restricted: false },
@@ -17,9 +18,9 @@ jest.mock('@/lib/countries', () => ({
 }))
 
 describe('RiskAssessmentStep', () => {
-  const mockOnNext = jest.fn()
-  const mockOnBack = jest.fn()
-  const mockUpdateData = jest.fn()
+  const mockOnNext = vi.fn()
+  const mockOnBack = vi.fn()
+  const mockUpdateData = vi.fn()
   const user = userEvent.setup()
 
   const defaultKYCData = {
@@ -31,9 +32,9 @@ describe('RiskAssessmentStep', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     
-    ;(useKYC as jest.Mock).mockReturnValue({
+    ;(useKYC as any).mockReturnValue({
       kycData: defaultKYCData,
       updateKYCData: mockUpdateData,
       currentStep: 4
@@ -458,7 +459,7 @@ describe('RiskAssessmentStep', () => {
         countries: ['US', 'CA']
       }
       
-      ;(useKYC as jest.Mock).mockReturnValue({
+      ;(useKYC as any).mockReturnValue({
         kycData: {
           ...defaultKYCData,
           riskAssessment: existingData

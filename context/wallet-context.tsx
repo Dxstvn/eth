@@ -200,9 +200,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // Initialize wallet state from localStorage and backend
   const initializeWallets = useCallback(async () => {
     try {
-      // In development mode, skip backend wallet initialization to prevent errors
-      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {
-        console.log('🔧 Development mode: Skipping wallet initialization')
+      // Skip wallet initialization in E2E tests or when explicitly disabled
+      if (
+        process.env.NEXT_PUBLIC_DISABLE_WALLET_INIT === 'true' ||
+        process.env.NEXT_PUBLIC_E2E_TEST === 'true' ||
+        (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true')
+      ) {
+        console.log('🔧 Skipping wallet initialization (E2E test or bypass mode)')
         return
       }
       

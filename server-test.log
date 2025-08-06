@@ -1,0 +1,743 @@
+
+> my-v0-project@0.1.0 dev
+> next dev --port 3001
+
+   ▲ Next.js 15.2.4
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.92:3001
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 1197ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4.2s (2543 modules)
+ GET / 200 in 4563ms
+ GET / 200 in 69ms
+ ✓ Compiled in 518ms (1106 modules)
+ ✓ Compiled in 171ms (1106 modules)
+ ✓ Compiled in 152ms (1106 modules)
+ ✓ Compiled /middleware in 181ms (150 modules)
+ ✓ Compiled /login in 406ms (2528 modules)
+ GET /login?test=true 200 in 714ms
+ GET /login?test=true 200 in 714ms
+ GET /login?test=true 200 in 714ms
+ GET /login?test=true 200 in 714ms
+ GET /login?test=true 200 in 715ms
+ GET /login?test=true 200 in 715ms
+ GET /login?test=true 200 in 715ms
+ GET /login?test=true 200 in 719ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 771ms (2546 modules)
+ GET /fonts/inter.woff2 404 in 1149ms
+ GET /fonts/inter.woff2 404 in 1141ms
+ GET /fonts/inter.woff2 404 in 1135ms
+ GET /fonts/inter.woff2 404 in 1123ms
+ GET /fonts/inter.woff2 404 in 1140ms
+ GET /fonts/inter.woff2 404 in 1149ms
+ GET /fonts/inter.woff2 404 in 1135ms
+ GET /fonts/inter.woff2 404 in 1116ms
+ GET /login 200 in 261ms
+ GET /login 200 in 262ms
+ GET /login 200 in 264ms
+ GET /login 200 in 262ms
+ GET /login 200 in 263ms
+ GET /fonts/inter.woff2 404 in 89ms
+ GET /fonts/inter.woff2 404 in 89ms
+ GET /fonts/inter.woff2 404 in 88ms
+ GET /fonts/inter.woff2 404 in 89ms
+ GET /fonts/inter.woff2 404 in 89ms
+[SECURITY MEDIUM] RATE_LIMIT_EXCEEDED: {
+  blocked: undefined,
+  reason: 'Rate limit exceeded. Try again in 15 minutes.',
+  retryAfter: 900,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 900,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 900, reason: 'Rate limit exceeded' }
+ GET /fonts/inter.woff2 404 in 83ms
+ GET /fonts/inter.woff2 404 in 83ms
+ GET /login 200 in 126ms
+ GET /login 200 in 126ms
+ GET /login 200 in 127ms
+ GET /fonts/inter.woff2 404 in 49ms
+ GET /fonts/inter.woff2 404 in 49ms
+ GET /fonts/inter.woff2 404 in 49ms
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 900,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 900, reason: 'Rate limit exceeded' }
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 900,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 900, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438352946_bojwqxhek',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 5 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 900,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 900, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438352947_ewgwyjklk',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 6 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 900,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 900, reason: 'Rate limit exceeded' }
+ GET /fonts/inter.woff2 404 in 39ms
+ GET /fonts/inter.woff2 404 in 40ms
+ GET /fonts/inter.woff2 404 in 41ms
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355801_jryl893pu',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 7 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355802_0ucagtpnn',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 8 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355825_iye4pdl5r',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 9 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355832_gsxvx8sf8',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 10 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355847_3h0bl5y0i',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 11 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355847_liv8zd731',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 12 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355848_topjke0c8',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 13 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438355848_vzchgdeq4',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 14 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 897,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 897, reason: 'Rate limit exceeded' }
+ GET /fonts/inter.woff2 404 in 98ms
+ GET /fonts/inter.woff2 404 in 100ms
+ GET /fonts/inter.woff2 404 in 82ms
+ GET /fonts/inter.woff2 404 in 57ms
+ GET /fonts/inter.woff2 404 in 58ms
+ GET /fonts/inter.woff2 404 in 58ms
+ GET /fonts/inter.woff2 404 in 59ms
+ GET /fonts/inter.woff2 404 in 61ms
+ ✓ Compiled in 313ms (1116 modules)
+[SECURITY ALERT] {
+  eventId: 'sec_1754438362012_hop4d7cp2',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 15 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 891,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 891, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438362027_rldconftp',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 16 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 891,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 891, reason: 'Rate limit exceeded' }
+ ✓ Compiled in 240ms (1116 modules)
+ GET / 200 in 93ms
+ GET /fonts/inter.woff2 404 in 59ms
+ GET /fonts/inter.woff2 404 in 59ms
+ GET /fonts/inter.woff2 404 in 16ms
+[SECURITY ALERT] {
+  eventId: 'sec_1754438362397_2w71psr6x',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 17 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 891,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 891, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438362398_zj8jrvj4j',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 18 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 891,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 891, reason: 'Rate limit exceeded' }
+ GET /fonts/inter.woff2 404 in 12ms
+ ✓ Compiled in 138ms (1116 modules)
+ ✓ Compiled in 139ms (1116 modules)
+[SECURITY ALERT] {
+  eventId: 'sec_1754438367862_m68xjr4dw',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 19 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 885,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 885, reason: 'Rate limit exceeded' }
+[SECURITY ALERT] {
+  eventId: 'sec_1754438367863_pdqmd9v15',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 20 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY HIGH] RATE_LIMIT_EXCEEDED: {
+  blocked: true,
+  reason: 'Account temporarily blocked due to suspicious activity',
+  retryAfter: 885,
+  fingerprint: '::1-1yhzwn'
+}
+[SECURITY HIGH] ACCOUNT_BLOCKED: { duration: 885, reason: 'Rate limit exceeded' }
+ GET /fonts/inter.woff2 404 in 25ms
+ GET /fonts/inter.woff2 404 in 15ms
+ ✓ Compiled in 141ms (1116 modules)
+ ✓ Compiled in 191ms (1116 modules)
+ ✓ Compiled in 716ms (2536 modules)
+ ✓ Compiled in 170ms (1113 modules)
+ ✓ Compiled in 162ms (1113 modules)
+ ✓ Compiled in 149ms (1113 modules)
+ ✓ Compiled in 169ms (1113 modules)
+ ✓ Compiled in 219ms (1263 modules)
+ ✓ Compiled in 262ms (1263 modules)
+ ✓ Compiled in 240ms (1113 modules)
+ ✓ Compiled / in 315ms (2542 modules)
+ GET / 200 in 510ms
+ GET / 200 in 16ms
+ ✓ Compiled in 152ms (1113 modules)
+ ✓ Compiled in 144ms (1113 modules)
+ ✓ Compiled in 204ms (1113 modules)
+ ✓ Compiled in 153ms (1113 modules)
+ ✓ Compiled in 210ms (1113 modules)
+ GET / 200 in 65ms
+ ✓ Compiled /_not-found in 337ms (2546 modules)
+ GET /fonts/inter.woff2 404 in 489ms
+ ✓ Compiled in 185ms (1116 modules)
+ GET / 200 in 90ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 130ms
+ ✓ Compiled in 312ms (2532 modules)
+ GET /fonts/inter.woff2 404 in 353ms
+ GET /login 200 in 40ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 45ms
+ GET /fonts/inter.woff2 404 in 16ms
+ GET /login 200 in 32ms
+ GET /fonts/inter.woff2 404 in 17ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 16ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 39ms
+ GET /fonts/inter.woff2 404 in 13ms
+ ✓ Compiled /api/health in 527ms (2548 modules)
+ GET /api/health 200 in 475ms
+ ✓ Compiled in 247ms (1116 modules)
+ GET /login 200 in 144ms
+ GET /fonts/inter.woff2 404 in 23ms
+ ✓ Compiled /forgot-password in 348ms (2575 modules)
+ GET /forgot-password 200 in 490ms
+ GET /fonts/inter.woff2 404 in 17ms
+ GET / 200 in 37ms
+ GET /fonts/inter.woff2 404 in 14ms
+ ✓ Compiled in 161ms (1121 modules)
+ GET /login 200 in 61ms
+ GET /fonts/inter.woff2 404 in 17ms
+ ✓ Compiled in 181ms (1121 modules)
+ ✓ Compiled in 148ms (1121 modules)
+ ✓ Compiled in 134ms (1121 modules)
+ ✓ Compiled in 191ms (1121 modules)
+ ✓ Compiled in 177ms (1121 modules)
+ GET / 200 in 17ms
+ GET / 200 in 13ms
+ ✓ Compiled in 159ms (1121 modules)
+ ✓ Compiled in 163ms (1121 modules)
+ ✓ Compiled in 402ms (1121 modules)
+ GET / 200 in 173ms
+ GET /fonts/inter.woff2 404 in 169ms
+ GET /login 200 in 219ms
+ GET /login 200 in 221ms
+ GET /login 200 in 220ms
+ GET /login 200 in 221ms
+ GET /login 200 in 221ms
+ GET /login 200 in 220ms
+ GET /login 200 in 225ms
+ GET /fonts/inter.woff2 404 in 131ms
+ GET /fonts/inter.woff2 404 in 129ms
+ GET /fonts/inter.woff2 404 in 130ms
+ GET /fonts/inter.woff2 404 in 137ms
+ GET /fonts/inter.woff2 404 in 193ms
+ GET /fonts/inter.woff2 404 in 182ms
+ GET /fonts/inter.woff2 404 in 187ms
+ ✓ Compiled in 266ms (1121 modules)
+ GET /login 200 in 101ms
+ GET /fonts/inter.woff2 404 in 76ms
+ GET /login 200 in 106ms
+ GET /fonts/inter.woff2 404 in 27ms
+ GET /login 200 in 31ms
+ GET /fonts/inter.woff2 404 in 42ms
+ GET /login 200 in 62ms
+ GET /fonts/inter.woff2 404 in 34ms
+ GET /login 200 in 66ms
+ GET /login 200 in 67ms
+ GET /fonts/inter.woff2 404 in 32ms
+ GET /fonts/inter.woff2 404 in 31ms
+ GET /login 200 in 39ms
+ GET /fonts/inter.woff2 404 in 20ms
+ GET /login 200 in 53ms
+ GET /fonts/inter.woff2 404 in 18ms
+ GET /login 200 in 66ms
+ GET /login 200 in 69ms
+ GET /fonts/inter.woff2 404 in 30ms
+ GET /fonts/inter.woff2 404 in 32ms
+ GET /login 200 in 69ms
+ GET /login 200 in 68ms
+ GET /fonts/inter.woff2 404 in 33ms
+ GET /fonts/inter.woff2 404 in 34ms
+ GET /login 200 in 68ms
+ GET /login 200 in 68ms
+ GET /fonts/inter.woff2 404 in 35ms
+ GET /fonts/inter.woff2 404 in 35ms
+ GET /login 200 in 72ms
+ GET /login 200 in 70ms
+ GET /fonts/inter.woff2 404 in 35ms
+ GET /fonts/inter.woff2 404 in 34ms
+ GET /login 200 in 66ms
+ GET /login 200 in 66ms
+ GET /fonts/inter.woff2 404 in 34ms
+ GET /fonts/inter.woff2 404 in 34ms
+ GET /login 200 in 63ms
+ GET /login 200 in 63ms
+ GET /fonts/inter.woff2 404 in 33ms
+ GET /fonts/inter.woff2 404 in 34ms
+ GET /login 200 in 63ms
+ GET /login 200 in 63ms
+ GET /fonts/inter.woff2 404 in 28ms
+ GET /fonts/inter.woff2 404 in 29ms
+ GET /login 200 in 68ms
+ GET /login 200 in 69ms
+ GET /fonts/inter.woff2 404 in 30ms
+ GET /fonts/inter.woff2 404 in 30ms
+ GET /login 200 in 66ms
+ GET /login 200 in 66ms
+ GET /fonts/inter.woff2 404 in 30ms
+ GET /fonts/inter.woff2 404 in 29ms
+ GET /login 200 in 69ms
+ GET /login 200 in 69ms
+ GET /fonts/inter.woff2 404 in 31ms
+ GET /fonts/inter.woff2 404 in 31ms
+ GET /login 200 in 65ms
+ GET /login 200 in 65ms
+ GET /fonts/inter.woff2 404 in 32ms
+ GET /fonts/inter.woff2 404 in 32ms
+ GET /login 200 in 77ms
+ GET /fonts/inter.woff2 404 in 56ms
+ GET /login 200 in 87ms
+ GET /fonts/inter.woff2 404 in 18ms
+ GET /login 200 in 93ms
+ GET /login 200 in 99ms
+ GET /fonts/inter.woff2 404 in 44ms
+ GET /fonts/inter.woff2 404 in 45ms
+ ✓ Compiled in 178ms (1121 modules)
+ GET /login 200 in 185ms
+ GET /login 200 in 265ms
+ ✓ Compiled in 600ms (2575 modules)
+ GET /fonts/inter.woff2 404 in 635ms
+ GET /login 200 in 52ms
+ GET /fonts/inter.woff2 404 in 25ms
+ ✓ Compiled in 177ms (1121 modules)
+ GET /login 200 in 49ms
+ GET /fonts/inter.woff2 404 in 18ms
+ GET /login 200 in 37ms
+ GET /fonts/inter.woff2 404 in 18ms
+ GET /login 200 in 45ms
+ GET /fonts/inter.woff2 404 in 24ms
+ GET /login 200 in 37ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 55ms
+ GET /fonts/inter.woff2 404 in 16ms
+ GET /login 200 in 41ms
+ GET /fonts/inter.woff2 404 in 19ms
+ GET /login 200 in 22ms
+ GET /fonts/inter.woff2 404 in 22ms
+ GET /login 200 in 48ms
+ GET /fonts/inter.woff2 404 in 19ms
+ GET /login 200 in 25ms
+ GET /fonts/inter.woff2 404 in 18ms
+ GET /login 200 in 37ms
+ GET /fonts/inter.woff2 404 in 16ms
+ GET /login 200 in 41ms
+ GET /fonts/inter.woff2 404 in 19ms
+ GET /login 200 in 31ms
+ GET /fonts/inter.woff2 404 in 19ms
+ GET /login 200 in 46ms
+ GET /fonts/inter.woff2 404 in 35ms
+ GET /login 200 in 209ms
+ ✓ Compiled in 604ms (2575 modules)
+ GET /fonts/inter.woff2 404 in 743ms
+ ✓ Compiled in 199ms (1121 modules)
+ GET / 200 in 124ms
+ GET /fonts/inter.woff2 404 in 57ms
+ GET /login 200 in 133ms
+ GET /fonts/inter.woff2 404 in 24ms
+ ✓ Compiled in 177ms (1121 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /login 200 in 113ms
+ GET /fonts/inter.woff2 404 in 32ms
+ GET /login 200 in 70ms
+ GET /fonts/inter.woff2 404 in 46ms
+ GET /login 200 in 77ms
+ GET /login 200 in 77ms
+ GET /fonts/inter.woff2 404 in 32ms
+ GET /fonts/inter.woff2 404 in 32ms
+ GET /login 200 in 55ms
+ GET /login 200 in 85ms
+ GET /fonts/inter.woff2 404 in 41ms
+ GET /fonts/inter.woff2 404 in 37ms
+ GET /login 200 in 18ms
+ GET /fonts/inter.woff2 404 in 16ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 25ms
+ GET /login 200 in 48ms
+ GET /fonts/inter.woff2 404 in 26ms
+ GET /login 200 in 39ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 54ms
+ GET /fonts/inter.woff2 404 in 44ms
+ GET /login 200 in 71ms
+ GET /login 200 in 87ms
+ GET /fonts/inter.woff2 404 in 29ms
+ GET /fonts/inter.woff2 404 in 28ms
+ GET /login 200 in 74ms
+ GET /login 200 in 73ms
+ GET /fonts/inter.woff2 404 in 55ms
+ GET /fonts/inter.woff2 404 in 56ms
+ GET /login 200 in 87ms
+ GET /fonts/inter.woff2 404 in 18ms
+ ✓ Compiled in 167ms (1121 modules)
+ GET /login 200 in 42ms
+ GET /fonts/inter.woff2 404 in 37ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 53ms
+ GET /login 200 in 117ms
+ ✓ Compiled in 428ms (2575 modules)
+ GET /fonts/inter.woff2 404 in 531ms
+ GET /login 200 in 4ms
+ GET /login 200 in 37ms
+ GET /login 200 in 61ms
+ GET /fonts/inter.woff2 404 in 133ms
+ ✓ Compiled in 177ms (1121 modules)
+ GET /login 200 in 15ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 4ms
+ GET /login 200 in 18ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 16ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 18ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 15ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 28ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 17ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 12ms
+ ✓ Compiled in 146ms (1121 modules)
+ GET /login 200 in 16ms
+ ✓ Compiled in 449ms (2575 modules)
+ GET /fonts/inter.woff2 404 in 531ms
+ GET /login 200 in 42ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 44ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 2ms
+ GET /login 200 in 18ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 17ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 3ms
+ GET /login 200 in 17ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 39ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 30ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 28ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 19ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 26ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 4ms
+ GET /login 200 in 18ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 19ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 30ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 16ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 26ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 3ms
+ GET /login 200 in 17ms
+ GET /fonts/inter.woff2 404 in 15ms
+ GET /login 200 in 2ms
+ GET /login 200 in 17ms
+ GET /fonts/inter.woff2 404 in 12ms
+ GET /login 200 in 25ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 31ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 26ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 2ms
+ GET /login 200 in 18ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 15ms
+ GET /fonts/inter.woff2 404 in 16ms
+ GET /login 200 in 3ms
+ GET /login 200 in 29ms
+ GET /fonts/inter.woff2 404 in 14ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 13ms
+ GET /login 200 in 27ms
+ GET /fonts/inter.woff2 404 in 15ms
+ ✓ Compiled in 171ms (1121 modules)
+ GET /login 200 in 64ms
+ GET /fonts/inter.woff2 404 in 19ms
+ ✓ Compiled in 163ms (1121 modules)
+ ✓ Compiled in 303ms (1268 modules)
+ ✓ Compiled in 233ms (1118 modules)
+ ✓ Compiled in 153ms (1118 modules)
+ ✓ Compiled in 153ms (1118 modules)
+ ✓ Compiled in 227ms (1118 modules)
+ ✓ Compiled in 152ms (1118 modules)
+ ✓ Compiled in 145ms (1118 modules)
+ ✓ Compiled in 228ms (1118 modules)
+ ✓ Compiled in 151ms (1118 modules)
+ ✓ Compiled in 139ms (1118 modules)
+ ✓ Compiled in 153ms (1118 modules)
+ ✓ Compiled in 161ms (1118 modules)
+ ✓ Compiled in 154ms (1118 modules)
+ ✓ Compiled in 137ms (1118 modules)
+ ✓ Compiled in 164ms (1118 modules)
+ ✓ Compiled in 140ms (1118 modules)
+ ✓ Compiled in 229ms (1118 modules)
+ ✓ Compiled in 153ms (1118 modules)
+ ✓ Compiled in 322ms (2541 modules)
+ ✓ Compiled in 399ms (2541 modules)
+ ✓ Compiled in 155ms (1118 modules)
+ ✓ Compiled in 157ms (1118 modules)
+ ✓ Compiled in 171ms (1118 modules)
+ ✓ Compiled in 158ms (1118 modules)
+ ✓ Compiled in 182ms (1118 modules)
+ ✓ Compiled in 174ms (1118 modules)
+ ✓ Compiled in 169ms (1118 modules)
+ ✓ Compiled in 155ms (1118 modules)
+ ✓ Compiled in 145ms (1118 modules)
+ ✓ Compiled in 226ms (1118 modules)
+ ✓ Compiled in 145ms (1118 modules)
+ ✓ Compiled in 158ms (1118 modules)
+ ✓ Compiled in 158ms (1118 modules)
+ ✓ Compiled in 516ms (2541 modules)
+ ✓ Compiled in 260ms (2541 modules)
+ ✓ Compiled in 171ms (1118 modules)
+ ✓ Compiled in 143ms (1118 modules)
+ ✓ Compiled in 222ms (1118 modules)
+ ✓ Compiled in 146ms (1118 modules)
+ ✓ Compiled in 137ms (1118 modules)
+ ✓ Compiled in 154ms (1118 modules)
+ ✓ Compiled in 163ms (1118 modules)
+ ✓ Compiled in 242ms (1118 modules)
+ ✓ Compiled in 148ms (1118 modules)
+ ✓ Compiled in 231ms (1118 modules)
+ ✓ Compiled in 156ms (1118 modules)
+ ✓ Compiled in 160ms (1118 modules)
+ ✓ Compiled in 157ms (1118 modules)
+ ✓ Compiled in 236ms (1118 modules)
+ ✓ Compiled in 150ms (1118 modules)
+ ✓ Compiled in 165ms (1118 modules)
+ ✓ Compiled in 151ms (1118 modules)
+ ✓ Compiled in 138ms (1118 modules)
+ ✓ Compiled in 225ms (1118 modules)
+ ✓ Compiled in 229ms (1118 modules)
+ ✓ Compiled in 143ms (1118 modules)
+ ✓ Compiled in 140ms (1118 modules)
+ ✓ Compiled in 137ms (1118 modules)
+ ✓ Compiled in 233ms (1118 modules)
+ ✓ Compiled in 145ms (1118 modules)
+ ✓ Compiled in 239ms (1118 modules)
+ ✓ Compiled in 230ms (1118 modules)
+ ✓ Compiled in 247ms (1118 modules)
+ ✓ Compiled in 228ms (1118 modules)
+ ✓ Compiled in 148ms (1118 modules)
+ ✓ Compiled in 142ms (1118 modules)
+ ✓ Compiled in 172ms (1118 modules)
+ ✓ Compiled in 176ms (1118 modules)
+ ✓ Compiled in 140ms (1118 modules)
+ ✓ Compiled in 235ms (1118 modules)
+ ✓ Compiled in 241ms (1118 modules)
+ ✓ Compiled in 152ms (1118 modules)
+ ✓ Compiled in 143ms (1118 modules)
+ ✓ Compiled in 162ms (1118 modules)

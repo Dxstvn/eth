@@ -1,4 +1,5 @@
 import { ClientRateLimiter, createRateLimitedClient } from '../rate-limiter';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 
 describe('ClientRateLimiter', () => {
   let rateLimiter: ClientRateLimiter;
@@ -115,7 +116,7 @@ describe('ClientRateLimiter', () => {
       rateLimiter.handleRateLimitError('/test');
       
       // Wait for recovery
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       
       // Second rate limit should have longer backoff
       rateLimiter.handleRateLimitError('/test');
@@ -145,7 +146,7 @@ describe('ClientRateLimiter', () => {
 
   describe('event emitter', () => {
     it('should emit rate-limited event', async () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       rateLimiter.on('rate-limited', listener);
 
       // Use up limit
@@ -208,10 +209,10 @@ describe('createRateLimitedClient', () => {
 
   beforeEach(() => {
     mockClient = {
-      get: jest.fn().mockResolvedValue({ data: 'success', headers: {} }),
-      post: jest.fn().mockResolvedValue({ data: 'success', headers: {} }),
-      put: jest.fn().mockResolvedValue({ data: 'success', headers: {} }),
-      delete: jest.fn().mockResolvedValue({ data: 'success', headers: {} })
+      get: vi.fn().mockResolvedValue({ data: 'success', headers: {} }),
+      post: vi.fn().mockResolvedValue({ data: 'success', headers: {} }),
+      put: vi.fn().mockResolvedValue({ data: 'success', headers: {} }),
+      delete: vi.fn().mockResolvedValue({ data: 'success', headers: {} })
     };
 
     rateLimitedClient = createRateLimitedClient(mockClient, {

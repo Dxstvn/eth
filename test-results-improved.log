@@ -1,0 +1,214 @@
+
+Running 15 tests using 8 workers
+
+  ✓  1 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:19:7 › Passwordless Login - Simplified › login page displays correctly (2.8s)
+  ✓  8 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:37:7 › Authentication Flow - Simplified › navigate between login methods (4.4s)
+  ✓  4 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:31:7 › Passwordless Login - Simplified › can complete passwordless flow (4.7s)
+  ✓  7 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:103:7 › Authentication Flow - Simplified › cross-device authentication info (4.8s)
+Attempt 1 failed, retrying with page reload...
+Attempt 1 failed, retrying with page reload...
+Attempt 1 failed, retrying with page reload...
+Attempt 1 failed, retrying with page reload...
+  ✓  11 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:11:7 › Smoke Tests › app loads without errors (1.7s)
+  ✓  12 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:48:7 › Smoke Tests › main navigation works (1.2s)
+  ✓  13 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:59:7 › Smoke Tests › API is reachable (512ms)
+Attempt 1 failed, retrying with page reload...
+Attempt 1 failed, retrying with page reload...
+  ✓  14 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:71:7 › Smoke Tests › critical pages load (3.0s)
+Failed to ensure clean login state after 2 attempts
+Failed to ensure clean login state after 2 attempts
+Failed to ensure clean login state after 2 attempts
+  ✘  5 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:126:7 › Authentication Flow - Simplified › handles rate limiting (11.9s)
+Failed to ensure clean login state after 2 attempts
+  ✘  6 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:59:7 › Passwordless Login - Simplified › validates email format (12.1s)
+  ✘  2 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:68:7 › Authentication Flow - Simplified › remember user choice (12.1s)
+  ✘  3 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:18:7 › Authentication Flow - Simplified › complete signup flow (12.1s)
+  ✓  15 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:107:7 › Smoke Tests › form interactions work (2.3s)
+Failed to ensure clean login state after 2 attempts
+  ✘  9 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:78:7 › Passwordless Login - Simplified › displays auth methods for existing users (11.8s)
+Failed to ensure clean login state after 2 attempts
+  ✘  10 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:97:7 › Passwordless Login - Simplified › handles errors gracefully (11.8s)
+
+
+  1) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:18:7 › Authentication Flow - Simplified › complete signup flow 
+
+    TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:82
+
+      80 |       
+      81 |       // Wait for email input to be visible
+    > 82 |       const emailInput = await page.waitForSelector('input[type="email"]', { 
+         |                                     ^
+      83 |         state: 'visible', 
+      84 |         timeout: 5000 
+      85 |       });
+        at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:82:37)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:19:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-dfa09-lified-complete-signup-flow-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-dfa09-lified-complete-signup-flow-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-dfa09-lified-complete-signup-flow-chromium/error-context.md
+
+  2) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:68:7 › Authentication Flow - Simplified › remember user choice 
+
+    TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:82
+
+      80 |       
+      81 |       // Wait for email input to be visible
+    > 82 |       const emailInput = await page.waitForSelector('input[type="email"]', { 
+         |                                     ^
+      83 |         state: 'visible', 
+      84 |         timeout: 5000 
+      85 |       });
+        at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:82:37)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:71:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-bb0c0-lified-remember-user-choice-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-bb0c0-lified-remember-user-choice-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-bb0c0-lified-remember-user-choice-chromium/error-context.md
+
+  3) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:126:7 › Authentication Flow - Simplified › handles rate limiting 
+
+    TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:82
+
+      80 |       
+      81 |       // Wait for email input to be visible
+    > 82 |       const emailInput = await page.waitForSelector('input[type="email"]', { 
+         |                                     ^
+      83 |         state: 'visible', 
+      84 |         timeout: 5000 
+      85 |       });
+        at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:82:37)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:129:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-583fe-ified-handles-rate-limiting-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-583fe-ified-handles-rate-limiting-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-583fe-ified-handles-rate-limiting-chromium/error-context.md
+
+  4) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:59:7 › Passwordless Login - Simplified › validates email format 
+
+    TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:82
+
+      80 |       
+      81 |       // Wait for email input to be visible
+    > 82 |       const emailInput = await page.waitForSelector('input[type="email"]', { 
+         |                                     ^
+      83 |         state: 'visible', 
+      84 |         timeout: 5000 
+      85 |       });
+        at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:82:37)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:60:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/error-context.md
+
+  5) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:78:7 › Passwordless Login - Simplified › displays auth methods for existing users 
+
+    TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:82
+
+      80 |       
+      81 |       // Wait for email input to be visible
+    > 82 |       const emailInput = await page.waitForSelector('input[type="email"]', { 
+         |                                     ^
+      83 |         state: 'visible', 
+      84 |         timeout: 5000 
+      85 |       });
+        at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:82:37)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:79:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/error-context.md
+
+  6) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:97:7 › Passwordless Login - Simplified › handles errors gracefully 
+
+    TimeoutError: page.waitForSelector: Timeout 5000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:82
+
+      80 |       
+      81 |       // Wait for email input to be visible
+    > 82 |       const emailInput = await page.waitForSelector('input[type="email"]', { 
+         |                                     ^
+      83 |         state: 'visible', 
+      84 |         timeout: 5000 
+      85 |       });
+        at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:82:37)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:98:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-75ce0-d-handles-errors-gracefully-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-75ce0-d-handles-errors-gracefully-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-75ce0-d-handles-errors-gracefully-chromium/error-context.md
+
+  6 failed
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:18:7 › Authentication Flow - Simplified › complete signup flow 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:68:7 › Authentication Flow - Simplified › remember user choice 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:126:7 › Authentication Flow - Simplified › handles rate limiting 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:59:7 › Passwordless Login - Simplified › validates email format 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:78:7 › Passwordless Login - Simplified › displays auth methods for existing users 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:97:7 › Passwordless Login - Simplified › handles errors gracefully 
+  9 passed (17.3s)

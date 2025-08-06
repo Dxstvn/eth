@@ -1,0 +1,88 @@
+
+> my-v0-project@0.1.0 start
+> next start -p 3001
+
+   ▲ Next.js 15.2.4
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.92:3001
+
+ ✓ Starting...
+ ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+ ✓ Ready in 171ms
+[SECURITY ALERT] {
+  eventId: 'sec_1754418143915_svq80xg2n',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 5 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418174927_s3rf7pxkk',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 6 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418205929_u750ec9yz',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 7 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418244596_720dfhz4y',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 8 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418255737_o21vc9i1y',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 9 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418266861_ah3f79soz',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 9 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418481105_e5svetx1h',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 5 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418486623_ku570o9uc',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 6 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418492120_2z4w53tpo',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 7 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418523120_48165abyz',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 7 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}
+[SECURITY ALERT] {
+  eventId: 'sec_1754418554123_5dw5er0yh',
+  message: 'Multiple RATE_LIMIT_EXCEEDED events detected: 7 in 5 minutes',
+  severity: 'HIGH',
+  actionRequired: true,
+  suggestedActions: [ 'Review security logs', 'Monitor for continued activity' ]
+}

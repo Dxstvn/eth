@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddressProofStep } from '../AddressProofStep'
@@ -6,8 +7,8 @@ import { useAuth } from '@/context/auth-context-v2'
 import { format, subMonths } from 'date-fns'
 
 // Mock dependencies
-jest.mock('@/context/auth-context-v2')
-jest.mock('@/components/kyc/secure-file-upload', () => ({
+vi.mock('@/context/auth-context-v2')
+vi.mock('@/components/kyc/secure-file-upload', () => ({
   SecureFileUpload: ({ label, onFileSelect, onRemove, value, preview, description, ...props }: any) => (
     <div data-testid={`secure-upload-${props.id}`}>
       <label>{label}</label>
@@ -39,8 +40,8 @@ jest.mock('@/components/kyc/secure-file-upload', () => ({
 }))
 
 describe('AddressProofStep', () => {
-  const mockOnComplete = jest.fn()
-  const mockOnBack = jest.fn()
+  const mockOnComplete = vi.fn()
+  const mockOnBack = vi.fn()
   const user = userEvent.setup()
 
   // Helper to create a mock file
@@ -53,24 +54,24 @@ describe('AddressProofStep', () => {
   // Helper to create a mock FileReader
   const mockFileReader = () => {
     const reader = {
-      readAsDataURL: jest.fn(),
+      readAsDataURL: vi.fn(),
       onloadend: null as any,
       result: 'data:image/png;base64,mock-image-data'
     }
-    jest.spyOn(window, 'FileReader').mockImplementation(() => reader as any)
+    vi.spyOn(window, 'FileReader').mockImplementation(() => reader as any)
     return reader
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     
-    ;(useAuth as jest.Mock).mockReturnValue({
+    ;(useAuth as any).mockReturnValue({
       user: { uid: 'test-user-123' }
     })
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Rendering', () => {

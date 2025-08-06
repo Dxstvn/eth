@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DocumentUploadStep } from '../DocumentUploadStep'
@@ -7,9 +8,9 @@ import { performOCR, validateOCRResult } from '@/lib/services/mock-ocr-service'
 import { act } from 'react-dom/test-utils'
 
 // Mock dependencies
-jest.mock('@/context/auth-context-v2')
-jest.mock('@/lib/services/mock-ocr-service')
-jest.mock('@/components/kyc/secure-file-upload', () => ({
+vi.mock('@/context/auth-context-v2')
+vi.mock('@/lib/services/mock-ocr-service')
+vi.mock('@/components/kyc/secure-file-upload', () => ({
   SecureFileUpload: ({ label, onFileSelect, onRemove, value, preview, ...props }: any) => (
     <div data-testid={`secure-upload-${props.id}`}>
       <label>{label}</label>
@@ -40,10 +41,10 @@ jest.mock('@/components/kyc/secure-file-upload', () => ({
 }))
 
 describe('DocumentUploadStep', () => {
-  const mockOnComplete = jest.fn()
-  const mockOnBack = jest.fn()
-  const mockPerformOCR = performOCR as jest.MockedFunction<typeof performOCR>
-  const mockValidateOCRResult = validateOCRResult as jest.MockedFunction<typeof validateOCRResult>
+  const mockOnComplete = vi.fn()
+  const mockOnBack = vi.fn()
+  const mockPerformOCR = performOCR as any
+  const mockValidateOCRResult = validateOCRResult as any
   const user = userEvent.setup()
 
   // Helper to create a mock file
@@ -56,18 +57,18 @@ describe('DocumentUploadStep', () => {
   // Helper to create a mock FileReader
   const mockFileReader = () => {
     const reader = {
-      readAsDataURL: jest.fn(),
+      readAsDataURL: vi.fn(),
       onloadend: null as any,
       result: 'data:image/png;base64,mock-image-data'
     }
-    jest.spyOn(window, 'FileReader').mockImplementation(() => reader as any)
+    vi.spyOn(window, 'FileReader').mockImplementation(() => reader as any)
     return reader
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     
-    ;(useAuth as jest.Mock).mockReturnValue({
+    ;(useAuth as any).mockReturnValue({
       user: { uid: 'test-user-123' }
     })
 
@@ -93,7 +94,7 @@ describe('DocumentUploadStep', () => {
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Rendering', () => {

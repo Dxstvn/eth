@@ -1,12 +1,13 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { KYCQueueManager } from '../KYCQueueManager'
 import { toast } from 'sonner'
 
 // Mock dependencies
-jest.mock('sonner')
-jest.mock('../KYCApplicationDetail', () => ({
+vi.mock('sonner')
+vi.mock('../KYCApplicationDetail', () => ({
   __esModule: true,
   default: ({ application, onUpdate }: any) => (
     <div data-testid="application-detail">
@@ -89,12 +90,12 @@ const mockApplications = [
 ]
 
 describe('KYCQueueManager', () => {
-  const mockOnSelectApplication = jest.fn()
-  const mockOnBulkAction = jest.fn()
+  const mockOnSelectApplication = vi.fn()
+  const mockOnBulkAction = vi.fn()
   const user = userEvent.setup()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Rendering', () => {
@@ -552,7 +553,7 @@ describe('KYCQueueManager', () => {
 
   describe('Export Functionality', () => {
     it('exports filtered data', async () => {
-      const mockExport = jest.fn()
+      const mockExport = vi.fn()
       
       render(
         <KYCQueueManager 

@@ -1,0 +1,415 @@
+
+Running 15 tests using 8 workers
+
+  ✘  6 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:14:7 › Authentication Flow - Simplified › can navigate to login page (7.2s)
+  ✘  5 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:43:7 › Authentication Flow - Simplified › Google sign-in button is visible (12.1s)
+  ✘  1 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:51:7 › Authentication Flow - Simplified › can switch between login and signup (12.1s)
+  ✘  7 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:67:7 › Authentication Flow - Simplified › forgot password link is accessible (12.1s)
+  ✘  8 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:29:7 › Authentication Flow - Simplified › shows email input on login page (12.1s)
+  ✘  4 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:48:7 › Passwordless Login - Simplified › validates email format (12.1s)
+  ✘  3 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:27:7 › Passwordless Login - Simplified › can enter email and continue (12.1s)
+Errors found: [
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m,
+  [32m'Error fetching connected wallets: ApiException: Request failed with status 401\n'[39m +
+    [32m'    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:191:31)\n'[39m +
+    [32m'    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\n'[39m +
+    [32m'    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\n'[39m +
+    [32m'    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\n'[39m +
+    [32m'    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)'[39m
+]
+  ✘  11 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:11:7 › Smoke Tests › app loads without critical errors (2.6s)
+  -  12 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:42:7 › Smoke Tests › main navigation works
+  -  13 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:56:7 › Smoke Tests › API health check
+  -  14 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:65:7 › Smoke Tests › critical pages load
+  -  15 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:85:7 › Smoke Tests › login form is interactive
+  ✘  2 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:15:7 › Passwordless Login - Simplified › login page displays correctly (15.8s)
+  ✘  9 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:76:7 › Passwordless Login - Simplified › displays auth methods for existing users (11.4s)
+  ✘  10 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:98:7 › Passwordless Login - Simplified › handles API errors gracefully (15.3s)
+
+
+  1) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:14:7 › Authentication Flow - Simplified › can navigate to login page 
+
+    Error: [31mTimed out 5000ms waiting for [39m[2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m
+
+    Locator: locator('input[type="email"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('input[type="email"]')[22m
+    [2m    - waiting for" http://localhost:3001/login" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:3001/login"[22m
+
+
+      24 |     // Should be on login page
+      25 |     await expect(page).toHaveURL(/\/login/);
+    > 26 |     await expect(page.locator('input[type="email"]')).toBeVisible();
+         |                                                       ^
+      27 |   });
+      28 |
+      29 |   test('shows email input on login page', async ({ page }) => {
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:26:55
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-d13a5--can-navigate-to-login-page-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-d13a5--can-navigate-to-login-page-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-d13a5--can-navigate-to-login-page-chromium/error-context.md
+
+  2) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:29:7 › Authentication Flow - Simplified › shows email input on login page 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:17
+
+      15 |   
+      16 |   // Wait for the email input to be visible and ready
+    > 17 |   await page.waitForSelector('input[type="email"]', { 
+         |              ^
+      18 |     state: 'visible',
+      19 |     timeout: 10000 
+      20 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:17:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:30:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-06dbb-s-email-input-on-login-page-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-06dbb-s-email-input-on-login-page-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-06dbb-s-email-input-on-login-page-chromium/error-context.md
+
+  3) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:43:7 › Authentication Flow - Simplified › Google sign-in button is visible 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:17
+
+      15 |   
+      16 |   // Wait for the email input to be visible and ready
+    > 17 |   await page.waitForSelector('input[type="email"]', { 
+         |              ^
+      18 |     state: 'visible',
+      19 |     timeout: 10000 
+      20 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:17:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:44:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-388f9-e-sign-in-button-is-visible-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-388f9-e-sign-in-button-is-visible-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-388f9-e-sign-in-button-is-visible-chromium/error-context.md
+
+  4) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:51:7 › Authentication Flow - Simplified › can switch between login and signup 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:17
+
+      15 |   
+      16 |   // Wait for the email input to be visible and ready
+    > 17 |   await page.waitForSelector('input[type="email"]', { 
+         |              ^
+      18 |     state: 'visible',
+      19 |     timeout: 10000 
+      20 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:17:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:52:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-24b8b-ch-between-login-and-signup-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-24b8b-ch-between-login-and-signup-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-24b8b-ch-between-login-and-signup-chromium/error-context.md
+
+  5) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:67:7 › Authentication Flow - Simplified › forgot password link is accessible 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:17
+
+      15 |   
+      16 |   // Wait for the email input to be visible and ready
+    > 17 |   await page.waitForSelector('input[type="email"]', { 
+         |              ^
+      18 |     state: 'visible',
+      19 |     timeout: 10000 
+      20 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:17:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:68:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-97ecc-password-link-is-accessible-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-97ecc-password-link-is-accessible-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-auth-flow-Authe-97ecc-password-link-is-accessible-chromium/error-context.md
+
+  6) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:15:7 › Passwordless Login - Simplified › login page displays correctly 
+
+    TimeoutError: page.goto: Timeout 15000ms exceeded.
+    Call log:
+    [2m  - navigating to "http://localhost:3001/login", waiting until "networkidle"[22m
+
+
+       at helpers/test-utils.ts:11
+
+       9 |  */
+      10 | export async function navigateToLogin(page: Page) {
+    > 11 |   await page.goto('/login', { 
+         |              ^
+      12 |     waitUntil: 'networkidle',
+      13 |     timeout: 15000 
+      14 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:11:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:16:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-20ac4-gin-page-displays-correctly-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-20ac4-gin-page-displays-correctly-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-20ac4-gin-page-displays-correctly-chromium/error-context.md
+
+  7) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:27:7 › Passwordless Login - Simplified › can enter email and continue 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:17
+
+      15 |   
+      16 |   // Wait for the email input to be visible and ready
+    > 17 |   await page.waitForSelector('input[type="email"]', { 
+         |              ^
+      18 |     state: 'visible',
+      19 |     timeout: 10000 
+      20 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:17:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:30:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-c4794-an-enter-email-and-continue-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-c4794-an-enter-email-and-continue-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-c4794-an-enter-email-and-continue-chromium/error-context.md
+
+  8) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:48:7 › Passwordless Login - Simplified › validates email format 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:17
+
+      15 |   
+      16 |   // Wait for the email input to be visible and ready
+    > 17 |   await page.waitForSelector('input[type="email"]', { 
+         |              ^
+      18 |     state: 'visible',
+      19 |     timeout: 10000 
+      20 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:17:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:49:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/error-context.md
+
+  9) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:76:7 › Passwordless Login - Simplified › displays auth methods for existing users 
+
+    TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[type="email"]') to be visible[22m
+
+
+       at helpers/test-utils.ts:17
+
+      15 |   
+      16 |   // Wait for the email input to be visible and ready
+    > 17 |   await page.waitForSelector('input[type="email"]', { 
+         |              ^
+      18 |     state: 'visible',
+      19 |     timeout: 10000 
+      20 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:17:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:77:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/error-context.md
+
+  10) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:98:7 › Passwordless Login - Simplified › handles API errors gracefully 
+
+    TimeoutError: page.goto: Timeout 15000ms exceeded.
+    Call log:
+    [2m  - navigating to "http://localhost:3001/login", waiting until "networkidle"[22m
+
+
+       at helpers/test-utils.ts:11
+
+       9 |  */
+      10 | export async function navigateToLogin(page: Page) {
+    > 11 |   await page.goto('/login', { 
+         |              ^
+      12 |     waitUntil: 'networkidle',
+      13 |     timeout: 15000 
+      14 |   });
+        at navigateToLogin (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:11:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:99:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-41264-ndles-API-errors-gracefully-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-41264-ndles-API-errors-gracefully-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-passwordless-lo-41264-ndles-API-errors-gracefully-chromium/error-context.md
+
+  11) [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:11:7 › Smoke Tests › app loads without critical errors 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeLessThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: < [32m5[39m
+    Received:   [31m10[39m
+
+      37 |     
+      38 |     // Allow some errors but not too many
+    > 39 |     expect(criticalErrors.length).toBeLessThan(5);
+         |                                   ^
+      40 |   });
+      41 |
+      42 |   test('main navigation works', async ({ page }) => {
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/smoke-tests.spec.ts:39:35
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-smoke-tests-Smo-710a3-ads-without-critical-errors-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-smoke-tests-Smo-710a3-ads-without-critical-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/simplified-smoke-tests-Smo-710a3-ads-without-critical-errors-chromium/error-context.md
+
+  11 failed
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:14:7 › Authentication Flow - Simplified › can navigate to login page 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:29:7 › Authentication Flow - Simplified › shows email input on login page 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:43:7 › Authentication Flow - Simplified › Google sign-in button is visible 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:51:7 › Authentication Flow - Simplified › can switch between login and signup 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:67:7 › Authentication Flow - Simplified › forgot password link is accessible 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:15:7 › Passwordless Login - Simplified › login page displays correctly 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:27:7 › Passwordless Login - Simplified › can enter email and continue 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:48:7 › Passwordless Login - Simplified › validates email format 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:76:7 › Passwordless Login - Simplified › displays auth methods for existing users 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:98:7 › Passwordless Login - Simplified › handles API errors gracefully 
+    [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:11:7 › Smoke Tests › app loads without critical errors 
+  4 did not run

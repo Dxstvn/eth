@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { KYCGuard, withKYCGuard, useKYCGuard } from '../kyc-guard'
@@ -7,30 +8,30 @@ import { useKYC } from '@/context/kyc-context'
 import { renderHook } from '@testing-library/react'
 
 // Mock next/navigation
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
-  usePathname: jest.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+  usePathname: vi.fn()
 }))
 
 // Mock auth context
-jest.mock('@/context/auth-context-v2', () => ({
-  useAuth: jest.fn()
+vi.mock('@/context/auth-context-v2', () => ({
+  useAuth: vi.fn()
 }))
 
 // Mock KYC context
-jest.mock('@/context/kyc-context', () => ({
-  useKYC: jest.fn()
+vi.mock('@/context/kyc-context', () => ({
+  useKYC: vi.fn()
 }))
 
 describe('KYCGuard', () => {
-  const mockPush = jest.fn()
-  const mockRefreshKYCStatus = jest.fn()
+  const mockPush = vi.fn()
+  const mockRefreshKYCStatus = vi.fn()
   
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
-    ;(usePathname as jest.Mock).mockReturnValue('/dashboard')
-    ;(useKYC as jest.Mock).mockReturnValue({
+    vi.clearAllMocks()
+    ;(useRouter as any).mockReturnValue({ push: mockPush })
+    ;(usePathname as any).mockReturnValue('/dashboard')
+    ;(useKYC as any).mockReturnValue({
       kycData: { status: 'not_started' },
       refreshKYCStatus: mockRefreshKYCStatus
     })
@@ -38,7 +39,7 @@ describe('KYCGuard', () => {
 
   describe('KYCGuard Component', () => {
     it('should render children when user has required KYC level', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'basic',
           kycStatus: { status: 'approved' },
@@ -58,7 +59,7 @@ describe('KYCGuard', () => {
     })
 
     it('should show full page guard when user lacks KYC', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'none',
           kycStatus: { status: 'pending' }
@@ -78,7 +79,7 @@ describe('KYCGuard', () => {
     })
 
     it('should show banner mode with dimmed content', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'none'
         }
@@ -98,7 +99,7 @@ describe('KYCGuard', () => {
     })
 
     it('should show modal mode by default', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'none'
         }
@@ -118,7 +119,7 @@ describe('KYCGuard', () => {
     })
 
     it('should handle Start Verification button click', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'none'
         }
@@ -138,8 +139,8 @@ describe('KYCGuard', () => {
     })
 
     it('should handle Skip button when onSkip provided', async () => {
-      const mockOnSkip = jest.fn()
-      ;(useAuth as jest.Mock).mockReturnValue({
+      const mockOnSkip = vi.fn()
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'none'
         }
@@ -162,7 +163,7 @@ describe('KYCGuard', () => {
       const pastDate = new Date()
       pastDate.setDate(pastDate.getDate() - 1)
       
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'basic',
           kycStatus: { 
@@ -184,7 +185,7 @@ describe('KYCGuard', () => {
     })
 
     it('should show custom message when provided', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'none'
         }
@@ -208,7 +209,7 @@ describe('KYCGuard', () => {
     const TestComponent = () => <div>Test Component</div>
     
     it('should wrap component with KYC guard', async () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'basic',
           kycStatus: { status: 'approved' },
@@ -228,14 +229,14 @@ describe('KYCGuard', () => {
 
   describe('useKYCGuard hook', () => {
     it('should return allowed status for verified user', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'basic',
           kycStatus: { status: 'approved' },
           facialVerificationStatus: 'passed'
         }
       })
-      ;(useKYC as jest.Mock).mockReturnValue({
+      ;(useKYC as any).mockReturnValue({
         kycData: { status: 'approved' }
       })
 
@@ -246,12 +247,12 @@ describe('KYCGuard', () => {
     })
 
     it('should return not allowed for unverified user', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'none'
         }
       })
-      ;(useKYC as jest.Mock).mockReturnValue({
+      ;(useKYC as any).mockReturnValue({
         kycData: { status: 'not_started' }
       })
 
@@ -262,14 +263,14 @@ describe('KYCGuard', () => {
     })
 
     it('should check facial verification requirement', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           kycLevel: 'basic',
           kycStatus: { status: 'approved' },
           facialVerificationStatus: 'failed'
         }
       })
-      ;(useKYC as jest.Mock).mockReturnValue({
+      ;(useKYC as any).mockReturnValue({
         kycData: { status: 'approved' }
       })
 

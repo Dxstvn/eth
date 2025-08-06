@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,6 +24,7 @@ export default function PasswordlessSignInForm({
   className,
   initialEmail = ""
 }: PasswordlessSignInFormProps) {
+  const router = useRouter()
   const { sendPasswordlessLink } = useAuth()
   const [email, setEmail] = useState(initialEmail)
   const [isLoading, setIsLoading] = useState(false)
@@ -55,6 +57,11 @@ export default function PasswordlessSignInForm({
       await sendPasswordlessLink(email)
       setSuccess(true)
       onSuccess?.(email)
+      
+      // Redirect to email-sent page after a short delay
+      setTimeout(() => {
+        router.push(`/auth/email-sent?email=${encodeURIComponent(email)}`)
+      }, 1500)
     } catch (err: any) {
       const errorMessage = err.message || "Failed to send sign-in link. Please try again."
       setError(errorMessage)

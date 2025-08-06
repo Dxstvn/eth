@@ -1,12 +1,13 @@
 import { KYCAPIService } from '../kyc-api-service'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { apiClient } from '@/services/api-client'
 
 // Mock the API client
-jest.mock('@/services/api-client', () => ({
+vi.mock('@/services/api-client', () => ({
   apiClient: {
-    post: jest.fn(),
-    get: jest.fn(),
-    put: jest.fn()
+    post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn()
   }
 }))
 
@@ -14,7 +15,7 @@ describe('KYCAPIService', () => {
   let kycAPI: KYCAPIService
   
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     kycAPI = new KYCAPIService()
   })
 
@@ -31,7 +32,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.post as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.post as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.startSession('basic')
       
@@ -43,7 +44,7 @@ describe('KYCAPIService', () => {
 
     it('should handle session start error', async () => {
       const mockError = new Error('Session creation failed')
-      ;(apiClient.post as jest.Mock).mockRejectedValue(mockError)
+      ;(apiClient.post as any).mockRejectedValue(mockError)
       
       await expect(kycAPI.startSession()).rejects.toThrow('Session creation failed')
     })
@@ -71,7 +72,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.post as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.post as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.uploadDocument(sessionId, documentType, mockFile)
       
@@ -82,7 +83,7 @@ describe('KYCAPIService', () => {
       )
       
       // Verify FormData contents
-      const formDataCall = (apiClient.post as jest.Mock).mock.calls[0][1]
+      const formDataCall = (apiClient.post as any).mock.calls[0][1]
       expect(formDataCall).toBeInstanceOf(FormData)
       
       expect(result).toEqual(mockResponse.data)
@@ -91,7 +92,7 @@ describe('KYCAPIService', () => {
     it('should handle upload failure', async () => {
       const mockFile = new File(['test'], 'test.pdf', { type: 'application/pdf' })
       const mockError = new Error('Upload failed')
-      ;(apiClient.post as jest.Mock).mockRejectedValue(mockError)
+      ;(apiClient.post as any).mockRejectedValue(mockError)
       
       await expect(kycAPI.uploadDocument('session-123', 'passport', mockFile))
         .rejects.toThrow('Upload failed')
@@ -114,7 +115,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.post as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.post as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.performLivenessCheck(sessionId, imageData)
       
@@ -127,7 +128,7 @@ describe('KYCAPIService', () => {
 
     it('should handle liveness check failure', async () => {
       const mockError = new Error('Liveness check failed')
-      ;(apiClient.post as jest.Mock).mockRejectedValue(mockError)
+      ;(apiClient.post as any).mockRejectedValue(mockError)
       
       await expect(kycAPI.performLivenessCheck('session-123', 'image-data'))
         .rejects.toThrow('Liveness check failed')
@@ -150,7 +151,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.get as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.get as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.getStatus()
       
@@ -184,7 +185,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.post as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.post as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.submitPersonalInfo(personalInfo)
       
@@ -205,7 +206,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.post as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.post as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.completeSession(sessionId)
       
@@ -232,7 +233,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.get as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.get as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.getPendingReviews()
       
@@ -255,7 +256,7 @@ describe('KYCAPIService', () => {
         }
       }
       
-      ;(apiClient.put as jest.Mock).mockResolvedValue(mockResponse)
+      ;(apiClient.put as any).mockResolvedValue(mockResponse)
       
       const result = await kycAPI.submitManualReview(sessionId, reviewData)
       

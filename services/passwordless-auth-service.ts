@@ -49,6 +49,11 @@ class PasswordlessAuthService {
     } catch (error: any) {
       console.error('Error sending sign-in link:', error)
       
+      // Re-throw validation errors
+      if (error.message === 'Please enter a valid email address') {
+        throw error
+      }
+      
       // Handle specific error cases
       if (error.response?.status === 429) {
         throw new Error('Too many attempts. Please try again in 1 hour.')
@@ -89,6 +94,11 @@ class PasswordlessAuthService {
       return response
     } catch (error: any) {
       console.error('Error verifying sign-in link:', error)
+      
+      // Re-throw validation errors
+      if (error.message === 'Invalid sign-in link') {
+        throw error
+      }
       
       if (error.code === 'auth/invalid-action-code') {
         throw new Error('This sign-in link has expired or has already been used.')

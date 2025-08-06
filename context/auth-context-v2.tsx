@@ -36,7 +36,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [user, setUser] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  
+  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false)
   const [isDemoAccount, setIsDemoAccount] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)

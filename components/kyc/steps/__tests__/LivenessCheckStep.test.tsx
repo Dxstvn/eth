@@ -1,13 +1,14 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LivenessCheckStep } from '../LivenessCheckStep'
 
 // Mock getUserMedia
-const mockGetUserMedia = jest.fn()
+const mockGetUserMedia = vi.fn()
 const mockMediaStream = {
-  getTracks: jest.fn().mockReturnValue([
-    { stop: jest.fn(), kind: 'video' }
+  getTracks: vi.fn().mockReturnValue([
+    { stop: vi.fn(), kind: 'video' }
   ])
 }
 
@@ -19,31 +20,31 @@ Object.defineProperty(navigator, 'mediaDevices', {
 })
 
 // Mock HTMLVideoElement play/pause
-HTMLVideoElement.prototype.play = jest.fn().mockResolvedValue(undefined)
-HTMLVideoElement.prototype.pause = jest.fn()
+HTMLVideoElement.prototype.play = vi.fn().mockResolvedValue(undefined)
+HTMLVideoElement.prototype.pause = vi.fn()
 
 // Mock Canvas context
 const mockCanvasContext = {
-  drawImage: jest.fn(),
+  drawImage: vi.fn(),
   canvas: {
-    toDataURL: jest.fn().mockReturnValue('data:image/png;base64,mock-capture')
+    toDataURL: vi.fn().mockReturnValue('data:image/png;base64,mock-capture')
   }
 }
 
-HTMLCanvasElement.prototype.getContext = jest.fn().mockReturnValue(mockCanvasContext)
+HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockCanvasContext)
 
 describe('LivenessCheckStep', () => {
-  const mockOnComplete = jest.fn()
-  const mockOnBack = jest.fn()
+  const mockOnComplete = vi.fn()
+  const mockOnBack = vi.fn()
   const user = userEvent.setup()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockGetUserMedia.mockResolvedValue(mockMediaStream)
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Rendering', () => {
@@ -424,7 +425,7 @@ describe('LivenessCheckStep', () => {
   describe('Error Handling', () => {
     it('handles verification failure', async () => {
       // Mock random to force failure
-      jest.spyOn(Math, 'random').mockReturnValue(0.1)
+      vi.spyOn(Math, 'random').mockReturnValue(0.1)
       
       render(<LivenessCheckStep onComplete={mockOnComplete} />)
       
@@ -450,7 +451,7 @@ describe('LivenessCheckStep', () => {
     })
 
     it('allows retry after failure', async () => {
-      jest.spyOn(Math, 'random').mockReturnValue(0.1)
+      vi.spyOn(Math, 'random').mockReturnValue(0.1)
       
       render(<LivenessCheckStep onComplete={mockOnComplete} />)
       

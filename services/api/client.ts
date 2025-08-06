@@ -70,6 +70,15 @@ export class ApiClient {
       })
     );
 
+    // Add test mode interceptor
+    if (process.env.NEXT_PUBLIC_TEST_MODE === 'true') {
+      this.interceptors.addRequestInterceptor((config) => {
+        const headers = new Headers(config.headers);
+        headers.set('x-test-mode', 'true');
+        headers.set('x-test-auth', process.env.NEXT_PUBLIC_TEST_AUTH_TOKEN || 'test-token');
+        return { ...config, headers };
+      });
+    }
 
     // Add response error normalization
     this.interceptors.addResponseInterceptor(errorNormalizationInterceptor);
@@ -90,6 +99,11 @@ export class ApiClient {
   }
 
   private async getAuthToken(): Promise<string | null> {
+    // In test mode, use test token
+    if (process.env.NEXT_PUBLIC_TEST_MODE === 'true') {
+      return process.env.NEXT_PUBLIC_TEST_AUTH_TOKEN || 'test-jwt-token-for-e2e';
+    }
+
     // Get token from localStorage
     const token = typeof window !== 'undefined' ? 
       localStorage.getItem('clearhold_auth_token') : null;

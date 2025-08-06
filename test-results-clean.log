@@ -1,0 +1,212 @@
+
+Running 15 tests using 8 workers
+
+  ✘  1 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:48:7 › Passwordless Login - Simplified › validates email format (386ms)
+  ✘  5 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:29:7 › Authentication Flow - Simplified › shows email input on login page (387ms)
+  ✘  3 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:43:7 › Authentication Flow - Simplified › Google sign-in button is visible (387ms)
+  ✘  8 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:15:7 › Passwordless Login - Simplified › login page displays correctly (387ms)
+  ✘  7 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:67:7 › Authentication Flow - Simplified › forgot password link is accessible (387ms)
+  ✘  4 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:27:7 › Passwordless Login - Simplified › can enter email and continue (387ms)
+  ✘  6 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:51:7 › Authentication Flow - Simplified › can switch between login and signup (387ms)
+  ✘  2 [chromium] › tests/e2e/simplified/auth-flow.spec.ts:14:7 › Authentication Flow - Simplified › can navigate to login page (387ms)
+  ✘  10 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:76:7 › Passwordless Login - Simplified › displays auth methods for existing users (179ms)
+  ✘  11 [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:98:7 › Passwordless Login - Simplified › handles API errors gracefully (179ms)
+  ✓  9 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:11:7 › Smoke Tests › app loads without critical errors (2.2s)
+  ✓  12 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:42:7 › Smoke Tests › main navigation works (2.5s)
+  ✓  13 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:56:7 › Smoke Tests › API health check (613ms)
+  ✓  14 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:65:7 › Smoke Tests › critical pages load (1.1s)
+  ✓  15 [chromium] › tests/e2e/simplified/smoke-tests.spec.ts:85:7 › Smoke Tests › login form is interactive (3.2s)
+
+
+  1) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:14:7 › Authentication Flow - Simplified › can navigate to login page 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:11:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-d13a5--can-navigate-to-login-page-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-d13a5--can-navigate-to-login-page-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:29:7 › Authentication Flow - Simplified › shows email input on login page 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:11:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-06dbb-s-email-input-on-login-page-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-06dbb-s-email-input-on-login-page-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:43:7 › Authentication Flow - Simplified › Google sign-in button is visible 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:11:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-388f9-e-sign-in-button-is-visible-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-388f9-e-sign-in-button-is-visible-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:51:7 › Authentication Flow - Simplified › can switch between login and signup 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:11:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-24b8b-ch-between-login-and-signup-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-24b8b-ch-between-login-and-signup-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium] › tests/e2e/simplified/auth-flow.spec.ts:67:7 › Authentication Flow - Simplified › forgot password link is accessible 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:11:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-97ecc-password-link-is-accessible-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-auth-flow-Authe-97ecc-password-link-is-accessible-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:15:7 › Passwordless Login - Simplified › login page displays correctly 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-20ac4-gin-page-displays-correctly-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-20ac4-gin-page-displays-correctly-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:27:7 › Passwordless Login - Simplified › can enter email and continue 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-c4794-an-enter-email-and-continue-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-c4794-an-enter-email-and-continue-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:48:7 › Passwordless Login - Simplified › validates email format 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:76:7 › Passwordless Login - Simplified › displays auth methods for existing users 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-26cd1--methods-for-existing-users-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:98:7 › Passwordless Login - Simplified › handles API errors gracefully 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at clearStorage (/Users/dustinjasmin/eth-1/tests/e2e/helpers/test-utils.ts:52:14)
+        at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-41264-ndles-API-errors-gracefully-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/simplified-passwordless-lo-41264-ndles-API-errors-gracefully-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10 failed
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:14:7 › Authentication Flow - Simplified › can navigate to login page 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:29:7 › Authentication Flow - Simplified › shows email input on login page 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:43:7 › Authentication Flow - Simplified › Google sign-in button is visible 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:51:7 › Authentication Flow - Simplified › can switch between login and signup 
+    [chromium] › tests/e2e/simplified/auth-flow.spec.ts:67:7 › Authentication Flow - Simplified › forgot password link is accessible 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:15:7 › Passwordless Login - Simplified › login page displays correctly 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:27:7 › Passwordless Login - Simplified › can enter email and continue 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:48:7 › Passwordless Login - Simplified › validates email format 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:76:7 › Passwordless Login - Simplified › displays auth methods for existing users 
+    [chromium] › tests/e2e/simplified/passwordless-login.spec.ts:98:7 › Passwordless Login - Simplified › handles API errors gracefully 
+  5 passed (11.7s)

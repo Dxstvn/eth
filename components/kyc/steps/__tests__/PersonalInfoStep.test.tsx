@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PersonalInfoStep } from '../PersonalInfoStep'
@@ -8,12 +9,12 @@ import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 
 // Mock dependencies
-jest.mock('@/context/auth-context-v2')
-jest.mock('@/app/(dashboard)/kyc/utils/encryption-helpers')
-jest.mock('next/navigation')
+vi.mock('@/context/auth-context-v2')
+vi.mock('@/app/(dashboard)/kyc/utils/encryption-helpers')
+vi.mock('next/navigation')
 
 // Mock components
-jest.mock('@/components/ui/masked-input', () => ({
+vi.mock('@/components/ui/masked-input', () => ({
   MaskedInput: ({ value, onChange, mask, ...props }: any) => (
     <input
       {...props}
@@ -24,7 +25,7 @@ jest.mock('@/components/ui/masked-input', () => ({
   )
 }))
 
-jest.mock('@/components/ui/address-autocomplete', () => ({
+vi.mock('@/components/ui/address-autocomplete', () => ({
   AddressAutocomplete: ({ value, onChange, onAddressSelect, ...props }: any) => (
     <input
       {...props}
@@ -36,24 +37,24 @@ jest.mock('@/components/ui/address-autocomplete', () => ({
 }))
 
 describe('PersonalInfoStep', () => {
-  const mockPush = jest.fn()
-  const mockEncryptFormData = jest.fn()
-  const mockInitializeEncryption = jest.fn()
-  const mockIsInitialized = jest.fn()
+  const mockPush = vi.fn()
+  const mockEncryptFormData = vi.fn()
+  const mockInitializeEncryption = vi.fn()
+  const mockIsInitialized = vi.fn()
   const user = userEvent.setup()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     
-    ;(useRouter as jest.Mock).mockReturnValue({
+    ;(useRouter as any).mockReturnValue({
       push: mockPush
     })
     
-    ;(useAuth as jest.Mock).mockReturnValue({
+    ;(useAuth as any).mockReturnValue({
       user: { uid: 'test-uid', email: 'test@example.com' }
     })
     
-    ;(useKYCEncryption as jest.Mock).mockReturnValue({
+    ;(useKYCEncryption as any).mockReturnValue({
       initialize: mockInitializeEncryption,
       encryptFormData: mockEncryptFormData,
       isInitialized: mockIsInitialized
@@ -70,13 +71,13 @@ describe('PersonalInfoStep', () => {
     })
     
     // Mock localStorage
-    Storage.prototype.setItem = jest.fn()
-    Storage.prototype.getItem = jest.fn()
-    Storage.prototype.removeItem = jest.fn()
+    Storage.prototype.setItem = vi.fn()
+    Storage.prototype.getItem = vi.fn()
+    Storage.prototype.removeItem = vi.fn()
   })
 
   afterEach(() => {
-    jest.clearAllTimers()
+    vi.clearAllTimers()
   })
 
   describe('Form Rendering', () => {
@@ -279,11 +280,11 @@ describe('PersonalInfoStep', () => {
 
   describe('Auto-save', () => {
     beforeEach(() => {
-      jest.useFakeTimers()
+      vi.useFakeTimers()
     })
 
     afterEach(() => {
-      jest.useRealTimers()
+      vi.useRealTimers()
     })
 
     it('auto-saves form data after 2 seconds of inactivity', async () => {
@@ -292,7 +293,7 @@ describe('PersonalInfoStep', () => {
       await user.type(screen.getByLabelText(/first name/i), 'John')
       
       // Fast-forward 2 seconds
-      jest.advanceTimersByTime(2000)
+      vi.advanceTimersByTime(2000)
       
       await waitFor(() => {
         expect(localStorage.setItem).toHaveBeenCalledWith(
@@ -307,7 +308,7 @@ describe('PersonalInfoStep', () => {
       
       await user.type(screen.getByLabelText(/first name/i), 'John')
       
-      jest.advanceTimersByTime(2000)
+      vi.advanceTimersByTime(2000)
       
       await waitFor(() => {
         expect(screen.getByText(/auto-saved/i)).toBeInTheDocument()
@@ -322,7 +323,7 @@ describe('PersonalInfoStep', () => {
       
       await user.type(screen.getByLabelText(/first name/i), 'John')
       
-      jest.advanceTimersByTime(2000)
+      vi.advanceTimersByTime(2000)
       
       await waitFor(() => {
         expect(localStorage.setItem).not.toHaveBeenCalled()

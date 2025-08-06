@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { KYCNotificationBanner, KYCNotificationCard } from '../kyc-notification-banner'
@@ -6,30 +7,30 @@ import { useAuth } from '@/context/auth-context-v2'
 import { useKYC } from '@/context/kyc-context'
 
 // Mock next/navigation
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
-  usePathname: jest.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+  usePathname: vi.fn()
 }))
 
 // Mock auth context
-jest.mock('@/context/auth-context-v2', () => ({
-  useAuth: jest.fn()
+vi.mock('@/context/auth-context-v2', () => ({
+  useAuth: vi.fn()
 }))
 
 // Mock KYC context
-jest.mock('@/context/kyc-context', () => ({
-  useKYC: jest.fn()
+vi.mock('@/context/kyc-context', () => ({
+  useKYC: vi.fn()
 }))
 
 describe('KYCNotificationBanner', () => {
-  const mockPush = jest.fn()
-  const mockRefreshKYCStatus = jest.fn()
+  const mockPush = vi.fn()
+  const mockRefreshKYCStatus = vi.fn()
   
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
-    ;(usePathname as jest.Mock).mockReturnValue('/dashboard')
-    ;(useKYC as jest.Mock).mockReturnValue({
+    vi.clearAllMocks()
+    ;(useRouter as any).mockReturnValue({ push: mockPush })
+    ;(usePathname as any).mockReturnValue('/dashboard')
+    ;(useKYC as any).mockReturnValue({
       kycData: { status: 'not_started' },
       refreshKYCStatus: mockRefreshKYCStatus
     })
@@ -40,7 +41,7 @@ describe('KYCNotificationBanner', () => {
 
   describe('Visibility Logic', () => {
     it('should show banner when user needs KYC', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -53,7 +54,7 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should not show banner when user has completed KYC', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'basic',
@@ -68,13 +69,13 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should not show banner on auth pages', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
         }
       })
-      ;(usePathname as jest.Mock).mockReturnValue('/sign-in')
+      ;(usePathname as any).mockReturnValue('/sign-in')
 
       render(<KYCNotificationBanner />)
 
@@ -82,13 +83,13 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should not show banner during onboarding', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: false,
           kycLevel: 'none'
         }
       })
-      ;(usePathname as jest.Mock).mockReturnValue('/onboarding/welcome')
+      ;(usePathname as any).mockReturnValue('/onboarding/welcome')
 
       render(<KYCNotificationBanner />)
 
@@ -98,13 +99,13 @@ describe('KYCNotificationBanner', () => {
 
   describe('Banner States', () => {
     it('should show under review state', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
         }
       })
-      ;(useKYC as jest.Mock).mockReturnValue({
+      ;(useKYC as any).mockReturnValue({
         kycData: { status: 'under_review' },
         refreshKYCStatus: mockRefreshKYCStatus
       })
@@ -116,13 +117,13 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should show rejected state', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
         }
       })
-      ;(useKYC as jest.Mock).mockReturnValue({
+      ;(useKYC as any).mockReturnValue({
         kycData: { status: 'rejected' },
         refreshKYCStatus: mockRefreshKYCStatus
       })
@@ -134,13 +135,13 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should show additional info required state', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
         }
       })
-      ;(useKYC as jest.Mock).mockReturnValue({
+      ;(useKYC as any).mockReturnValue({
         kycData: { status: 'additional_info_required' },
         refreshKYCStatus: mockRefreshKYCStatus
       })
@@ -154,7 +155,7 @@ describe('KYCNotificationBanner', () => {
 
   describe('User Interactions', () => {
     it('should handle verify button click', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -171,7 +172,7 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should handle dismiss button', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -190,7 +191,7 @@ describe('KYCNotificationBanner', () => {
     it('should respect dismissed state from sessionStorage', () => {
       sessionStorage.setItem('kycBannerDismissed', 'true')
       
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -205,7 +206,7 @@ describe('KYCNotificationBanner', () => {
 
   describe('Banner Variants', () => {
     it('should render inline variant', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -218,7 +219,7 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should render floating variant', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -231,7 +232,7 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should position banner at top', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -244,7 +245,7 @@ describe('KYCNotificationBanner', () => {
     })
 
     it('should position banner at bottom', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -259,15 +260,15 @@ describe('KYCNotificationBanner', () => {
 
   describe('Auto Refresh', () => {
     beforeEach(() => {
-      jest.useFakeTimers()
+      vi.useFakeTimers()
     })
 
     afterEach(() => {
-      jest.useRealTimers()
+      vi.useRealTimers()
     })
 
     it('should refresh KYC status periodically', () => {
-      ;(useAuth as jest.Mock).mockReturnValue({
+      ;(useAuth as any).mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -277,7 +278,7 @@ describe('KYCNotificationBanner', () => {
       render(<KYCNotificationBanner />)
 
       // Fast forward 1 minute
-      jest.advanceTimersByTime(60000)
+      vi.advanceTimersByTime(60000)
 
       expect(mockRefreshKYCStatus).toHaveBeenCalled()
     })
@@ -285,18 +286,18 @@ describe('KYCNotificationBanner', () => {
 })
 
 describe('KYCNotificationCard', () => {
-  const mockPush = jest.fn()
+  const mockPush = vi.fn()
   
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
-    ;(useKYC as jest.Mock).mockReturnValue({
+    vi.clearAllMocks()
+    ;(useRouter as any).mockReturnValue({ push: mockPush })
+    ;(useKYC as any).mockReturnValue({
       kycData: { status: 'not_started' }
     })
   })
 
   it('should render card when user needs KYC', () => {
-    ;(useAuth as jest.Mock).mockReturnValue({
+    ;(useAuth as any).mockReturnValue({
       user: {
         kycLevel: 'none'
       }
@@ -309,7 +310,7 @@ describe('KYCNotificationCard', () => {
   })
 
   it('should not render card when user has KYC', () => {
-    ;(useAuth as jest.Mock).mockReturnValue({
+    ;(useAuth as any).mockReturnValue({
       user: {
         kycLevel: 'basic'
       }
@@ -321,7 +322,7 @@ describe('KYCNotificationCard', () => {
   })
 
   it('should handle start verification click', () => {
-    ;(useAuth as jest.Mock).mockReturnValue({
+    ;(useAuth as any).mockReturnValue({
       user: {
         kycLevel: 'none'
       }

@@ -1,0 +1,83 @@
+[dotenv@17.2.1] injecting env (13) from .env.production.e2e -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+
+Running 3 tests using 1 worker
+
+[1A[2K[dotenv@17.2.1] injecting env (0) from .env.production.e2e -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[1A[2K[1/3] [chromium] › tests/e2e/production-ngrok.spec.ts:13:7 › Production Build with Ngrok Backend › should load login page from production build
+[1A[2K[chromium] › tests/e2e/production-ngrok.spec.ts:13:7 › Production Build with Ngrok Backend › should load login page from production build
+🌐 API Call to ngrok: https://9ec09eb9cefd.ngrok-free.app/wallet/
+
+[1A[2K🌐 API Call to ngrok: https://9ec09eb9cefd.ngrok-free.app/wallet/detection
+
+[1A[2K  1) [chromium] › tests/e2e/production-ngrok.spec.ts:13:7 › Production Build with Ngrok Backend › should load login page from production build 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+      25 |     
+      26 |     // Wait for page to fully load
+    > 27 |     await page.waitForLoadState('networkidle');
+         |                ^
+      28 |     
+      29 |     // Verify we're on the login page
+      30 |     expect(page.url()).toContain('/login');
+        at /Users/dustinjasmin/eth-1/tests/e2e/production-ngrok.spec.ts:27:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/production-ngrok-Productio-9ce77--page-from-production-build-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/production-ngrok-Productio-9ce77--page-from-production-build-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/production-ngrok-Productio-9ce77--page-from-production-build-chromium/error-context.md
+
+
+[1A[2K[dotenv@17.2.1] injecting env (0) from .env.production.e2e -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+[1A[2K[2/3] [chromium] › tests/e2e/production-ngrok.spec.ts:48:7 › Production Build with Ngrok Backend › should send passwordless email through ngrok backend
+[1A[2K  2) [chromium] › tests/e2e/production-ngrok.spec.ts:48:7 › Production Build with Ngrok Backend › should send passwordless email through ngrok backend 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+      58 |     // Navigate to login
+      59 |     await page.goto('/login');
+    > 60 |     await page.waitForLoadState('networkidle');
+         |                ^
+      61 |     
+      62 |     // Enter email
+      63 |     const emailInput = page.locator('input[type="email"]');
+        at /Users/dustinjasmin/eth-1/tests/e2e/production-ngrok.spec.ts:60:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/production-ngrok-Productio-e8236-email-through-ngrok-backend-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/production-ngrok-Productio-e8236-email-through-ngrok-backend-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/production-ngrok-Productio-e8236-email-through-ngrok-backend-chromium/error-context.md
+
+
+[1A[2K[dotenv@17.2.1] injecting env (0) from .env.production.e2e -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+[1A[2K[3/3] [chromium] › tests/e2e/production-ngrok.spec.ts:103:7 › Production Build with Ngrok Backend › should verify ngrok headers are sent correctly
+[1A[2K[chromium] › tests/e2e/production-ngrok.spec.ts:103:7 › Production Build with Ngrok Backend › should verify ngrok headers are sent correctly
+📤 Request headers to ngrok: {
+  [32m'ngrok-skip-browser-warning'[39m: [32m'true'[39m,
+  [32m'x-e2e-test'[39m: [32m'true'[39m,
+  [32m'x-request-id'[39m: [32m'prod-e2e-1754416574984'[39m
+}
+
+[1A[2K📤 Request headers to ngrok: {
+  [32m'ngrok-skip-browser-warning'[39m: [32m'true'[39m,
+  [32m'x-e2e-test'[39m: [32m'true'[39m,
+  [32m'x-request-id'[39m: [32m'prod-e2e-1754416574984'[39m
+}
+

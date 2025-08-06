@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useRouter } from 'next/navigation'
@@ -10,23 +11,23 @@ import KYCSelfie from '@/app/(onboarding)/onboarding/kyc-selfie/page'
 import CompletePage from '@/app/(onboarding)/onboarding/complete/page'
 
 // Mock dependencies
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
-  usePathname: jest.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+  usePathname: vi.fn()
 }))
 
-jest.mock('@/lib/services/kyc-api-service', () => ({
+vi.mock('@/lib/services/kyc-api-service', () => ({
   kycAPI: {
-    startSession: jest.fn(),
-    uploadDocument: jest.fn(),
-    performLivenessCheck: jest.fn(),
-    completeSession: jest.fn(),
-    getStatus: jest.fn()
+    startSession: vi.fn(),
+    uploadDocument: vi.fn(),
+    performLivenessCheck: vi.fn(),
+    completeSession: vi.fn(),
+    getStatus: vi.fn()
   }
 }))
 
 // Mock components that aren't part of the test
-jest.mock('@/components/kyc/steps/DocumentUploadStep', () => ({
+vi.mock('@/components/kyc/steps/DocumentUploadStep', () => ({
   DocumentUploadStep: ({ onComplete, initialDocuments }: any) => (
     <div data-testid="document-upload-step">
       <button onClick={() => onComplete({ passport_front: { file: new File(['test'], 'passport.jpg') } })}>
@@ -36,7 +37,7 @@ jest.mock('@/components/kyc/steps/DocumentUploadStep', () => ({
   )
 }))
 
-jest.mock('@/components/kyc/steps/LivenessCheckStep', () => ({
+vi.mock('@/components/kyc/steps/LivenessCheckStep', () => ({
   LivenessCheckStep: ({ onComplete }: any) => (
     <div data-testid="liveness-check-step">
       <button onClick={() => onComplete({ capturedImage: 'data:image/png;base64,test' })}>
@@ -47,14 +48,14 @@ jest.mock('@/components/kyc/steps/LivenessCheckStep', () => ({
 }))
 
 // Mock canvas confetti
-jest.mock('canvas-confetti', () => ({
+vi.mock('canvas-confetti', () => ({
   __esModule: true,
-  default: jest.fn()
+  default: vi.fn()
 }))
 
 describe('KYC Backend Integration Flow', () => {
-  const mockPush = jest.fn()
-  const mockUpdateProfile = jest.fn()
+  const mockPush = vi.fn()
+  const mockUpdateProfile = vi.fn()
   
   const TestWrapper = ({ children }: { children: React.ReactNode }) => (
     <AuthProvider>
@@ -65,11 +66,11 @@ describe('KYC Backend Integration Flow', () => {
   )
 
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
+    vi.clearAllMocks()
+    ;(useRouter as any).mockReturnValue({ push: mockPush })
     
     // Mock successful auth context
-    jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+    vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
       user: { 
         id: 'test-user',
         email: 'test@example.com',
@@ -83,7 +84,7 @@ describe('KYC Backend Integration Flow', () => {
   describe('Document Upload Flow', () => {
     it('should complete document upload flow with backend', async () => {
       // Mock successful API responses
-      ;(kycAPI.startSession as jest.Mock).mockResolvedValue({
+      ;(kycAPI.startSession as any).mockResolvedValue({
         success: true,
         session: {
           sessionId: 'test-session-123',
@@ -91,7 +92,7 @@ describe('KYC Backend Integration Flow', () => {
         }
       })
 
-      ;(kycAPI.uploadDocument as jest.Mock).mockResolvedValue({
+      ;(kycAPI.uploadDocument as any).mockResolvedValue({
         success: true,
         result: {
           documentId: 'doc-123',
@@ -126,12 +127,12 @@ describe('KYC Backend Integration Flow', () => {
     })
 
     it('should handle document upload errors', async () => {
-      ;(kycAPI.startSession as jest.Mock).mockResolvedValue({
+      ;(kycAPI.startSession as any).mockResolvedValue({
         success: true,
         session: { sessionId: 'test-session-123' }
       })
 
-      ;(kycAPI.uploadDocument as jest.Mock).mockRejectedValue(
+      ;(kycAPI.uploadDocument as any).mockRejectedValue(
         new Error('Document verification failed')
       )
 
@@ -158,13 +159,13 @@ describe('KYC Backend Integration Flow', () => {
   describe('Facial Verification Flow', () => {
     beforeEach(() => {
       // Set up KYC context with session
-      jest.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
+      vi.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
         kycData: { 
           sessionId: 'test-session-123',
           status: 'in_progress'
         },
-        performLivenessCheck: jest.fn().mockResolvedValue(true),
-        completeKYCSession: jest.fn().mockResolvedValue(true),
+        performLivenessCheck: vi.fn().mockResolvedValue(true),
+        completeKYCSession: vi.fn().mockResolvedValue(true),
         isLoading: false
       })
     })
@@ -187,14 +188,14 @@ describe('KYC Backend Integration Flow', () => {
     })
 
     it('should handle liveness check failure', async () => {
-      const mockPerformLivenessCheck = jest.fn().mockRejectedValue(
+      const mockPerformLivenessCheck = vi.fn().mockRejectedValue(
         new Error('Liveness check failed')
       )
       
-      jest.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
+      vi.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
         kycData: { sessionId: 'test-session-123' },
         performLivenessCheck: mockPerformLivenessCheck,
-        completeKYCSession: jest.fn(),
+        completeKYCSession: vi.fn(),
         isLoading: false
       })
 
@@ -216,12 +217,12 @@ describe('KYC Backend Integration Flow', () => {
 
   describe('Completion Flow', () => {
     it('should complete onboarding and update profile', async () => {
-      jest.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
+      vi.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
         kycData: { 
           status: 'approved',
           kycLevel: 'basic'
         },
-        refreshKYCStatus: jest.fn(),
+        refreshKYCStatus: vi.fn(),
         isLoading: false
       })
 
@@ -251,11 +252,11 @@ describe('KYC Backend Integration Flow', () => {
     })
 
     it('should show under review status', async () => {
-      jest.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
+      vi.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
         kycData: { 
           status: 'under_review'
         },
-        refreshKYCStatus: jest.fn(),
+        refreshKYCStatus: vi.fn(),
         isLoading: false
       })
 
@@ -275,27 +276,27 @@ describe('KYC Backend Integration Flow', () => {
   describe('End-to-End KYC Flow', () => {
     it('should complete full KYC flow from start to finish', async () => {
       // Mock all successful API calls
-      ;(kycAPI.startSession as jest.Mock).mockResolvedValue({
+      ;(kycAPI.startSession as any).mockResolvedValue({
         success: true,
         session: { sessionId: 'test-session-123' }
       })
 
-      ;(kycAPI.uploadDocument as jest.Mock).mockResolvedValue({
+      ;(kycAPI.uploadDocument as any).mockResolvedValue({
         success: true,
         result: { documentId: 'doc-123' }
       })
 
-      ;(kycAPI.performLivenessCheck as jest.Mock).mockResolvedValue({
+      ;(kycAPI.performLivenessCheck as any).mockResolvedValue({
         success: true,
         result: { isLive: true, confidence: 0.98 }
       })
 
-      ;(kycAPI.completeSession as jest.Mock).mockResolvedValue({
+      ;(kycAPI.completeSession as any).mockResolvedValue({
         success: true,
         message: 'Session completed'
       })
 
-      ;(kycAPI.getStatus as jest.Mock).mockResolvedValue({
+      ;(kycAPI.getStatus as any).mockResolvedValue({
         success: true,
         status: {
           level: 'basic',
@@ -349,7 +350,7 @@ describe('KYC Backend Integration Flow', () => {
 
   describe('Error Recovery', () => {
     it('should handle session expiry gracefully', async () => {
-      ;(kycAPI.startSession as jest.Mock).mockResolvedValue({
+      ;(kycAPI.startSession as any).mockResolvedValue({
         success: true,
         session: { 
           sessionId: 'test-session-123',
@@ -371,14 +372,14 @@ describe('KYC Backend Integration Flow', () => {
 
     it('should retry on network errors', async () => {
       // First call fails, second succeeds
-      ;(kycAPI.getStatus as jest.Mock)
+      ;(kycAPI.getStatus as any)
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValueOnce({
           success: true,
           status: { level: 'basic', status: 'approved' }
         })
 
-      jest.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
+      vi.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
         kycData: {},
         refreshKYCStatus: kycAPI.getStatus,
         isLoading: false

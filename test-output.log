@@ -1,0 +1,14 @@
+
+> my-v0-project@0.1.0 test:e2e:prod
+> playwright test -c playwright.config.production.ts production-ngrok.spec.ts --reporter=list
+
+[dotenv@17.2.1] injecting env (13) from .env.production.e2e -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[2m[WebServer] [22m [33m[1m⚠[22m[39m "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+
+Running 3 tests using 1 worker
+
+[dotenv@17.2.1] injecting env (0) from .env.production.e2e -- tip: ⚙️  override existing env vars with { override: true }
+🌐 API Call to ngrok: https://9ec09eb9cefd.ngrok-free.app/wallet/
+🌐 API Call to ngrok: https://9ec09eb9cefd.ngrok-free.app/wallet/detection
+  ✘  1 [chromium] › tests/e2e/production-ngrok.spec.ts:13:7 › Production Build with Ngrok Backend › should load login page from production build (30.1s)
+[dotenv@17.2.1] injecting env (0) from .env.production.e2e -- tip: ⚙️  enable debug logging with { debug: true }

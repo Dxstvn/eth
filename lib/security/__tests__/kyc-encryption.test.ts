@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { 
   KYCEncryption,
   KYCFieldType,
@@ -8,22 +9,22 @@ import {
 import { AdvancedEncryption } from '../crypto-utils'
 
 // Mock crypto-utils
-jest.mock('../crypto-utils', () => ({
+vi.mock('../crypto-utils', () => ({
   AdvancedEncryption: {
-    encrypt: jest.fn(),
-    decrypt: jest.fn(),
-    verifyIntegrity: jest.fn()
+    encrypt: vi.fn(),
+    decrypt: vi.fn(),
+    verifyIntegrity: vi.fn()
   },
   SecureRandom: {
-    generateBytes: jest.fn().mockImplementation((size) => {
+    generateBytes: vi.fn().mockImplementation((size) => {
       return CryptoJS.lib.WordArray.random(size / 8).toString(CryptoJS.enc.Hex)
     })
   }
 }))
 
 // Mock uuid
-jest.mock('uuid', () => ({
-  v4: jest.fn().mockReturnValue('test-uuid-1234')
+vi.mock('uuid', () => ({
+  v4: vi.fn().mockReturnValue('test-uuid-1234')
 }))
 
 describe('KYCEncryption', () => {
@@ -32,11 +33,11 @@ describe('KYCEncryption', () => {
   let kycEncryption: KYCEncryption
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     kycEncryption = new KYCEncryption()
     
     // Mock successful encryption/decryption
-    ;(AdvancedEncryption.encrypt as jest.Mock).mockReturnValue({
+    ;(AdvancedEncryption.encrypt as any).mockReturnValue({
       encrypted: 'mock-encrypted-data',
       salt: 'mock-salt',
       iv: 'mock-iv',
@@ -47,8 +48,8 @@ describe('KYCEncryption', () => {
       }
     })
     
-    ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue('decrypted-data')
-    ;(AdvancedEncryption.verifyIntegrity as jest.Mock).mockReturnValue(true)
+    ;(AdvancedEncryption.decrypt as any).mockReturnValue('decrypted-data')
+    ;(AdvancedEncryption.verifyIntegrity as any).mockReturnValue(true)
   })
 
   describe('Initialization', () => {
@@ -132,7 +133,7 @@ describe('KYCEncryption', () => {
     })
 
     it('generates unique field keys for each field type', async () => {
-      const encryptMock = AdvancedEncryption.encrypt as jest.Mock
+      const encryptMock = AdvancedEncryption.encrypt as any
       
       await kycEncryption.encryptField('data1', KYCFieldType.SSN)
       const key1 = encryptMock.mock.calls[0][1]
@@ -151,7 +152,7 @@ describe('KYCEncryption', () => {
 
     it('decrypts encrypted field data', async () => {
       const originalData = 'test@example.com'
-      ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue(originalData)
+      ;(AdvancedEncryption.decrypt as any).mockReturnValue(originalData)
       
       const encrypted = await kycEncryption.encryptField(originalData, KYCFieldType.EMAIL)
       const decrypted = await kycEncryption.decryptField(encrypted)
@@ -162,7 +163,7 @@ describe('KYCEncryption', () => {
     it('verifies data integrity before decryption', async () => {
       const encrypted = await kycEncryption.encryptField('test-data', KYCFieldType.SSN)
       
-      ;(AdvancedEncryption.verifyIntegrity as jest.Mock).mockReturnValue(false)
+      ;(AdvancedEncryption.verifyIntegrity as any).mockReturnValue(false)
       
       await expect(kycEncryption.decryptField(encrypted))
         .rejects.toThrow('Data integrity verification failed')
@@ -238,8 +239,8 @@ describe('KYCEncryption', () => {
       const file = new File([originalData], 'test.pdf', { type: 'application/pdf' })
       
       // Mock file read
-      jest.spyOn(File.prototype, 'arrayBuffer').mockResolvedValue(originalData)
-      ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue(originalData)
+      vi.spyOn(File.prototype, 'arrayBuffer').mockResolvedValue(originalData)
+      ;(AdvancedEncryption.decrypt as any).mockReturnValue(originalData)
       
       const encrypted = await kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT)
       const decrypted = await kycEncryption.decryptFile(encrypted)
@@ -253,7 +254,7 @@ describe('KYCEncryption', () => {
       const fileData = new ArrayBuffer(1024)
       const file = new File([fileData], 'test.pdf', { type: 'application/pdf' })
       
-      jest.spyOn(File.prototype, 'arrayBuffer').mockResolvedValue(fileData)
+      vi.spyOn(File.prototype, 'arrayBuffer').mockResolvedValue(fileData)
       
       const encrypted = await kycEncryption.encryptFile(file, KYCFieldType.DOCUMENT)
       
@@ -293,7 +294,7 @@ describe('KYCEncryption', () => {
       
       const encrypted = await kycEncryption.encryptBatch(fields)
       
-      ;(AdvancedEncryption.decrypt as jest.Mock)
+      ;(AdvancedEncryption.decrypt as any)
         .mockReturnValueOnce(fields[0].data)
         .mockReturnValueOnce(fields[1].data)
       
@@ -320,7 +321,7 @@ describe('KYCEncryption', () => {
       const newKycEncryption = new KYCEncryption()
       await newKycEncryption.initialize(newPassword, testUserId)
       
-      ;(AdvancedEncryption.decrypt as jest.Mock).mockReturnValue(data)
+      ;(AdvancedEncryption.decrypt as any).mockReturnValue(data)
       
       const decrypted = await newKycEncryption.decryptField(rotated[0])
       expect(decrypted).toBe(data)
@@ -386,7 +387,7 @@ describe('KYCEncryption', () => {
     })
 
     it('handles encryption failures gracefully', async () => {
-      ;(AdvancedEncryption.encrypt as jest.Mock).mockImplementation(() => {
+      ;(AdvancedEncryption.encrypt as any).mockImplementation(() => {
         throw new Error('Encryption failed')
       })
       
@@ -397,7 +398,7 @@ describe('KYCEncryption', () => {
     it('handles decryption failures gracefully', async () => {
       const encrypted = await kycEncryption.encryptField('test', KYCFieldType.SSN)
       
-      ;(AdvancedEncryption.decrypt as jest.Mock).mockImplementation(() => {
+      ;(AdvancedEncryption.decrypt as any).mockImplementation(() => {
         throw new Error('Decryption failed')
       })
       

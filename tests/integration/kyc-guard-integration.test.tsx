@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useRouter } from 'next/navigation'
 import { KYCGuard } from '@/components/kyc/kyc-guard'
@@ -9,45 +10,45 @@ import { kycAPI } from '@/lib/services/kyc-api-service'
 import NewTransactionPage from '@/app/transactions/new/page'
 
 // Mock dependencies
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
-  usePathname: jest.fn(() => '/transactions/new')
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+  usePathname: vi.fn(() => '/transactions/new')
 }))
 
-jest.mock('@/lib/services/kyc-api-service', () => ({
+vi.mock('@/lib/services/kyc-api-service', () => ({
   kycAPI: {
-    getStatus: jest.fn()
+    getStatus: vi.fn()
   }
 }))
 
 // Mock other contexts/components
-jest.mock('@/context/wallet-context', () => ({
+vi.mock('@/context/wallet-context', () => ({
   useWallet: () => ({
     isConnected: true,
-    connectWallet: jest.fn(),
+    connectWallet: vi.fn(),
     isConnecting: false,
     error: null
   })
 }))
 
-jest.mock('@/context/transaction-context', () => ({
+vi.mock('@/context/transaction-context', () => ({
   useTransaction: () => ({
-    createTransaction: jest.fn()
+    createTransaction: vi.fn()
   })
 }))
 
-jest.mock('@/context/contact-context', () => ({
+vi.mock('@/context/contact-context', () => ({
   ContactProvider: ({ children }: any) => children
 }))
 
-jest.mock('@/components/ui/use-toast', () => ({
+vi.mock('@/components/ui/use-toast', () => ({
   useToast: () => ({
-    addToast: jest.fn()
+    addToast: vi.fn()
   })
 }))
 
 describe('KYC Guard Integration', () => {
-  const mockPush = jest.fn()
+  const mockPush = vi.fn()
   
   const TestWrapper = ({ children }: { children: React.ReactNode }) => (
     <AuthProvider>
@@ -58,15 +59,15 @@ describe('KYC Guard Integration', () => {
   )
 
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
+    vi.clearAllMocks()
+    ;(useRouter as any).mockReturnValue({ push: mockPush })
     sessionStorage.clear()
   })
 
   describe('Protected Page Access', () => {
     it('should block access to transaction page without KYC', async () => {
       // Mock user without KYC
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           id: 'test-user',
           email: 'test@example.com',
@@ -76,7 +77,7 @@ describe('KYC Guard Integration', () => {
         authToken: 'test-token'
       })
 
-      ;(kycAPI.getStatus as jest.Mock).mockResolvedValue({
+      ;(kycAPI.getStatus as any).mockResolvedValue({
         success: true,
         status: {
           level: 'none',
@@ -102,7 +103,7 @@ describe('KYC Guard Integration', () => {
 
     it('should allow access with valid KYC', async () => {
       // Mock user with approved KYC
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           id: 'test-user',
           email: 'test@example.com',
@@ -114,7 +115,7 @@ describe('KYC Guard Integration', () => {
         authToken: 'test-token'
       })
 
-      ;(kycAPI.getStatus as jest.Mock).mockResolvedValue({
+      ;(kycAPI.getStatus as any).mockResolvedValue({
         success: true,
         status: {
           level: 'basic',
@@ -123,7 +124,7 @@ describe('KYC Guard Integration', () => {
       })
 
       // Mock the NewTransactionPageContent to avoid complex setup
-      jest.mock('@/app/transactions/new/page', () => ({
+      vi.mock('@/app/transactions/new/page', () => ({
         __esModule: true,
         default: () => <div>Create New Transaction</div>
       }))
@@ -144,7 +145,7 @@ describe('KYC Guard Integration', () => {
     })
 
     it('should redirect to KYC flow when Start Verification clicked', async () => {
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           kycLevel: 'none'
         }
@@ -175,14 +176,14 @@ describe('KYC Guard Integration', () => {
 
   describe('KYC Notification Banner Integration', () => {
     it('should show banner on dashboard for users needing KYC', async () => {
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
         }
       })
 
-      ;(kycAPI.getStatus as jest.Mock).mockResolvedValue({
+      ;(kycAPI.getStatus as any).mockResolvedValue({
         success: true,
         status: {
           level: 'none',
@@ -204,7 +205,7 @@ describe('KYC Guard Integration', () => {
 
     it('should update banner when KYC status changes', async () => {
       // Start with no KYC
-      ;(kycAPI.getStatus as jest.Mock).mockResolvedValue({
+      ;(kycAPI.getStatus as any).mockResolvedValue({
         success: true,
         status: {
           level: 'none',
@@ -219,9 +220,9 @@ describe('KYC Guard Integration', () => {
       )
 
       // Update to under review
-      jest.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
+      vi.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
         kycData: { status: 'under_review' },
-        refreshKYCStatus: jest.fn()
+        refreshKYCStatus: vi.fn()
       })
 
       rerender(
@@ -237,7 +238,7 @@ describe('KYC Guard Integration', () => {
     })
 
     it('should persist dismissal across page navigation', async () => {
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
@@ -277,7 +278,7 @@ describe('KYC Guard Integration', () => {
   describe('Progressive KYC Requirements', () => {
     it('should enforce different KYC levels for different features', async () => {
       // User has basic KYC but feature requires enhanced
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           kycLevel: 'basic',
           kycStatus: { status: 'approved' },
@@ -303,7 +304,7 @@ describe('KYC Guard Integration', () => {
       const expiredDate = new Date()
       expiredDate.setDate(expiredDate.getDate() - 1)
 
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           kycLevel: 'basic',
           kycStatus: { 
@@ -329,24 +330,24 @@ describe('KYC Guard Integration', () => {
 
   describe('Real-time Status Updates', () => {
     beforeEach(() => {
-      jest.useFakeTimers()
+      vi.useFakeTimers()
     })
 
     afterEach(() => {
-      jest.useRealTimers()
+      vi.useRealTimers()
     })
 
     it('should poll for KYC status updates', async () => {
-      const mockRefreshStatus = jest.fn()
+      const mockRefreshStatus = vi.fn()
       
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           hasCompletedOnboarding: true,
           kycLevel: 'none'
         }
       })
 
-      jest.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
+      vi.spyOn(require('@/context/kyc-context'), 'useKYC').mockReturnValue({
         kycData: { status: 'under_review' },
         refreshKYCStatus: mockRefreshStatus
       })
@@ -358,7 +359,7 @@ describe('KYC Guard Integration', () => {
       )
 
       // Fast forward 1 minute
-      jest.advanceTimersByTime(60000)
+      vi.advanceTimersByTime(60000)
 
       await waitFor(() => {
         expect(mockRefreshStatus).toHaveBeenCalled()
@@ -368,13 +369,13 @@ describe('KYC Guard Integration', () => {
 
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: {
           kycLevel: 'none'
         }
       })
 
-      ;(kycAPI.getStatus as jest.Mock).mockRejectedValue(new Error('API Error'))
+      ;(kycAPI.getStatus as any).mockRejectedValue(new Error('API Error'))
 
       render(
         <TestWrapper>
@@ -391,7 +392,7 @@ describe('KYC Guard Integration', () => {
     })
 
     it('should handle missing user gracefully', async () => {
-      jest.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
+      vi.spyOn(require('@/context/auth-context-v2'), 'useAuth').mockReturnValue({
         user: null,
         authToken: null
       })

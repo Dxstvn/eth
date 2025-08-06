@@ -1,4 +1,5 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { KYCApplicationDetail } from '../KYCApplicationDetail'
@@ -6,12 +7,12 @@ import { apiClient } from '@/services/api'
 import { toast } from 'sonner'
 
 // Mock dependencies
-jest.mock('@/services/api')
-jest.mock('sonner')
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn().mockReturnValue({
-    push: jest.fn(),
-    back: jest.fn()
+vi.mock('@/services/api')
+vi.mock('sonner')
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn().mockReturnValue({
+    push: vi.fn(),
+    back: vi.fn()
   })
 }))
 
@@ -98,13 +99,13 @@ const mockApplication = {
 }
 
 describe('KYCApplicationDetail', () => {
-  const mockOnUpdate = jest.fn()
+  const mockOnUpdate = vi.fn()
   const user = userEvent.setup()
 
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(apiClient.post as jest.Mock).mockResolvedValue({ data: { success: true } })
-    ;(apiClient.get as jest.Mock).mockResolvedValue({ data: { url: 'https://example.com/file' } })
+    vi.clearAllMocks()
+    ;(apiClient.post as any).mockResolvedValue({ data: { success: true } })
+    ;(apiClient.get as any).mockResolvedValue({ data: { url: 'https://example.com/file' } })
   })
 
   describe('Rendering', () => {
@@ -615,7 +616,7 @@ describe('KYCApplicationDetail', () => {
 
   describe('Error Handling', () => {
     it('handles API errors gracefully', async () => {
-      ;(apiClient.post as jest.Mock).mockRejectedValueOnce(new Error('API Error'))
+      ;(apiClient.post as any).mockRejectedValueOnce(new Error('API Error'))
       
       render(
         <KYCApplicationDetail 
@@ -661,7 +662,7 @@ describe('KYCApplicationDetail', () => {
   describe('Loading States', () => {
     it('shows loading state for actions', async () => {
       // Mock slow API response
-      ;(apiClient.post as jest.Mock).mockImplementation(() => 
+      ;(apiClient.post as any).mockImplementation(() => 
         new Promise(resolve => setTimeout(resolve, 100))
       )
       

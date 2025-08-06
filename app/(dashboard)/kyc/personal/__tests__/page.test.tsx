@@ -1,35 +1,36 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import KYCPersonalPage from '../page'
 import { useAuth } from '@/context/auth-context-v2'
 import { useRouter } from 'next/navigation'
 
 // Mock dependencies
-jest.mock('@/context/auth-context-v2')
-jest.mock('next/navigation')
-jest.mock('../../utils/encryption-helpers', () => ({
+vi.mock('@/context/auth-context-v2')
+vi.mock('next/navigation')
+vi.mock('../../utils/encryption-helpers', () => ({
   useKYCEncryption: () => ({
-    initialize: jest.fn(),
-    encryptFormData: jest.fn().mockResolvedValue({
+    initialize: vi.fn(),
+    encryptFormData: vi.fn().mockResolvedValue({
       fullName: { data: 'encrypted', salt: 'salt', iv: 'iv' },
       ssn: { data: 'encrypted', salt: 'salt', iv: 'iv' },
     }),
-    isInitialized: jest.fn().mockReturnValue(true),
+    isInitialized: vi.fn().mockReturnValue(true),
   }),
   KYCEncryptionUtils: {
-    maskSensitiveData: jest.fn((value) => value.replace(/./g, '*')),
-    validateField: jest.fn().mockReturnValue(true),
+    maskSensitiveData: vi.fn((value) => value.replace(/./g, '*')),
+    validateField: vi.fn().mockReturnValue(true),
   },
 }))
 
 describe('KYCPersonalPage', () => {
-  const mockPush = jest.fn()
+  const mockPush = vi.fn()
   const mockUser = { uid: 'test-uid', email: 'test@example.com' }
 
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(useAuth as jest.Mock).mockReturnValue({ user: mockUser })
-    ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
+    vi.clearAllMocks()
+    ;(useAuth as any).mockReturnValue({ user: mockUser })
+    ;(useRouter as any).mockReturnValue({ push: mockPush })
   })
 
   it('renders all form fields correctly', () => {

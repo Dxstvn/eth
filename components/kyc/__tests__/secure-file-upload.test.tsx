@@ -1,18 +1,19 @@
 import React from 'react'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SecureFileUpload } from '../secure-file-upload'
 import { KYCFieldType, KYCEncryptionService } from '@/lib/security/kyc-encryption'
 
 // Mock KYC encryption service
-jest.mock('@/lib/security/kyc-encryption', () => ({
+vi.mock('@/lib/security/kyc-encryption', () => ({
   KYCFieldType: {
     DOCUMENT: 'document',
     PASSPORT: 'passport',
     DRIVERS_LICENSE: 'drivers_license'
   },
-  KYCEncryptionService: jest.fn().mockImplementation(() => ({
-    encryptFile: jest.fn().mockResolvedValue({
+  KYCEncryptionService: vi.fn().mockImplementation(() => ({
+    encryptFile: vi.fn().mockResolvedValue({
       encryptedData: 'mock-encrypted-data',
       metadata: {
         fieldType: 'document',
@@ -25,18 +26,18 @@ jest.mock('@/lib/security/kyc-encryption', () => ({
 
 // Mock canvas for watermarking
 const mockCanvasContext = {
-  drawImage: jest.fn(),
-  fillText: jest.fn(),
-  measureText: jest.fn().mockReturnValue({ width: 100 }),
-  save: jest.fn(),
-  restore: jest.fn(),
-  translate: jest.fn(),
-  rotate: jest.fn(),
+  drawImage: vi.fn(),
+  fillText: vi.fn(),
+  measureText: vi.fn().mockReturnValue({ width: 100 }),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
   globalAlpha: 0.3,
   fillStyle: '',
   font: '',
   canvas: {
-    toBlob: jest.fn((callback) => {
+    toBlob: vi.fn((callback) => {
       callback(new Blob(['watermarked'], { type: 'image/png' }))
     }),
     width: 800,
@@ -44,19 +45,19 @@ const mockCanvasContext = {
   }
 }
 
-HTMLCanvasElement.prototype.getContext = jest.fn().mockReturnValue(mockCanvasContext)
+HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockCanvasContext)
 
 // Mock FileReader
 const mockFileReader = () => {
   const reader = {
-    readAsDataURL: jest.fn(),
-    readAsArrayBuffer: jest.fn(),
+    readAsDataURL: vi.fn(),
+    readAsArrayBuffer: vi.fn(),
     onload: null as any,
     onloadend: null as any,
     onerror: null as any,
     result: null as any
   }
-  jest.spyOn(window, 'FileReader').mockImplementation(() => reader as any)
+  vi.spyOn(window, 'FileReader').mockImplementation(() => reader as any)
   return reader
 }
 
@@ -78,8 +79,8 @@ class MockImage {
 (global as any).Image = MockImage
 
 describe('SecureFileUpload', () => {
-  const mockOnFileSelect = jest.fn()
-  const mockOnRemove = jest.fn()
+  const mockOnFileSelect = vi.fn()
+  const mockOnRemove = vi.fn()
   const user = userEvent.setup()
 
   const defaultProps = {
@@ -97,7 +98,7 @@ describe('SecureFileUpload', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -188,10 +189,10 @@ describe('SecureFileUpload', () => {
       fireEvent.dragEnter(dropZone)
       expect(dropZone).toHaveClass('border-primary')
       
-      fireEvent.dragOver(dropZone, { preventDefault: jest.fn() })
+      fireEvent.dragOver(dropZone, { preventDefault: vi.fn() })
       
       fireEvent.drop(dropZone, {
-        preventDefault: jest.fn(),
+        preventDefault: vi.fn(),
         dataTransfer: { files: [file] }
       })
       
@@ -274,7 +275,7 @@ describe('SecureFileUpload', () => {
       const reader = mockFileReader()
       
       // Delay encryption to show progress
-      const mockEncrypt = jest.fn().mockImplementation(() => 
+      const mockEncrypt = vi.fn().mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({
           encryptedData: 'encrypted',
           metadata: {}
@@ -310,7 +311,7 @@ describe('SecureFileUpload', () => {
       const reader = mockFileReader()
       reader.result = new ArrayBuffer(1024)
       
-      KYCEncryptionService.prototype.encryptFile = jest.fn()
+      KYCEncryptionService.prototype.encryptFile = vi.fn()
         .mockRejectedValue(new Error('Encryption failed'))
       
       render(
@@ -575,7 +576,7 @@ describe('SecureFileUpload', () => {
       const file = createMockFile('test.pdf')
       
       fireEvent.drop(dropZone, {
-        preventDefault: jest.fn(),
+        preventDefault: vi.fn(),
         dataTransfer: { files: [file] }
       })
       
@@ -588,7 +589,7 @@ describe('SecureFileUpload', () => {
       const reader = mockFileReader()
       
       // Mock slow read
-      reader.readAsDataURL = jest.fn().mockImplementation(function() {
+      reader.readAsDataURL = vi.fn().mockImplementation(function() {
         setTimeout(() => {
           if (this.onprogress) {
             this.onprogress({ loaded: 50, total: 100 } as any)

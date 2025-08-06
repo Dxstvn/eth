@@ -1,0 +1,843 @@
+{
+  "config": {
+    "configFile": "/Users/dustinjasmin/eth-1/playwright.config.test.ts",
+    "rootDir": "/Users/dustinjasmin/eth-1/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 8
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/dustinjasmin/eth-1/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/dustinjasmin/eth-1/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.54.1",
+    "workers": 8,
+    "webServer": {
+      "command": "npm run dev -- --port 3001",
+      "port": 3001,
+      "reuseExistingServer": true,
+      "env": {
+        "NODE_ENV": "development",
+        "NEXT_PUBLIC_TEST_MODE": "true",
+        "NEXT_PUBLIC_API_URL": "http://localhost:3000"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "simplified/auth-flow.spec.ts",
+      "file": "simplified/auth-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Authentication Flow - Simplified",
+          "file": "simplified/auth-flow.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "complete signup flow",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 29763,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:56:5",
+                        "location": {
+                          "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                          "column": 20,
+                          "line": 34
+                        },
+                        "snippet": "  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                            "column": 20,
+                            "line": 34
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n\n  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:56:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.830Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/dustinjasmin/eth-1/test-results/simplified-auth-flow-Authe-dfa09-lified-complete-signup-flow-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                        "column": 20,
+                        "line": 34
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7650a0d6e04aff69f16d-7c790d4de2cf775878a4",
+              "file": "simplified/auth-flow.spec.ts",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "navigate between login methods",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 29782,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:75:5",
+                        "location": {
+                          "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                          "column": 20,
+                          "line": 34
+                        },
+                        "snippet": "  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                            "column": 20,
+                            "line": 34
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n\n  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:75:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.829Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/dustinjasmin/eth-1/test-results/simplified-auth-flow-Authe-9a497-igate-between-login-methods-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                        "column": 20,
+                        "line": 34
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7650a0d6e04aff69f16d-19ff5c4ecf7d6c2c8d1d",
+              "file": "simplified/auth-flow.spec.ts",
+              "line": 74,
+              "column": 7
+            },
+            {
+              "title": "remember user choice",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 29781,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:108:5",
+                        "location": {
+                          "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                          "column": 20,
+                          "line": 34
+                        },
+                        "snippet": "  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                            "column": 20,
+                            "line": 34
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n\n  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:108:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.833Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/dustinjasmin/eth-1/test-results/simplified-auth-flow-Authe-bb0c0-lified-remember-user-choice-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                        "column": 20,
+                        "line": 34
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7650a0d6e04aff69f16d-8039b0a2c8b983112f45",
+              "file": "simplified/auth-flow.spec.ts",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "cross-device authentication info",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 29771,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:141:5",
+                        "location": {
+                          "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                          "column": 20,
+                          "line": 34
+                        },
+                        "snippet": "  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                            "column": 20,
+                            "line": 34
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n\n  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts:141:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.830Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/dustinjasmin/eth-1/test-results/simplified-auth-flow-Authe-ec127--device-authentication-info-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/auth-flow.spec.ts",
+                        "column": 20,
+                        "line": 34
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7650a0d6e04aff69f16d-ab6b42d4a84ac62dafcc",
+              "file": "simplified/auth-flow.spec.ts",
+              "line": 140,
+              "column": 7
+            },
+            {
+              "title": "handles rate limiting",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 11296,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.834Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7650a0d6e04aff69f16d-f6a8c58694d7b6ab693a",
+              "file": "simplified/auth-flow.spec.ts",
+              "line": 163,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "simplified/passwordless-login.spec.ts",
+      "file": "simplified/passwordless-login.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Passwordless Login - Simplified",
+          "file": "simplified/passwordless-login.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "login page displays correctly",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "failed",
+                      "duration": 29764,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:56:5",
+                        "location": {
+                          "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts",
+                          "column": 20,
+                          "line": 34
+                        },
+                        "snippet": "  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts",
+                            "column": 20,
+                            "line": 34
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n\n  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:56:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.830Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/dustinjasmin/eth-1/test-results/simplified-passwordless-lo-20ac4-gin-page-displays-correctly-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts",
+                        "column": 20,
+                        "line": 34
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "60a7379e8c6a81ab5034-3afd93040b9f6ca1c4a6",
+              "file": "simplified/passwordless-login.spec.ts",
+              "line": 55,
+              "column": 7
+            },
+            {
+              "title": "can complete passwordless flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 10061,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.834Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "60a7379e8c6a81ab5034-98310e69dea7fadb91ad",
+              "file": "simplified/passwordless-login.spec.ts",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "validates email format",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "failed",
+                      "duration": 29765,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:96:5",
+                        "location": {
+                          "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts",
+                          "column": 20,
+                          "line": 34
+                        },
+                        "snippet": "  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts",
+                            "column": 20,
+                            "line": 34
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]') to be visible\u001b[22m\n\n\n  32 |     while (attempts < 5) {\n  33 |       try {\n> 34 |         await page.waitForSelector('input[type=\"email\"]', { \n     |                    ^\n  35 |           state: 'visible', \n  36 |           timeout: 3000 \n  37 |         });\n    at ensureCleanLoginState (/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:34:20)\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts:96:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:45.836Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/dustinjasmin/eth-1/test-results/simplified-passwordless-lo-85a8d-fied-validates-email-format-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/passwordless-login.spec.ts",
+                        "column": 20,
+                        "line": 34
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "60a7379e8c6a81ab5034-90e7745b98776b20b4b9",
+              "file": "simplified/passwordless-login.spec.ts",
+              "line": 95,
+              "column": 7
+            },
+            {
+              "title": "displays auth methods for existing users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 3891,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:56.151Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "60a7379e8c6a81ab5034-32a8b8ac529e45f8437f",
+              "file": "simplified/passwordless-login.spec.ts",
+              "line": 114,
+              "column": 7
+            },
+            {
+              "title": "handles errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1862,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:57.393Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "60a7379e8c6a81ab5034-2d49def4fcc14a825fb3",
+              "file": "simplified/passwordless-login.spec.ts",
+              "line": 133,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "simplified/smoke-tests.spec.ts",
+      "file": "simplified/smoke-tests.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Smoke Tests",
+          "file": "simplified/smoke-tests.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "app loads without errors",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "failed",
+                      "duration": 938,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m0\u001b[39m\nReceived length: \u001b[31m2\u001b[39m\nReceived array:  \u001b[31m[\"Error fetching connected wallets: ApiException: Network error: Unable to connect to the server. Please check your internet connection.\u001b[39m\n\u001b[31m    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:180:35)\u001b[39m\n\u001b[31m    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\u001b[39m\n\u001b[31m    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\u001b[39m\n\u001b[31m    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\u001b[39m\n\u001b[31m    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)\", \"Error fetching connected wallets: ApiException: Network error: Unable to connect to the server. Please check your internet connection.\u001b[39m\n\u001b[31m    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:180:35)\u001b[39m\n\u001b[31m    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\u001b[39m\n\u001b[31m    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\u001b[39m\n\u001b[31m    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\u001b[39m\n\u001b[31m    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)\"]\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m0\u001b[39m\nReceived length: \u001b[31m2\u001b[39m\nReceived array:  \u001b[31m[\"Error fetching connected wallets: ApiException: Network error: Unable to connect to the server. Please check your internet connection.\u001b[39m\n\u001b[31m    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:180:35)\u001b[39m\n\u001b[31m    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\u001b[39m\n\u001b[31m    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\u001b[39m\n\u001b[31m    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\u001b[39m\n\u001b[31m    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)\", \"Error fetching connected wallets: ApiException: Network error: Unable to connect to the server. Please check your internet connection.\u001b[39m\n\u001b[31m    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:180:35)\u001b[39m\n\u001b[31m    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\u001b[39m\n\u001b[31m    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\u001b[39m\n\u001b[31m    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\u001b[39m\n\u001b[31m    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)\"]\u001b[39m\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/smoke-tests.spec.ts:45:28",
+                        "location": {
+                          "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/smoke-tests.spec.ts",
+                          "column": 28,
+                          "line": 45
+                        },
+                        "snippet": "  43 |     );\n  44 |     \n> 45 |     expect(criticalErrors).toHaveLength(0);\n     |                            ^\n  46 |   });\n  47 |\n  48 |   test('main navigation works', async ({ page }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/smoke-tests.spec.ts",
+                            "column": 28,
+                            "line": 45
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m0\u001b[39m\nReceived length: \u001b[31m2\u001b[39m\nReceived array:  \u001b[31m[\"Error fetching connected wallets: ApiException: Network error: Unable to connect to the server. Please check your internet connection.\u001b[39m\n\u001b[31m    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:180:35)\u001b[39m\n\u001b[31m    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\u001b[39m\n\u001b[31m    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\u001b[39m\n\u001b[31m    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\u001b[39m\n\u001b[31m    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)\", \"Error fetching connected wallets: ApiException: Network error: Unable to connect to the server. Please check your internet connection.\u001b[39m\n\u001b[31m    at executeRequest (webpack-internal:///(app-pages-browser)/./services/api/client.ts:180:35)\u001b[39m\n\u001b[31m    at async RetryHandler.executeWithRetry (webpack-internal:///(app-pages-browser)/./services/api/retry-logic.ts:38:24)\u001b[39m\n\u001b[31m    at async ApiClient.request (webpack-internal:///(app-pages-browser)/./services/api/client.ts:211:24)\u001b[39m\n\u001b[31m    at async WalletService.getConnectedWallets (webpack-internal:///(app-pages-browser)/./services/wallet-service.ts:266:30)\u001b[39m\n\u001b[31m    at async WalletProvider.useCallback[initializeWallets] (webpack-internal:///(app-pages-browser)/./context/wallet-context.tsx:197:40)\"]\u001b[39m\n\n  43 |     );\n  44 |     \n> 45 |     expect(criticalErrors).toHaveLength(0);\n     |                            ^\n  46 |   });\n  47 |\n  48 |   test('main navigation works', async ({ page }) => {\n    at /Users/dustinjasmin/eth-1/tests/e2e/simplified/smoke-tests.spec.ts:45:28"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:17:59.258Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/dustinjasmin/eth-1/test-results/simplified-smoke-tests-Smoke-Tests-app-loads-without-errors-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/dustinjasmin/eth-1/tests/e2e/simplified/smoke-tests.spec.ts",
+                        "column": 28,
+                        "line": 45
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "4f995de7958d88df35a8-3d4071fef2ef80b0fb2f",
+              "file": "simplified/smoke-tests.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "main navigation works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:18:00.215Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4f995de7958d88df35a8-e54fe69511795ae4b736",
+              "file": "simplified/smoke-tests.spec.ts",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:18:00.215Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4f995de7958d88df35a8-51ff3c06b8757f825edf",
+              "file": "simplified/smoke-tests.spec.ts",
+              "line": 59,
+              "column": 7
+            },
+            {
+              "title": "critical pages load",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:18:00.215Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4f995de7958d88df35a8-471ef40414268229120d",
+              "file": "simplified/smoke-tests.spec.ts",
+              "line": 71,
+              "column": 7
+            },
+            {
+              "title": "form interactions work",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-05T23:18:00.215Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4f995de7958d88df35a8-7ee35c789c3e4b698cc0",
+              "file": "simplified/smoke-tests.spec.ts",
+              "line": 107,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-08-05T23:17:44.678Z",
+    "duration": 31271.297000000002,
+    "expected": 4,
+    "skipped": 4,
+    "unexpected": 7,
+    "flaky": 0
+  }
+}

@@ -119,7 +119,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://static.sumsub.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com https://static.sumsub.com",
-              "connect-src 'self' https://api.clearhold.app https://*.ngrok.io https://*.ngrok-free.app https://*.ngrok.app https://*.firebaseapp.com https://*.googleapis.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.sumsub.com https://static.sumsub.com",
+              "connect-src 'self' https://api.clearhold.app https://*.firebaseapp.com https://*.googleapis.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.sumsub.com https://static.sumsub.com",
               "frame-src 'self' https://accounts.google.com https://clearhold.firebaseapp.com https://api.sumsub.com",
               "object-src 'none'",
               "base-uri 'self'",
